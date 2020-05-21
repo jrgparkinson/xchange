@@ -1,0 +1,57 @@
+{% if past_trades %}
+
+
+    	<table class="table">
+  <thead>
+    <tr>
+      <th scope="col">Share</th>
+      <th scope="col"></th>
+      <th scope="col">Trade with</th>
+      <th scope="col">Price</th>
+      <th scope="col">Status</th>
+      
+    </tr>
+  </thead>
+  <tbody>
+
+
+{% for t in past_trades %}
+    <tr>
+    
+<td>{{t.share.runner}}</td>
+
+    {% if t.seller == user.investor %}
+
+<td>Sell to  </td>
+
+      <td>{% if t.buyer %}  {{t.buyer}}
+    {% else %} Anyone  {% endif %}</td>
+
+      
+
+    	{% else %}
+
+<td>Buy from</td>
+      <td> {% if t.seller %}{{t.seller}}
+           {% else %}Anyone{% endif %}</td>
+
+    	{% endif %}
+
+
+    
+
+
+      
+      <td>{{t.print_price}}</td>
+      <td>{{t.print_status}}</td>
+     
+    </tr>
+{% endfor %}
+</tbody>
+</table>
+
+    	{% else %}
+
+    	No past trades.
+
+    	{% endif %}

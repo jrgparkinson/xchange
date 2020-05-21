@@ -1,0 +1,24 @@
+{% if sell_trades %}
+<table class="table">
+  <tbody>
+
+
+{% for t in sell_trades %}
+<tr>
+<td>{{t.seller}}</td>
+<td>wants to sell</td>
+<td>{{t.share.runner}}</td>
+      <td>for {{t.print_price}}</td>
+      <td> Actions <!-- <button id="C{{t.id}}" value="C" name="C" onclick="respond_to_trade({{t.id}}, '{{t.CANCELLED}}')">Cancel</button>-->
+        
+      </td>
+</tr>
+{% endfor %}
+
+
+</tbody>
+</table>
+
+{% else %}
+Nothing to show
+{% endif %}

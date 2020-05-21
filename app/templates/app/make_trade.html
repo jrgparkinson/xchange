@@ -1,0 +1,61 @@
+
+
+<div style="float:left; width:50%; padding-right:2%; border-right:1px #000 solid; height:100%">
+<h3>Sell</h3>
+{% if sellable_shares|length > 0 %}
+    Share: <select name="trade_share" id="trade_share">
+    	{% for s in sellable_shares %}
+
+		  <option value="{{s.runner.id}}">{{s.runner}} - {{s.num_shares}} share(s)</option>
+	  {% endfor %}
+    	
+	</select>
+	<br>
+	Number of shares to trade: <input name="num_shares" id="num_shares" type="number" style="width:40px" value="1"> 
+	<br>
+	Price per share: £<input name="share_price" id="share_price" type="number" style="width:80px" value="1"> million <br>
+	Sell to: <select name="buyer_id" id="buyer_id">
+		<option value="-1">--Marketplace--</option>
+{% for r in other_investors %}
+<option value="{{r.id}}">{{r}}</option>
+{% endfor %}
+	</select>
+
+	<br>
+
+	<button id="make_trade" value="make_trade" name="make_trade" onClick="makeTradeSell()">Sell</button>
+
+	{% else %}
+
+	You don't have any shares to sell
+
+	{% endif %}
+
+
+</div>
+
+
+<div style="float:right; width:50%; padding-left:2%; border-left:1px #000 solid;">
+<h3>Buy</h3>
+Share: <select name="trade_share_buy" id="trade_share_buy">
+	<option value="-1">-- Choose a share --</option>
+    	{% for s in all_collated_shares %}
+		  <option value="{{s.runner.id}}">{{s.runner}} - {{s.num_shares}} share(s)</option>
+	  	{% endfor %}
+	  </select>
+
+	  	<br>
+Buy from: <select name="seller_id_responsive" id="seller_id_responsive">
+		<option value="-1" selected>--Marketplace--</option>
+{% for r in other_investors %}
+<option value="{{r.id}}">{{r}}</option>
+{% endfor %}
+	</select>
+
+<br>
+Number of shares to buy: <input name="num_shares_buy" id="num_shares_buy" type="number" style="width:40px" value="1"> <br>
+Price per share: £<input name="share_price_buy" id="share_price_buy" type="number" style="width:80px" value="1"> million <br>
+
+<button id="make_trade_buy" value="make_trade_buy" name="make_trade_buy" onClick="makeTradeBuy()">Buy</button>
+
+</div>

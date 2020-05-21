@@ -1,0 +1,94 @@
+{% if direct_trades or sell_trades or buy_trades %}
+<table class="table">
+  <tbody>
+
+
+{% for t in direct_trades %}
+    <tr>
+
+      {% if t.creator == t.seller %}
+
+        {% if t.seller == user.investor %}
+        <td>You</td>
+        <td>want to sell</td>
+         <td>{{t.share.runner}}</td>
+         <td>to {{t.buyer}} </td>
+
+        {% else %}
+
+        <td>{{t.seller}}</td>
+        <td>wants to sell</td>
+         <td>{{t.share.runner}}</td>
+        <td>to you</td>
+        {% endif %}
+
+      {% else %}
+
+
+          {% if t.buyer == user.investor %}
+        <td>You</td>
+        <td>want to buy</td>
+         <td>{{t.share.runner}}</td>
+         <td>from {{t.seller}}</td>
+
+        {% else %}
+
+        <td>{{t.buyer}}</td>
+        <td>wants to buy</td>
+         <td>{{t.share.runner}}</td>
+         <td>from you</td>
+
+        {% endif %}
+
+      {% endif %}
+
+
+    
+      
+     
+
+
+
+      <td>for {{t.print_price}}</td>
+      <td>
+       
+        
+        {% if t.creator == user.investor %}
+        <button id="C{{t.id}}" value="C" name="C" onclick="respond_to_trade({{t.id}}, '{{t.CANCELLED}}')">Cancel</button>
+        {% else %}
+         <button id="A{{t.id}}" value="A" name="A" onclick="respond_to_trade({{t.id}}, '{{t.ACCEPTED}}')" {% if not t.check_if_allowed %}disabled{% endif %}>Accept</button>  
+        <button id="D{{t.id}}" value="D" name="D" onclick="respond_to_trade({{t.id}}, '{{t.REJECTED}}')">Reject</button>
+        {% endif %}
+      </td>
+    </tr>
+{% endfor %}
+
+
+{% for t in sell_trades %}
+<tr>
+<td>You</td>
+<td>want to sell</td>
+<td>{{t.share.runner}}</td>
+<td>to anyone</td>
+      <td>for {{t.print_price}}</td>
+      <td> <button id="C{{t.id}}" value="C" name="C" onclick="respond_to_trade({{t.id}}, '{{t.CANCELLED}}')">Cancel</button></td>
+</tr>
+{% endfor %}
+
+{% for t in buy_trades %}
+<tr>
+<td>You</td>
+<td>want to buy</td>
+<td>{{t.runner}}</td>
+<td>from anyone</td>
+      <td>for {{t.print_price}}</td>
+      <td> <button id="C{{t.id}}" value="C" name="C" onclick="respond_to_open_trade({{t.id}}, '{{t.CANCELLED}}', {{user.investor.id}})">Cancel</button></td>
+</tr>
+{% endfor %}
+
+</tbody>
+</table>
+
+{% else %}
+No active trade requests
+{% endif %}

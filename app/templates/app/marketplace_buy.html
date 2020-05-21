@@ -1,0 +1,34 @@
+{% load webapp_extras %}
+
+{% if buy_trades %}
+<table class="table">
+  <tbody>
+
+{% for t in buy_trades %}
+<tr>
+<td>{{t.buyer}}</td>
+<td>wants to buy</td>
+<td>{{t.runner}}</td>
+      <td>for {{t.print_price}}</td>
+      <td> 
+      {% if t.buyer == user.investor %}
+      <button id="C{{t.id}}" value="C" name="C" onclick="respond_to_open_trade({{t.id}}, '{{t.CANCELLED}}', {{user.investor.id}})">Cancel</button>
+      {% else %}
+      {% check_investor_can_fulfil_trade t as make_trade_flag %}
+
+{% if make_trade_flag %} 
+      
+          <button id="A{{t.id}}" value="A" name="A" onclick="respond_to_open_trade({{t.id}}, '{{t.ACCEPTED}}', {{user.investor.id}})">Make trade</button>
+        {% else %} {% endif %}
+      {% endif %}
+      
+      </td>
+</tr>
+{% endfor %}
+
+</tbody>
+</table>
+
+{% else %}
+Nothing to show
+{% endif %}

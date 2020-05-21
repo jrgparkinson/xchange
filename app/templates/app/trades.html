@@ -1,0 +1,293 @@
+
+{% extends 'app/base.html' %}
+{% load static %}
+
+{% block title %}Trades{% endblock %}
+{% block page_title %}Trades{% endblock %}
+
+
+{% block content %}
+
+<div class="card" style="width: 48%; float:left;">
+  <div class="card-body">
+    <h2 class="card-title">Make a trade</h2>
+    <!--<h6 class="card-subtitle mb-2 text-muted">Card subtitle</h6>-->
+    <p class="card-text">
+    	<div id="make_trade">
+    	</div>
+
+
+</p>
+    <!--<a href="#" class="card-link">Card link</a>
+    <a href="#" class="card-link">Another link</a>-->
+  </div>
+</div>
+
+<div id="right-container" style="width:48%; float:right;">
+
+<div class="card" style="width: 100%;">
+  <div class="card-body">
+    <h2 class="card-title">Active trade requests</h2>
+    
+    <p class="card-text">
+
+<div id="incoming_trades">
+</div>
+
+    </p>
+    
+  </div>
+</div>
+
+
+
+</div>
+
+
+
+<div class="card" style="width: 100%; float:left; margin-top:25px">
+  <div class="card-body">
+    <h2 class="card-title">Trading history</h2>
+    <!--<h6 class="card-subtitle mb-2 text-muted">Card subtitle</h6>-->
+    <p class="card-text">
+
+    	<div id="past_trades">
+    	</div>
+
+    </p>
+    <!--<a href="#" class="card-link">Card link</a>
+    <a href="#" class="card-link">Another link</a>-->
+  </div>
+</div>
+
+
+          {%endblock%}
+
+
+      {% block footer %}
+
+
+  <script>
+
+
+  
+
+    function reload_incoming_trades() 
+    {
+    	/* Some data to send to the back end */
+    	var append_increment = 0;
+
+        $.ajax({
+            type: "GET",
+            url: {% url 'incoming_trades' %},  // URL to your view that serves new info
+            data: {'append_increment': append_increment}
+        })
+        .done(function(response) {
+            $('#incoming_trades').html(response);
+            append_increment += 10;
+        });
+    }
+
+    function reload_past_trades() 
+    {
+        $.ajax({
+            type: "GET",
+            url: {% url 'past_trades' %},  // URL to your view that serves new info
+            data: {}
+        })
+        .done(function(response) {
+            $('#past_trades').html(response);
+        });
+    }
+
+    function reload_make_trades() 
+    {
+        $.ajax({
+            type: "GET",
+            url: {% url 'make_trade' %},  // URL to your view that serves new info
+            data: {}
+        })
+        .done(function(response) {
+            $('#make_trade').html(response);
+        });
+    }
+
+    function makeTradeSell()
+    {
+    	var runner_id = $('#trade_share option:selected').val();
+    	var num_shares = $('#num_shares').val();
+    	var share_price = $('#share_price').val(); 
+    	var buyer_id = $('#buyer_id').val();
+    	var seller_id = {{request.user.investor.id}};
+
+    	makeTrade(seller_id, buyer_id, runner_id, num_shares, share_price);
+    }
+
+        function makeTradeBuy()
+    {
+    	var buyer_id = {{request.user.investor.id}};
+    	var num_shares = $('#num_shares_buy').val();
+    	var share_price = $('#share_price_buy').val(); 
+    	var seller_id = $('#seller_id_responsive option:selected').val();
+    	var runner_id = $('#trade_share_buy option:selected').val();
+
+		makeTrade(seller_id, buyer_id, runner_id, num_shares, share_price);
+
+
+    }
+
+    function makeTrade(seller_id, buyer_id, runner_id, num_shares, share_price)
+    {
+
+
+    	
+    	console.log("Create trade from: " + seller_id.toString() + " to: " + buyer_id.toString() + " for " + num_shares.toString() + " in " + runner_id.toString() + " @ " + share_price.toString() + " each");
+    	$.ajax({
+            type: "GET",
+            url: {% url 'create_trade' %},  // URL to your view that serves new info
+            data: {'seller_id': seller_id, 'runner_id': runner_id, 'num_shares': num_shares, 'share_price': share_price, 'buyer_id': buyer_id}
+        }).done(function(response)
+        {
+        	/* Check if response is success.
+        	Possible issues:
+
+        	1) Seller does not have this many shares to sell
+        	2) You're trying to spend more money than you have
+
+
+        	 */
+        	console.log(response);
+        	
+        	if (response.status != 0)
+        	{
+        		alert(response.err_msg);
+        	}
+        	else
+        	{
+	        	if (response.status == 1)
+	        	{
+	        		if (seller_id == {{user.investor.id}})
+	        		{
+	        			alert('You do not have this many shares to sell');	
+	        		}
+	        		else
+	        		{
+	        			alert('The seller does not have this many shares to sell');
+	        		}
+	       		 }
+	        	else if (response.status == 2)
+	        	{
+					alert('You don\'t have enough capital to buy these shares');
+	        	}
+	        	else if (response.status != 0)
+	        	{
+	        		alert('Unknown error, sorry');
+	        	}
+        }
+
+        	reload_all();
+        });
+    }
+
+
+
+
+
+    function respond_to_trade(trade_id, response)
+    {
+    	console.log("Trade ID: " + trade_id.toString() + ", response: " + response.toString());
+    	$.ajax({
+            type: "GET",
+            url: {% url 'respond_to_trade' %},  // URL to your view that serves new info
+            data: {'trade_id': trade_id, 'response': response}
+        }).done(function(response) {
+
+console.log(response);
+        	if (!response.trade_allowed)
+        	{
+				alert('Unable to process request');
+        	}
+        	reload_all();
+
+        });
+    }
+
+        
+
+
+
+    function reload_all()
+    {
+    	reload_past_trades();
+    	reload_incoming_trades();
+    	reload_make_trades();
+    	//reload_outgoing_trades();
+    }
+
+    $(document).ready(function()
+    {
+    	console.log('Ready');
+
+    	reload_all();
+
+
+
+    	$(document.body).on('change','#trade_share_buy',function()
+    		{
+    				var runner_id = $('#trade_share_buy').find(":selected").val(); //$('#trade_share_buy option:selected').val();
+
+    				console.log(runner_id);
+
+    				console.log('Runner selected: ' + runner_id.toString());
+    				update_investors_with_shares(runner_id);
+    		});
+
+    });
+
+    function update_investors_with_shares(runner_id){
+    				
+
+        $.ajax({
+        	type: "GET",
+            url: {% url 'get_investors_for_runner' %},  // URL to your view that serves new info
+            data: {'runner_id': runner_id}
+        })
+        .done(function(response) {
+
+            //$('#make_trade').html(response);
+
+            newOptions = response.investors;
+
+            console.log(response);
+            console.log(newOptions);
+
+            $('#seller_id_responsive option:gt(0)').remove(); // remove all options, but not the first 
+            var $el = $("#seller_id_responsive");
+
+$.each(newOptions, function(key,value) {
+
+	var investor_id = value['investor_id'];
+
+	// Skip currently logged in user
+	var current_investor_id = {{request.user.investor.id}};
+	if (investor_id != current_investor_id)
+	{
+	var txt = value['investor_name'] + " - " + value['num_shares'] + " share(s)";
+
+  $el.append($("<option></option>").attr("value", investor_id).text(txt));
+}
+});
+
+           // console.log(response);
+
+        });
+
+    }
+
+   
+
+
+  </script>
+
+    
+    {% endblock %}
