@@ -1,9 +1,12 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
 from django.contrib.auth import logout
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import authenticate, login
 from app.forms import SignUpForm
+from app.models import *
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 
 def index(request):
     # return HttpResponse("Hello, world. You're at the polls index.")
@@ -53,7 +56,8 @@ def logout_view(request):
 
 
 def temp(request):
-    return HttpResponse("testing")
+    return JsonResponse({"error": "Not implemented yet"})
+
 
 
 
@@ -61,11 +65,13 @@ def dashboard(request):
     if request.user.is_authenticated:
         investor = request.user.investor
 
-        shares = {} # Share.objects.filter(owner=request.user.investor)
+        shares = Share.objects.filter(owner=investor)
+        loans = Loan.objects.filter(recipient=investor)
+
         # collated_shares = investor.get_shares()
-        return render(request, 'dashboard.html', {'shares': shares, 'collated_shares': collated_shares})
+        return render(request, 'app/dashboard.html', {'shares': shares, 'loans': loans})
     else:
-        return render(request, 'index.html')
+        return render(request, 'app/index.html')
 
 
 def marketplace(request):
@@ -77,9 +83,96 @@ def marketplace(request):
         #open_trade = OpenTrade.objects.filter(buyer=investor).first()
         #investor.can_fulfil_trade(open_trade)
 
-        return render(request, 'marketplace.html')
+        return render(request, 'app/marketplace.html')
     else:
-        return render(request, 'index.html')
+        return render(request, 'app/index.html')
+
+
+
+@login_required(login_url='/login/')
+def retrieve_trades(request):
+    investor = request.user.investor
+
+    all_trades = Trade.objects.all().filter((Q(buyer=investor) | Q(seller=investor)) & Q(status=Trade.PENDING))
+
+    trades = []
+    for t in all_trades:
+        trade = t.serialize()
+
+        if t.seller == investor:
+            trade["type"] = "Sell"
+        else:
+            trade["type"] = "Buy"
+
+        trade["can_accept"] = False
+
+        # Can accept it if:
+        # a) we didn't make it
+        # and b) there's a seller and a buyer (direct trade) or no buyer (open trade) but we can become the buyer
+        if not t.creator == investor and ( (t.buyer and t.seller) or not t.seller == investor):
+            trade["can_accept"] = True
+
+
+        trades.append(trade)
+
+    return JsonResponse({"trades": trades, "investor": investor.serialize()}, safe=False)
+
+@login_required(login_url='/login/')
+def action_trade(request):
+    investor = request.user.investor
+
+    print(request.GET)
+
+    trade_id = request.GET["id"]
+    change = request.GET["change"]
+    
+    error = ""
+
+    try:
+        trade = Trade.objects.get(pk=trade_id)
+
+        print("Trade to modify: {}".format(trade))
+    
+        if change == "accept":
+            trade.accept_trade(action_by=investor)
+        elif investor == trade.creator:
+            trade.cancel_trade()
+        else:
+            trade.reject_trade()
+
+    except XChangeException as e:
+        error = e.desc
+    except Trade.DoesNotExist:
+        error = "Trade no longer exists"
+
+    return JsonResponse({"error": error})
+
+@login_required(login_url='/login/')
+def create_trade(request):
+    investor = request.user.investor
+
+    print(request.GET)
+
+    # trade_type = request.GET["type"]
+
+    # if trade_type == "BUY":
+    #     trades = Trade.objects.all().filter(buyer=investor)
+    # else:
+    #     trades = Trade.objects.all().filter(seller=investor)
+
+    return JsonResponse({"error": "Not implemented yet"})
+
+def get_investors(request):
+    inv = Investor.objects.all()
+    if request.GET["ignore_self"]:
+        inv = [i for i in inv if not i == request.user.investor]
+
+    investors = [i.serialize() for i in inv]
+    return JsonResponse({"investors": investors})
+
+def get_athletes(request):
+    athletes = [i.serialize() for i in Athlete.objects.all()]
+    return JsonResponse({"athletes": athletes})
 
 # @login_required
 # def marketplace_buying(request):
@@ -396,7 +489,8 @@ def trades(request):
 #             #'buy_requests': buy_requests, 'sell_requests': sell_requests
 #             'incoming_trades': incoming_trades
 #             })
-        return render(request, "app/trades.html")
+        return render(request, "app/trades.html", 
+        {"trades": Trade.objects.filter(seller=investor).filter(buyer=investor)})
     else:
         return render(request, 'app/index.html')
 

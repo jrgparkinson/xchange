@@ -1,0 +1,22 @@
+
+.tradeLabel {
+    float:left;
+    width:calc(100% - 50px);
+}
+
+.tradeActions {
+    float:right;
+    width:50px;
+}
+
+ul.tradeList {
+    list-style: none;
+}
+
+tr.buy {   
+    background-color: lightgreen;
+}
+
+tr.sell {
+    background-color: mistyrose;
+}

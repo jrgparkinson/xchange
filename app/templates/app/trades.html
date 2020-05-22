@@ -1,4 +1,3 @@
-
 {% extends 'app/base.html' %}
 {% load static %}
 
@@ -8,36 +7,105 @@
 
 {% block content %}
 
-<div class="card" style="width: 48%; float:left;">
+<div class="card" style="width: 32%; float:left;">
   <div class="card-body">
     <h2 class="card-title">Make a trade</h2>
     <!--<h6 class="card-subtitle mb-2 text-muted">Card subtitle</h6>-->
     <p class="card-text">
-    	<div id="make_trade">
-    	</div>
+    <div id="make_trade">
+      <form id="formCreateTrade" novalidate>
+        <div class="form-group row">
+          <div class="col-sm-6">
+            <div class="custom-control custom-radio custom-control-inline">
+              <input type="radio" id="buy" name="buysell" value="buy" class="custom-control-input"  >
+              <label class="custom-control-label" for="buy">Buy</label>
+            </div>
+            <div class="custom-control custom-radio custom-control-inline">
+              <input type="radio" id="sell" name="buysell" value="sell" class="custom-control-input" >
+              <label class="custom-control-label" for="sell">Sell</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label for="commodity" class="col-sm-4 col-form-label col-form-label">Commodity:</label>
+          <div class="col-sm-6">
+
+            <button type="button" class="btn btn-primary mb-2" data-toggle="modal"
+              data-target="#createShare">Share</button>
+            <!-- <div id="commodityEntry"></div> -->
+            <input type="text" class="form-control form-control" id="commodityEntry" 
+            name="commodityEntry" required>
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label for="tradeWith" class="col-sm-4 col-form-label col-form-label">Trade with:</label>
+          <div class="col-sm-8">
+            <select class="custom-select" name="tradeWith" id="tradeWith">
+              <option selected>Open</option>
+            </select>
+          </div>
+        </div>
 
 
-</p>
+        <div class="form-group row">
+          <label for="price" class="col-sm-4 col-form-label col-form-label">Price</label>
+          <div class="col-sm-8">
+            <input type="text" name="price" class="form-control form-control" id="price" required>
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <div class="col-sm-9"></div>
+          <div class="col-sm-2">
+            <button type="submit" class="btn btn-primary mb-2">Create</button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+
+    </p>
     <!--<a href="#" class="card-link">Card link</a>
     <a href="#" class="card-link">Another link</a>-->
   </div>
 </div>
 
-<div id="right-container" style="width:48%; float:right;">
+<div id="right-container" style="width:65%; float:right;">
 
-<div class="card" style="width: 100%;">
-  <div class="card-body">
-    <h2 class="card-title">Active trade requests</h2>
-    
-    <p class="card-text">
+  <div class="card" style="width: 100%;">
+    <div class="card-body">
+      <h2 class="card-title">Active trade requests</h2>
 
-<div id="incoming_trades">
-</div>
+      <p class="card-text">
 
-    </p>
-    
+      <div>
+        <!-- <ul class="tradeList" id="active_trades">
+  </ul> -->
+
+        <table class="table" id="active_trades">
+          <thead>
+            <tr>
+              <td scope="col"></td>
+              <th scope="col">Commodity</th>
+              <th scope="col">Price</th>
+              <td scope="col">Seller</td>
+              <td scope="col">Buyer</td>
+              <td scope="col">Initiated by</td>
+              <td scope="col"></td>
+            </tr>
+          </thead>
+          <tbody>
+          </tbody>
+        </table>
+      </div>
+
+      </p>
+
+    </div>
   </div>
-</div>
 
 
 
@@ -51,8 +119,8 @@
     <!--<h6 class="card-subtitle mb-2 text-muted">Card subtitle</h6>-->
     <p class="card-text">
 
-    	<div id="past_trades">
-    	</div>
+    <div id="past_trades">
+    </div>
 
     </p>
     <!--<a href="#" class="card-link">Card link</a>
@@ -61,233 +129,321 @@
 </div>
 
 
-          {%endblock%}
+<!-- Modal -->
+<div class="modal fade" id="createShare" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+  aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLongTitle">Construct Share To Trade</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form>
+
+          <div class="form-group row">
+            <label for="athlete" class="col-sm-4 col-form-label col-form-label">Athlete:</label>
+            <div class="col-sm-8">
+              <select class="custom-select" id="athlete">
+                <option selected>...</option>
+              </select>
+            </div>
+          </div>
 
 
-      {% block footer %}
+          <div class="form-group row">
+            <label for="volume" class="col-sm-4 col-form-label col-form-label">Volume</label>
+            <div class="col-sm-8">
+              <input type="text" class="form-control" id="volume">
+            </div>
+          </div>
 
 
-  <script>
+
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-dismiss="modal"
+          onclick="createShareFromModal()">Done</button>
+        <!-- <button type="button" class="btn btn-primary">Save changes</button> -->
+      </div>
+    </div>
+  </div>
+</div>
+
+{%endblock%}
 
 
-  
+{% block footer %}
 
-    function reload_incoming_trades() 
-    {
-    	/* Some data to send to the back end */
-    	var append_increment = 0;
 
-        $.ajax({
-            type: "GET",
-            url: {% url 'incoming_trades' %},  // URL to your view that serves new info
-            data: {'append_increment': append_increment}
+<script>
+
+  function populateTradeWithSelect() {
+    $.ajax({
+      type: "GET",
+      url: {% url 'get_investors' %},  // URL to your view that serves new info
+      data: { "ignore_self": true }
         })
-        .done(function(response) {
-            $('#incoming_trades').html(response);
-            append_increment += 10;
-        });
-    }
-
-    function reload_past_trades() 
-    {
-        $.ajax({
-            type: "GET",
-            url: {% url 'past_trades' %},  // URL to your view that serves new info
-            data: {}
-        })
-        .done(function(response) {
-            $('#past_trades').html(response);
-        });
-    }
-
-    function reload_make_trades() 
-    {
-        $.ajax({
-            type: "GET",
-            url: {% url 'make_trade' %},  // URL to your view that serves new info
-            data: {}
-        })
-        .done(function(response) {
-            $('#make_trade').html(response);
-        });
-    }
-
-    function makeTradeSell()
-    {
-    	var runner_id = $('#trade_share option:selected').val();
-    	var num_shares = $('#num_shares').val();
-    	var share_price = $('#share_price').val(); 
-    	var buyer_id = $('#buyer_id').val();
-    	var seller_id = {{request.user.investor.id}};
-
-    	makeTrade(seller_id, buyer_id, runner_id, num_shares, share_price);
-    }
-
-        function makeTradeBuy()
-    {
-    	var buyer_id = {{request.user.investor.id}};
-    	var num_shares = $('#num_shares_buy').val();
-    	var share_price = $('#share_price_buy').val(); 
-    	var seller_id = $('#seller_id_responsive option:selected').val();
-    	var runner_id = $('#trade_share_buy option:selected').val();
-
-		makeTrade(seller_id, buyer_id, runner_id, num_shares, share_price);
-
-
-    }
-
-    function makeTrade(seller_id, buyer_id, runner_id, num_shares, share_price)
-    {
-
-
-    	
-    	console.log("Create trade from: " + seller_id.toString() + " to: " + buyer_id.toString() + " for " + num_shares.toString() + " in " + runner_id.toString() + " @ " + share_price.toString() + " each");
-    	$.ajax({
-            type: "GET",
-            url: {% url 'create_trade' %},  // URL to your view that serves new info
-            data: {'seller_id': seller_id, 'runner_id': runner_id, 'num_shares': num_shares, 'share_price': share_price, 'buyer_id': buyer_id}
-        }).done(function(response)
-        {
-        	/* Check if response is success.
-        	Possible issues:
-
-        	1) Seller does not have this many shares to sell
-        	2) You're trying to spend more money than you have
-
-
-        	 */
-        	console.log(response);
-        	
-        	if (response.status != 0)
-        	{
-        		alert(response.err_msg);
-        	}
-        	else
-        	{
-	        	if (response.status == 1)
-	        	{
-	        		if (seller_id == {{user.investor.id}})
-	        		{
-	        			alert('You do not have this many shares to sell');	
-	        		}
-	        		else
-	        		{
-	        			alert('The seller does not have this many shares to sell');
-	        		}
-	       		 }
-	        	else if (response.status == 2)
-	        	{
-					alert('You don\'t have enough capital to buy these shares');
-	        	}
-	        	else if (response.status != 0)
-	        	{
-	        		alert('Unknown error, sorry');
-	        	}
+        .done(function (response) {
+        console.log(response);
+        if (response.error) {
+          display_error(response.error);
         }
 
-        	reload_all();
+        $("#tradeWith option[value='X']").each(function () {
+          if ($(this).value != "Open") {
+            $(this).remove();
+          }
         });
-    }
-
-
-
-
-
-    function respond_to_trade(trade_id, response)
-    {
-    	console.log("Trade ID: " + trade_id.toString() + ", response: " + response.toString());
-    	$.ajax({
-            type: "GET",
-            url: {% url 'respond_to_trade' %},  // URL to your view that serves new info
-            data: {'trade_id': trade_id, 'response': response}
-        }).done(function(response) {
-
-console.log(response);
-        	if (!response.trade_allowed)
-        	{
-				alert('Unable to process request');
-        	}
-        	reload_all();
-
+        $.each(response.investors, function (i, item) {
+          $('#tradeWith').append($('<option>', {
+            value: item.name,
+            text: item.name
+          }));
         });
+      });
+  }
+
+  function populateAthletes() {
+    $.ajax({
+      type: "GET",
+      url: {% url 'get_athletes' %},  // URL to your view that serves new info
+      data: {}
+        })
+        .done(function (response) {
+        console.log(response);
+        if (response.error) {
+          display_error(response.error);
+        }
+
+        $("#athlete option").each(function () {
+          $(this).remove();
+        });
+
+        $.each(response.athletes, function (i, athlete) {
+
+          $('#athlete').append($('<option>', {
+            value: athlete.name,
+            text: athlete.name
+          }));
+        });
+      });
+  }
+
+  function createShareFromModal() {
+    var shareText = $("#athlete option:selected").val() + "/" + $("#volume").val();
+    $("#commodityEntry").val(shareText);
+  }
+
+  function actionTrade(trade_id, change) {
+    $.ajax({
+      type: "GET",
+      url: {% url 'action_trade' %},  // URL to your view that serves new info
+      data: { "id": trade_id, "change": change }
+        })
+        .done(function (response) {
+        console.log(response);
+        if (response.error) {
+          display_error(response.error);
+        }
+        reload_all();
+      });
     }
 
-        
+  function reload_active_trades() {
+    $("#active_trades tbody tr").remove();
 
+    $.ajax({
+      type: "GET",
+      url: {% url 'retrieve_trades' %},  // URL to your view that serves new info
+      data: {}
+        })
+        .done(function (response) {
+        console.log(response)
+        if (response.error) {
+          // handle error
+          console.log("error: " + response.error)
+          return;
+        }
 
+        response.trades.forEach(trade => {
 
-    function reload_all()
-    {
-    	reload_past_trades();
-    	reload_incoming_trades();
-    	reload_make_trades();
-    	//reload_outgoing_trades();
+          var com_label;
+          if (trade.commodity.athlete) {
+            // this is a share
+            com_label = "Share (" + trade.commodity.athlete.name + ", " + trade.commodity.volume + ")";
+          }
+
+          var label;
+          if (trade.type == "Sell") {
+
+            label = com_label + " selling ";
+
+            if (trade.buyer) {
+              label = label + "to " + trade.buyer.name;
+            }
+          } else {
+            label = com_label + " buying ";
+            if (trade.seller && trade.seller != "") {
+              label = label + "from " + trade.seller.name;
+            }
+          }
+          label = label + " for " + trade.price;
+
+          var closeAction = '<i class="fas fa-window-close fa-fw" onclick="actionTrade(' + trade.id + ', \'cancel\')"></i>';
+          var acceptAction = '<i class="fas fa-check-circle fa-fw" onclick="actionTrade(' + trade.id + ', \'accept\')"></i>';
+
+          var actions = closeAction;
+          // Can only action this if we're the buyer (these aren't open trades)
+          if (trade.can_accept) {
+            actions += acceptAction;
+          }
+
+          // $("#active_trades").append("<li data-type='" + trade.type +"' data-id='"+trade.id+"'><div class='tradeLabel'>" + label +"</div><div class='tradeActions'>" + actions + "</div></li>")
+          if (trade.seller) { seller = trade.seller.name; } else { seller = 'Open'; }
+          if (trade.buyer) { buyer = trade.buyer.name; } else { buyer = 'Open'; }
+          var newRow = '<tr class="' + trade.type.toLowerCase() + '">';
+          newRow += '<td>' + trade.type + ' </td>';
+          newRow += '<td>' + com_label + '</td>';
+          newRow += '<td>' + trade.price + '</td>';
+          newRow += '<td>' + seller + '</td>';
+          newRow += '<td>' + buyer + '</td>';
+          newRow += '<td>' + trade.creator.name + '</td>';
+          newRow += '<td>' + actions + '</td></tr>';
+
+          // <th scope="col">Vol</th>
+          // <th scope="col">Price</th>
+          // <td scope="col">Seller</td>
+          // <td scope="col">Buyer</td>
+          // <td scope="col"></td>"
+          // console.log(newRow);
+          $("#active_trades tbody").append(newRow);
+        });
+
+      });
     }
 
-    $(document).ready(function()
-    {
-    	console.log('Ready');
-
-    	reload_all();
 
 
 
-    	$(document.body).on('change','#trade_share_buy',function()
-    		{
-    				var runner_id = $('#trade_share_buy').find(":selected").val(); //$('#trade_share_buy option:selected').val();
 
-    				console.log(runner_id);
 
-    				console.log('Runner selected: ' + runner_id.toString());
-    				update_investors_with_shares(runner_id);
-    		});
 
+  function reload_all() {
+    console.log("Refresh");
+    // reload_past_trades();
+    reload_active_trades();
+    // reload_make_trades();
+    //reload_outgoing_trades();
+  }
+
+  $(document).ready(function () {
+    console.log('Ready');
+
+    reload_all();
+    populateTradeWithSelect();
+    populateAthletes();
+
+
+
+    $("#createShare").on('show.bs.modal', function () {
+      populateAthletes();
     });
 
-    function update_investors_with_shares(runner_id){
-    				
 
-        $.ajax({
-        	type: "GET",
-            url: {% url 'get_investors_for_runner' %},  // URL to your view that serves new info
-            data: {'runner_id': runner_id}
-        })
-        .done(function(response) {
+    $("#formCreateTrade").submit(function (e) {
 
-            //$('#make_trade').html(response);
+      e.preventDefault(); // avoid to execute the actual submit of the form.
 
-            newOptions = response.investors;
+      var form = $(this);
 
-            console.log(response);
-            console.log(newOptions);
+      if ($("#formCreateTrade")[0].checkValidity() === false) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      //   form.classList.add('was-validated');
 
-            $('#seller_id_responsive option:gt(0)').remove(); // remove all options, but not the first 
-            var $el = $("#seller_id_responsive");
+      // var url = form.attr('action');
+      // var formData = {
+      //       'buysell'              : $('input[name=buysell]:checked').val(),
+      //       'commodity'             : $('input[name=commodityEntry]', ).val(),
+      //       'tradeWith'    : $('input[name=tradeWith] option:selected').val(),
+      //       'price'    : $('input[name=price]').val()
+      //   };
+      var formData = form.serialize();
 
-$.each(newOptions, function(key,value) {
+      console.log(formData);
 
-	var investor_id = value['investor_id'];
-
-	// Skip currently logged in user
-	var current_investor_id = {{request.user.investor.id}};
-	if (investor_id != current_investor_id)
-	{
-	var txt = value['investor_name'] + " - " + value['num_shares'] + " share(s)";
-
-  $el.append($("<option></option>").attr("value", investor_id).text(txt));
-}
-});
-
-           // console.log(response);
-
-        });
-
-    }
-
-   
+    //   $.ajax({
+    //     type: "GET",
+    //     url: {% url 'create_trade' %},
+    //     data: formData, // serializes the form's elements.
+    //     success: function (data) {
+    //     alert(data); // show response from the php script.
+    //   }
+    //  });
 
 
-  </script>
+  });
 
-    
-    {% endblock %}
+    //     	$(document.body).on('change','#trade_share_buy',function()
+    //     		{
+    //     				var runner_id = $('#trade_share_buy').find(":selected").val(); //$('#trade_share_buy option:selected').val();
+
+    //     				console.log(runner_id);
+
+    //     				console.log('Runner selected: ' + runner_id.toString());
+    //     				update_investors_with_shares(runner_id);
+    //     		});
+
+  });
+
+//     function update_investors_with_shares(runner_id){
+
+
+//         $.ajax({
+//         	type: "GET",
+//             url: {% url 'get_investors' %},  // URL to your view that serves new info
+//             data: {'runner_id': runner_id}
+//         })
+//         .done(function(response) {
+
+//             //$('#make_trade').html(response);
+
+//             newOptions = response.investors;
+
+//             console.log(response);
+//             console.log(newOptions);
+
+//             $('#seller_id_responsive option:gt(0)').remove(); // remove all options, but not the first 
+//             var $el = $("#seller_id_responsive");
+
+// $.each(newOptions, function(key,value) {
+
+// 	var investor_id = value['investor_id'];
+
+// 	// Skip currently logged in user
+// 	var current_investor_id = {{request.user.investor.id}};
+// 	if (investor_id != current_investor_id)
+// 	{
+// 	var txt = value['investor_name'] + " - " + value['num_shares'] + " share(s)";
+
+//   $el.append($("<option></option>").attr("value", investor_id).text(txt));
+// }
+// });
+
+//            // console.log(response);
+
+//         });
+
+//     }
+
+
+
+</script>
+
+
+{% endblock %}

@@ -12,16 +12,16 @@
 <!-- General summary of investor's portfolio and trade options <br><br>-->
 
 
-Capital: {{user.investor.print_capital}}
+Capital: {{user.investor.capital}}
 
 <br><br>
 
-Shares: 
+Shares: <br>
 
 {% if shares %}
 
-{% for s in collated_shares %}
-{{s.runner}} - {{s.num_shares}} share(s) <br> 
+{% for s in shares %}
+{{s.athlete}} ({{s.volume}}) <br> 
 {% endfor %}
 
 {% else %}

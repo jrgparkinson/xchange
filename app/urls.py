@@ -1,7 +1,7 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
 
-from . import views
+from . import views, requests
 
 urlpatterns = [
     path('', views.index, name='index'),
@@ -15,6 +15,12 @@ urlpatterns = [
     path('trades/', views.trades),
     path('marketplace/', views.marketplace),
 
-
-    path("respond_to_open_trade", views.temp, name="respond_to_open_trade")
+    # JQuery
+    path('retrieve_trades/', views.retrieve_trades, name="retrieve_trades"), # need name for JS lookup url
+    path('create_trade/', views.create_trade, name="create_trade"),
+    path("respond_to_open_trade/", views.temp, name="respond_to_open_trade"),
+    path("respond_to_trade/", views.temp, name="respond_to_trade"),
+    path("action_trade/", views.action_trade, name="action_trade"),
+    path("get_investors/", views.get_investors, name="get_investors"),
+    path("get_athletes/", views.get_athletes, name="get_athletes"),
 ]
