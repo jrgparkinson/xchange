@@ -21,22 +21,28 @@ def random_vol_of(vol):
     else:
         return np.round(vol * random.random(), 2)
 
-def random_price():
-    return np.round(random.random() * 100, 2)
+def random_price(volume):
+
+    return np.round(random.random() * 10 * volume, 2)
 
 def populate():
+
+    season = Season(name="Preseason", start_time=datetime.now(), end_time=datetime(2020, 9, 30, 23, 59, 59))
+    season.save()
 
     # 1. Create athletes
     # import os
     # this_file_folder = os.path.dirname(os.path.abspath(__file__))
     # with open(os.path.join(this_file_folder, 'data', 'athletes.csv'), 'r') as f:
     #     athletes = f.readlines()
+    ouccc = Club(name="OUCCC")
+    ouccc.save()
     athletes = ["Jamie Parkinson", "Luke Cotter", "Miles Weatherseed", 
     "Joseph Woods", "Jack Millar", "Noah Hurton", "Oliver Paulin"]
     
     Athlete.objects.all().delete()
     for name in athletes:
-        athlete = Athlete(name=name)
+        athlete = Athlete(name=name, club=ouccc)
         athlete.save()
 
 
@@ -49,7 +55,7 @@ def populate():
     ]
     
     for e in events:
-        event = Event(name=e["name"], date=e["date"])
+        event = Event(name=e["name"], date=e["date"],season=season)
         event.save()
 
 
@@ -82,7 +88,7 @@ def populate():
     # 4. Create shares for each athlete
     print("Create shares")
     for athlete in Athlete.objects.all():
-        share = Share(athlete=athlete, volume=100, owner=bank)
+        share = Share(athlete=athlete, volume=100, owner=bank,season=season)
         share.save()
 
     # 4.5 Randomly assign shares to investors
@@ -99,20 +105,22 @@ def populate():
 
         # Create new shares of correct volume
         for i in range(len(investors)):
-            share.transfer(to=investors[i], vol=r[i]*share.volume)
 
-    
-    # for investor in Investor.objects.all():
-    #     print("{}".format(investor))
-
-    #     for athlete in Athlete.objects.all():
-    #         print(" shares in {}: {} ".format(athlete, investor.shares_in_athlete(athlete)))
+            try:
+                t = Trade.make_share_trade(athlete=share.athlete, volume=r[i]*share.volume, 
+                creator=bank, price=random_price(r[i]*share.volume),
+                seller=bank, buyer=investors[i])
+                t.accept_trade(action_by=investors[i])
+                t.save()
+            except Exception as e:
+                print("Error")
+            # share.transfer(to=investors[i], vol=r[i]*share.volume)
 
 
     # print("====================================")
     # 5. Create some trades for each investor
 
-    # Somewhere here shares get duplicated
+    
     print('Create some trades')
     for investor in Investor.objects.all():
 
@@ -127,7 +135,7 @@ def populate():
             # share_to_sell = Share(athlete=share_to_sell.athlete, volume=volume, is_virtual=True) #  share_to_sell.get_vol_of_share(volume)
             # share_to_sell.save()
 
-            Trade.make_share_trade(share_to_sell.athlete, volume, creator=investor, price=random_price(), seller=investor)
+            Trade.make_share_trade(share_to_sell.athlete, volume, creator=investor, price=random_price(volume), seller=investor)
             
 
 
@@ -139,9 +147,9 @@ def populate():
             volume = random_vol_of(share_to_buy.volume)
 
             # share_to_buy = share_to_buy.get_vol_of_share(volume)
-            # trade = Trade.make_trade(commodity=share_to_buy, seller=share_to_buy.owner, buyer=investor, creator=investor, price=random_price())
+            # trade = Trade.make_trade(commodity=share_to_buy, seller=share_to_buy.owner, buyer=investor, creator=investor, price=random_price(volume))
             # trade.save()
-            Trade.make_share_trade(share_to_buy.athlete, volume, creator=investor, price=random_price(), buyer=investor,  seller=share_to_buy.owner)
+            Trade.make_share_trade(share_to_buy.athlete, volume, creator=investor, price=random_price(volume), buyer=investor,  seller=share_to_buy.owner)
             
 
 
@@ -152,58 +160,64 @@ def populate():
             total_available_share_volume = athlete_to_buy.get_total_volume_of_shares()
             volume = random_vol_of(share_to_buy.volume)
 
-            Trade.make_share_trade(athlete_to_buy, volume, creator=investor, price=random_price(), 
+            Trade.make_share_trade(athlete_to_buy, volume, creator=investor, price=random_price(volume), 
             buyer=investor,  seller=None)
             
 
     # Action some trades
     print('Action some trades')
-    for investor in Investor.objects.all():
+    # for investor in Investor.objects.all():
 
-        #  Action trades where we're the seller and someone else wants to buy our stuff
-        direct_trades = Trade.objects.all().filter(seller=investor).exclude(creator=investor)
-        # Do something with half of them
-        for t in random.choices(direct_trades, k=int(len(direct_trades)/2)):
-            # print(t)
-            try:
-                t.accept_trade(action_by=investor)
+    #     #  Action trades where we're the seller and someone else wants to buy our stuff
+    #     direct_trades = Trade.objects.all().filter(seller=investor).exclude(creator=investor)
+    #     # Do something with half of them
+    #     for t in random.choices(direct_trades, k=int(len(direct_trades)/2)):
+    #         # print(t)
+    #         try:
+    #             t.accept_trade(action_by=investor)
 
-            except InsufficientShares:
-                print("Insufficient shares to fulfill trade")
+    #         except XChangeException as e:
+    #             print(e.desc)
 
-        # Do trades where someone offered to sell us something
-        direct_trades = Trade.objects.all().filter(buyer=investor).exclude(creator=investor)
-        # Do something with half of them
-        for t in random.choices(direct_trades, k=int(len(direct_trades)/2)):
-            print(t)
-            try:
-                t.accept_trade(action_by=investor)
-            except InsufficientShares:
-                print("Insufficient shares to fulfill trade")
+    #     # Do trades where someone offered to sell us something
+    #     direct_trades = Trade.objects.all().filter(buyer=investor).exclude(creator=investor)
+    #     # Do something with half of them
+    #     for t in random.choices(direct_trades, k=int(len(direct_trades)/2)):
+    #         print(t)
+    #         try:
+    #             t.accept_trade(action_by=investor)
+    #         except XChangeException as e:
+    #             print(e.desc)
 
 
-        # Also open buy trades which we can fulfill (and which we did not create)
-        open_trades = Trade.objects.all().filter(seller=None).exclude(creator=investor)
-        for t in random.choices(open_trades, k=math.floor(len(open_trades)/2)):
-            try:
-                t.seller = investor
-                t.accept_trade(action_by=investor)
-            except InsufficientShares:
-                t.seller = None
-                print("Insufficient shares to fulfill trade")
 
-        # Open sell trades that we want to buy
-        open_trades = Trade.objects.all().filter(buyer=None).exclude(creator=investor)
-        for t in random.choices(open_trades, k=math.floor(len(open_trades)/2)):
-            try:
-                t.buyer = investor
-                t.accept_trade(action_by=investor)
-            except InsufficientShares:
-                t.buyer = None
-                print("Insufficient shares to fulfill trade")
-            except InsufficientFunds:
-                t.buyer = None
-                print("Insufficient funds")
+    #     # Also open buy trades which we can fulfill (and which we did not create)
+    #     open_trades = Trade.objects.all().filter(seller=None).exclude(creator=investor)
+    #     for t in random.choices(open_trades, k=math.floor(len(open_trades)/2)):
+    #         try:
+    #             t.seller = investor
+    #             t.accept_trade(action_by=investor)
+    #         except XChangeException as e:
+    #             t.seller=None
+    #             print(e.desc)
+
+
+    #     # Open sell trades that we want to buy
+    #     open_trades = Trade.objects.all().filter(buyer=None).exclude(creator=investor)
+    #     for t in random.choices(open_trades, k=math.floor(len(open_trades)/2)):
+    #         try:
+    #             t.buyer = investor
+    #             t.accept_trade(action_by=investor)
+    #         except InsufficientShares:
+    #             t.buyer = None
+    #             print("Insufficient shares to fulfill trade")
+    #         except InsufficientFunds:
+    #             t.buyer = None
+    #             print("Insufficient funds")
+    #         except XChangeException as e:
+    #             t.buyer = None
+    #             print(e.desc)
+
 
 
     
@@ -212,50 +226,50 @@ def populate():
     
 
     # 6. Issue some dividends
-    print("Before dividends, capital: ")
-    for i in Investor.objects.all():
-        print(i)
+    # print("Before dividends, capital: ")
+    # for i in Investor.objects.all():
+    #     print(i)
 
-    for event in Event.objects.all():
+    # for event in Event.objects.all():
 
-        # This should be done every hour by a scheduled job
-        make_share_snapshots(event)
+    #     # This should be done every hour by a scheduled job
+    #     make_share_snapshots(event)
 
 
-        for athlete in Athlete.objects.all():
-            val = random_price()
-            div = Dividend(event=event, athlete=athlete, ammount=val)
-            div.save()
+    #     for athlete in Athlete.objects.all():
+    #         val = random_price(volume)
+    #         div = Dividend(event=event, athlete=athlete, ammount=val)
+    #         div.save()
 
-            # Need to write this
-            distribute_dividends(event)
+    #         # Need to write this
+    #         distribute_dividends(event)
 
-    print("After dividends, capital: ")
-    for i in Investor.objects.all():
-        print(i)
+    # print("After dividends, capital: ")
+    # for i in Investor.objects.all():
+    #     print(i)
 
     # Make some loans
-    for i in Investor.objects.all():
-        loan_ammount = random.random()*100.0
-        interest = 0.02
+    # for i in Investor.objects.all():
+    #     loan_ammount = random.random()*100.0
+    #     interest = 0.02
 
-        interval = timedelta(seconds=3)
+    #     interval = timedelta(seconds=3)
 
-        loan = Loan.create_loan(bank, i, interest, loan_ammount, interval)
+    #     loan = Loan.create_loan(bank, i, interest, loan_ammount, interval)
         
-    print("After loans, capital: ")
-    for i in Investor.objects.all():
-        print(i)
+    # print("After loans, capital: ")
+    # for i in Investor.objects.all():
+    #     print(i)
     
-    import time
-    for step in range(25):
-        time.sleep(1)
-        print("Checking for loan repayments")
-        pay_all_loans()
+    # import time
+    # for step in range(25):
+    #     time.sleep(1)
+    #     print("Checking for loan repayments")
+    #     pay_all_loans()
 
-    print("After repayments, capital: ")
-    for i in Investor.objects.all():
-        print(i)
+    # print("After repayments, capital: ")
+    # for i in Investor.objects.all():
+    #     print(i)
     
 
 

@@ -9,14 +9,47 @@
     width:50px;
 }
 
+#active_trades {
+    min-width: 800px;
+}
 ul.tradeList {
     list-style: none;
 }
 
 tr.buy {   
-    background-color: lightgreen;
+    /* color: black; */
+    background-color: thistle;
 }
 
 tr.sell {
+    /* color: gray; */
+    background-color: wheat;
+}
+
+tr.cancelled, tr.rejected {
     background-color: mistyrose;
+}
+
+tr.accepted {
+    background-color: lightgreen;
+}
+
+tr.pending {
+    /* background-color: white; */
+}
+
+tr.tradeHeader {
+    font-size: large;
+    font-weight: bold;
+}
+
+tr.noTradesFound {
+    color: grey;
+}
+
+.nav-portfolio {
+    text-align: center;
+    width: calc(100% - 300px);
+    color: white;
+    font-size: large;
 }

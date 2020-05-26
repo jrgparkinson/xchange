@@ -7,6 +7,9 @@ from app.forms import SignUpForm
 from app.models import *
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
+import re
+import json
+from django.core.serializers.json import DjangoJSONEncoder
 
 def index(request):
     # return HttpResponse("Hello, world. You're at the polls index.")
@@ -20,6 +23,71 @@ def profile(request):
     else:
         return render(request, 'app/index.html')
 
+@login_required(login_url='/login/')
+def portfolio(request):
+    return view_investor(request, request.user.investor.id)
+
+def view_investor(request, investor_id):
+    try:
+        investor = Investor.objects.get(pk=investor_id)
+    except Investor.DoesNotExist:
+        raise Http404
+
+    shares_total = investor.get_shares_wealth()
+
+    current_val = investor.capital + shares_total
+
+    return render(request, 'app/investor.html', {
+        "investor": investor,
+        "worth": {"total": current_val,
+        "shares": shares_total,
+        "cash": investor.capital},
+        "shares": investor.get_shares_owned()})
+
+def view_athlete(request, athlete_id):
+    try:
+        athlete = Athlete.objects.get(pk=athlete_id)
+    except Athlete.DoesNotExist:
+        raise Http404
+
+    trades = athlete.get_all_trades()
+
+    current_value = athlete.get_value(current_time())
+    print("Current value = {}".format(current_value))
+    value_one_day_ago = athlete.get_value(current_time()-timedelta(days=1))
+    value_change = 100.0*(current_value - value_one_day_ago)/current_value
+    if np.isnan(value_change):
+        value_change = "NaN"
+    else:
+        value_change = np.round(value_change, 2)
+
+    print(value_change)
+
+    return render(request, 'app/athlete.html', {"athlete": athlete, 
+    "value": {"current": np.round(current_value, 2),
+    "change": value_change}
+    })
+
+def retrieve_investor_portfolio(request):
+    investor_id = request.GET["id"]
+    investor = Investor.objects.get(pk=investor_id)
+
+    portfolio = investor.get_portfolio_values()
+
+    return JsonResponse(portfolio)
+
+def retrieve_athlete_value(request):
+    athlete_id = request.GET["id"]
+    athlete = Athlete.objects.get(pk=athlete_id)
+
+    trades = athlete.get_all_trades()
+
+    for t in trades:
+        print("Trade price: {}, volume: {}, price/volume: {}".format(t.price, t.asset.share.volume, t.price/t.asset.share.volume))
+
+    return JsonResponse({"athlete": athlete.serialize(), 
+    # "historical_values": athlete.get_historical_value(),
+    "trades": [t.serialize() for t in trades]})
 
 def register(request):
     us = request.user
@@ -91,9 +159,19 @@ def marketplace(request):
 
 @login_required(login_url='/login/')
 def retrieve_trades(request):
-    investor = request.user.investor
+    if "investor_id" in request.GET:
+        investor = Investor.objects.get(pk=request.GET["investor_id"])
+    else:
+        investor = request.user.investor
 
-    all_trades = Trade.objects.all().filter((Q(buyer=investor) | Q(seller=investor)) & Q(status=Trade.PENDING))
+    current_investor = request.user.investor
+
+    if "historical" in request.GET:
+        all_trades = Trade.objects.all().filter((Q(buyer=investor) | Q(seller=investor)) & ~Q(status=Trade.PENDING)) #.order_by(updated)
+    else:
+        all_trades = Trade.objects.all().filter((Q(buyer=investor) | Q(seller=investor)) & Q(status=Trade.PENDING)) #.order_by(updated)
+
+    all_trades = all_trades.order_by('-updated')
 
     trades = []
     for t in all_trades:
@@ -109,13 +187,15 @@ def retrieve_trades(request):
         # Can accept it if:
         # a) we didn't make it
         # and b) there's a seller and a buyer (direct trade) or no buyer (open trade) but we can become the buyer
-        if not t.creator == investor and ( (t.buyer and t.seller) or not t.seller == investor):
+        if not t.creator == current_investor and ( (t.buyer and t.seller) or not t.seller == investor) and (t.buyer == current_investor or t.seller == current_investor):
             trade["can_accept"] = True
 
 
         trades.append(trade)
 
-    return JsonResponse({"trades": trades, "investor": investor.serialize()}, safe=False)
+    return JsonResponse({"trades": trades, 
+    "investor": investor.serialize(),
+    "current_investor": current_investor.serialize()}, safe=False)
 
 @login_required(login_url='/login/')
 def action_trade(request):
@@ -141,7 +221,7 @@ def action_trade(request):
             trade.reject_trade()
 
     except XChangeException as e:
-        error = e.desc
+        error = {"title": e.title, "description": e.desc}
     except Trade.DoesNotExist:
         error = "Trade no longer exists"
 
@@ -153,6 +233,52 @@ def create_trade(request):
 
     print(request.GET)
 
+    # TODO: validation
+
+    try:
+
+        commodity = request.GET["commodityEntry"]
+        tradeWith = request.GET["tradeWith"]
+        price = float(request.GET["price"])
+        is_sell = request.GET["buysell"] == "sell"
+
+        seller = None
+        buyer = None
+        other = None
+
+        if not tradeWith == "Open":
+            other = Investor.objects.get(user__username=tradeWith)
+
+        if is_sell:
+            seller = investor
+            buyer = other
+        else:
+            buyer = investor
+            seller = other
+        
+        share_match = re.match(r"([\w ]+)/([\.\d]+)", commodity)
+        if share_match:
+            ath = share_match.group(1)
+            volume = float(share_match.group(2))
+            athlete = Athlete.objects.get(name=ath)
+
+            # print(price)
+           
+            trade = Trade.make_share_trade(athlete, volume, investor, price, seller, buyer)
+
+        else:
+            print("Invalid commodity")
+            raise InvalidCommodity(desc="{} is not a valid commodity".format(commodity))
+    
+    except Athlete.DoesNotExist:
+        raise AthleteDoesNotExist(desc="{} does not exist".format(ath))
+    except XChangeException as e:
+        return JsonResponse(make_error(e))
+    except Exception as e:
+        return JsonResponse(make_error(e))
+
+
+    return JsonResponse({})
     # trade_type = request.GET["type"]
 
     # if trade_type == "BUY":
@@ -160,7 +286,15 @@ def create_trade(request):
     # else:
     #     trades = Trade.objects.all().filter(seller=investor)
 
-    return JsonResponse({"error": "Not implemented yet"})
+    # return JsonResponse({"error": "Not implemented yet"})
+
+def make_error(e):
+    print("Caught error " + str(e))
+    if isinstance(e, XChangeException):
+        return {"error": {"title": e.title, "desc": e.desc}}
+    else:
+        return {"error": {"title": "Internal error", "desc": "An internal error has occured"}}
+
 
 def get_investors(request):
     inv = Investor.objects.all()
