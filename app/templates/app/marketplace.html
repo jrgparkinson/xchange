@@ -7,82 +7,21 @@
 
 {% block content %}
 
-<div class="card" style="width: 48%; float:left;">
-  <div class="card-body">
-    <h2 class="card-title">Buying</h2>
-    <!--<h6 class="card-subtitle mb-2 text-muted">Card subtitle</h6>-->
-    <p class="card-text">
-    	<div id="marketplace_buying">
-    	</div>
 
-
-</p>
-    <!--<a href="#" class="card-link">Card link</a>
-    <a href="#" class="card-link">Another link</a>-->
+<div class="row">
+  <div class="col-sm">
+      <h2>Buy</h2>
+     
   </div>
-</div>
-
-<div id="right-container" style="width:48%; float:right;">
-
-<div class="card" style="width: 100%;">
-  <div class="card-body">
-    <h2 class="card-title">Selling</h2>
-    
-    <p class="card-text">
-
-<div id="marketplace_selling">
-</div>
-
-    </p>
-    
-  </div>
-</div>
+  <div class="col-sm">
+      <h2>Sell</h2>
+      </div>
+      </div>
 
 
 {%endblock%}
 
 {% block js_footer %}
-
-
-function reload_sell()
-{
- $.ajax({
-            type: "GET",
-            url: {% url 'marketplace_selling' %},  // URL to your view that serves new info
-            data: {}
-        })
-        .done(function(response) {
-            $('#marketplace_selling').html(response);
-        });
-
-}
-
-function reload_buy()
-{
-	 $.ajax({
-            type: "GET",
-            url: {% url 'marketplace_buying' %},  // URL to your view that serves new info
-            data: {}
-        })
-        .done(function(response) {
-            $('#marketplace_buying').html(response);
-        });
-}
-
-function reload_all()
-    {
-    	reload_sell();
-    	reload_buy();
-    }
-
-    $(document).ready(function()
-    {
-    	console.log('Ready');
-
-    	reload_all();
-
-    })
-
 
 
 

@@ -2,18 +2,72 @@
 {% extends 'app/base.html' %}
 {% load static %}
 
-{% block title %}Home{% endblock %}
+{% block title %}Season: {{season.name}}{% endblock %}
+
+{% block page_title %}Season: {{season.name}}{% endblock %}
+
 
 {% block content %}
 
-          General summary of the game here.
 
+<div class="row">
+  <div class="col-sm-8">
+      <h2>Leaderboard</h2>
+
+      <table class="table" id="leaderboard">
+        <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Player</th>
+                <th scope="col">Total value</th>
+                <th scope="col">Shares</th>
+                <th scope="col">Cash</th>
+                <th scope="col">Derivatives</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for investor in leaderboard %}
+            <tr>
+              <td>{{investor.position}}</td>
+                <td><a href="/investor/{{investor.id}}" class="badge badge-danger">{{investor.print_name}}</a>
+                </td>
+                <td>
+                  {{investor.total_value|floatformat}}
+                </td>
+                <td>{{investor.capital|floatformat}}</td>
+                <td>
+                  {{investor.share_value|floatformat}}
+                </td>
+                <td>
+                  {{investor.derivatives_value|floatformat}}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+  </div>
+  <div class="col-sm-2">
+    <h2>Stats</h2>
+    <p>TODO</p>
+    </div>
+</div>
+    
+        
           {%endblock%}
 
 
       {% block footer %}
 
     <!-- Demo scripts for this page-->
-    <script src="{% static 'js/demo/datatables-demo.js' %}"></script>
-    <script src="{% static 'js/demo/chart-area-demo.js' %}"></script>
+    <!-- <script src="{% static 'js/demo/datatables-demo.js' %}"></script>
+    <script src="{% static 'js/demo/chart-area-demo.js' %}"></script> -->
+    <script type="text/javascript">
+    $(document).ready(function() {
+    $('#leaderboard').DataTable({
+      paging: false,
+
+    });
+} );
+</script>
     {% endblock %}

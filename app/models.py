@@ -47,11 +47,17 @@ class Entity(models.Model):
 
     def serialize(self):
         if self.is_bank():
-            return self.bank.serialize()
+            s = self.bank.serialize()
+
         elif self.is_investor():
-            return self.investor.serialize()
+            s = self.investor.serialize()
         else:
-            return {"capital": self.capital}
+            s = {"capital": self.capital}
+
+        s["share_value"] = self.share_value
+        s["total_value"] = self.total_value
+
+        return s
 
     
 
@@ -181,6 +187,14 @@ class Entity(models.Model):
     @property
     def share_value(self):
         return self.get_shares_wealth()
+
+    @property
+    def total_value(self):
+        return self.share_value + self.capital
+
+    @property
+    def derivatives_value(self):
+        return 0.0
     
     def get_share_vol(self, athlete, time):
         current_shares = self.shares_in_athlete(athlete)
@@ -859,7 +873,7 @@ class Race(models.Model):
     event_details_link = models.URLField()
     max_dividend = models.FloatField()
     min_dividend = models.FloatField(default=10.0)
-    num_competitors = models.IntegerField()
+    num_competitors = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         return "{} ({})".format(self.name, self.time.strftime("%d/%m/%Y %H:%m"))
@@ -867,7 +881,12 @@ class Race(models.Model):
     def serialize(self):
         return {"event": self.event.serialize(),
         "name": self.name,
-        "time": self.time}
+        "time": self.time,
+        "results_link": self.results_link,
+        "event_details_link": self.event_details_link,
+        "max_dividend": self.max_dividend,
+        "min_dividend": self.min_dividend,
+        "num_competitors": self.num_competitors}
 
 
 class Result(models.Model):

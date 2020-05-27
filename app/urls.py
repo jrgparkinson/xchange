@@ -14,6 +14,7 @@ urlpatterns = [
     path('portfolio/', views.portfolio),
     path('trades/', views.trades),
     path('about/', views.about),
+    path('races/', views.races),
     path('marketplace/', views.marketplace),
     path('athlete/<int:athlete_id>/', views.view_athlete),
     path('investor/<int:investor_id>/', views.view_investor),
@@ -28,6 +29,8 @@ urlpatterns = [
     path("get_athletes/", views.get_athletes, name="get_athletes"),
     path("retrieve_athlete_value/", views.retrieve_athlete_value, name="retrieve_athlete_value"),
     path("retrieve_investor_portfolio/", views.retrieve_investor_portfolio, name="retrieve_investor_portfolio"),
+    path("get_race/", views.get_race, name="get_race"),
+    path("get_event/", views.get_event, name="get_event"),
 
     
     

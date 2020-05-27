@@ -68,20 +68,11 @@ function actionTrade(trade_id, change) {
                 display_error(response.error);
             }
 
-            if (window.location.href.includes("trades"))  {
-               reload_all();
-                } else if (window.location.href.includes("athlete")) {
-                    // const regex = /[A-Z]/g;
-                    // const found = paragraph.match(regex);
-                    // athlete_id = ; // parse frm url
-                    // reload_trades("active_trades", true, undefined, {"athlete": athlete_id});
-                    // $("#active_")
-                    //TODO: reload athlete page
-                    // var athlete_id = $("#active_trades tr[data-trade=" + trade_id + "]").attr("data-athlete");
-                    // reload_trades("active_trades", true, undefined, {"athlete": athlete_id});
-                    // reload_trades("historical")
-                    reload_all_athlete_trades();
-                }
+            if (window.location.href.includes("trades")) {
+                reload_all();
+            } else if (window.location.href.includes("athlete")) {
+                reload_all_athlete_trades();
+            }
         });
 }
 
@@ -132,7 +123,7 @@ function reload_trades(div, active, investor_id, other_opts) {
             }
 
             // TODO: If historical, sort by last_updated
-            if (response.trades==undefined) { return; }
+            if (response.trades == undefined) { return; }
 
             response.trades.forEach(trade => {
                 console.log(trade);
@@ -184,14 +175,14 @@ function reload_trades(div, active, investor_id, other_opts) {
 
                 var trclass = "trade ";
                 if (!athlete_filter) {
-                    trclass +=  trade.type.toLowerCase() + ' ' + trade.status.toLowerCase() 
+                    trclass += trade.type.toLowerCase() + ' ' + trade.status.toLowerCase()
                 }
 
                 var trade_athlete_id = "";
                 if (trade.asset.athlete) {
-                    trade_athlete_id = 'data-athlete="' + trade.asset.athlete.id +'"';
+                    trade_athlete_id = 'data-athlete="' + trade.asset.athlete.id + '"';
                 }
-                var newRow = '<tr class="trade '+ trclass + '" data-trade="'+trade.id+'" ' + trade_athlete_id + '>';
+                var newRow = '<tr class="trade ' + trclass + '" data-trade="' + trade.id + '" ' + trade_athlete_id + '>';
 
                 var typeString = trade.type;
                 if (trade.type == "Buy") { typeString = buyIcon + typeString; }
@@ -208,8 +199,8 @@ function reload_trades(div, active, investor_id, other_opts) {
                 }
                 if (athlete_filter) {
                     newRow += '<td>' + Number(trade.asset.volume).toFixed(2) + '</td>';
-                }else {
-                newRow += '<td>' + com_label + '</td>';
+                } else {
+                    newRow += '<td>' + com_label + '</td>';
                 }
                 newRow += '<td>' + trade.price + price_per_unit + '</td>';
                 newRow += '<td>' + seller + '</td>';

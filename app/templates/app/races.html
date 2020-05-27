@@ -1,0 +1,167 @@
+{% extends 'app/base.html' %}
+{% load static %}
+
+{% block title %}Races{% endblock %}
+
+{% block page_title %}Races{% endblock %}
+
+
+{% block content %}
+
+
+<div class="row">
+    <div class="col-sm-3">
+        <ul>
+
+            {% for event in events %}
+            <li>
+                <!-- <a class="event" data-event="{{event.id}}" href="#">{{event.name}} ({{event.date}})</a> -->
+                {{event.name}} ({{event.date}})
+                <ul>
+                    {% for race in event.races.all %}
+                    <li><a class="race" data-race="{{race.id}}" href="#">{{race.name}}</a></li>
+                    {% endfor %}
+                </ul>
+            </li>
+            {% endfor %}
+        </ul>
+
+    </div>
+
+    <div class="col-sm-8">
+        <div id="selectedRace">
+            <h2 id="raceName">Varsity II</h2>
+            <div class="row">
+                <div class="col-sm-3">When:</div>
+                <div class="col-sm-8" id="raceDate">date</div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3">Dividend formula:</div>
+                <div class="col-sm-8" id="raceDividend">formula</div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3">External link:</div>
+                <div class="col-sm-8" id="raceLink">link</div>
+            </div>
+            <div class="row">
+                <div class="col-sm-3">External results:</div>
+                <div class="col-sm-8" id="raceResultsLink">link</div>
+            </div>
+            <div class="row">
+                <div class="col-sm-10" id="raceResultsTable">Results if available</div>
+            </div>
+
+
+
+
+        </div>
+
+        <div id="selectedEvent">
+            <h2 id="eventName"></h2>
+            <div class="row">
+                <div class="col-sm-2">Date:</div>
+                <div class="col-sm-2" id="eventDate">date</div>
+            </div>
+            <div class="row">
+                <div class="col-sm-2">External link:</div>
+                <div class="col-sm-2" id="eventDate">link</div>
+            </div>
+        </div>
+        <div id="noRaceSelected">
+            <h4>Select a race to view results, dividends, and more</h4>
+        </div>
+    </div>
+</div>
+
+
+{%endblock%}
+
+
+{% block footer %}
+
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<script type="text/javascript">
+
+    function display_event(event_id) {
+        $.ajax({
+            type: "GET",
+            url: '/get_event/',  // URL to your view that serves new info
+            data: { "id": event_id }
+        })
+            .done(function (response) {
+                console.log(response)
+                if (response.error) {
+                    display_error(response.error);
+                    $("#noRaceSelected").show();
+                    return;
+                }
+
+                $("#selectedEvent").text(response);
+                $("#selectedEvent").show();
+                $("#noRaceSelected").hide();
+            });
+    }
+
+    function display_race(race_id) {
+        $.ajax({
+            type: "GET",
+            url: '/get_race/',  // URL to your view that serves new info
+            data: { "id": race_id }
+        })
+            .done(function (response) {
+                console.log(response)
+                if (response.error) {
+                    display_error(response.error);
+                    $("#noRaceSelected").show();
+                    return;
+                }
+
+                
+                    var d = new Date(response.race.time);
+            $("#raceName").text(response.race.name);
+            $("#raceDate").text(d.toLocaleString());
+            var equation = "\\[ d= a + \\left(\\frac{N - p- 1}{N}\\right)^2 (b-a) \\]";
+            equation += " \\[ \\textrm{where } N=\\textrm{number of competitors}, p=\\textrm{position} \\]";
+            equation += "\\[  a=" + Number(response.race.min_dividend).toFixed(2) + ", b=" + Number(response.race.max_dividend).toFixed(2) + "\\]"
+            $("#raceDividend").text(equation);
+            $("#raceLink").text(response.race.event_details_link);
+            $("#raceResultsLink").text(response.race.race_results_link);
+            $("#raceResultsTable").text("\\( x== y^2 \\)");
+
+           
+
+
+                $("#selectedRace").show();
+                $("#noRaceSelected").hide();
+                MathJax.typeset();
+            });
+    }
+
+    function hideEventRace() {
+            $("#selectedRace").hide();
+            $("#selectedEvent").hide();
+        }
+
+    $(document).ready(function () {
+        // $('#leaderboard').DataTable({
+        //   paging: false,
+
+        // });
+        hideEventRace();
+       
+
+        $("a.event").click(function (e) {
+            hideEventRace();
+            display_event($(this).attr("data-event"));
+        })
+        $("a.race").click(function (e) {
+            hideEventRace();
+            display_race($(this).attr("data-race"));
+        })
+
+
+    });
+</script>
+{% endblock %}

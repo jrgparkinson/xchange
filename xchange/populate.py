@@ -27,37 +27,40 @@ def random_price(volume):
 
 def populate():
 
-    season = Season(name="Preseason", start_time=datetime.now(), end_time=datetime(2020, 9, 30, 23, 59, 59))
+    season = Season.objects.get_or_create(name="Preseason", start_time=datetime.now(), end_time=datetime(2020, 9, 30, 23, 59, 59))[0]
     season.save()
 
     # 1. Create athletes
-    # import os
-    # this_file_folder = os.path.dirname(os.path.abspath(__file__))
-    # with open(os.path.join(this_file_folder, 'data', 'athletes.csv'), 'r') as f:
-    #     athletes = f.readlines()
-    ouccc = Club(name="OUCCC")
+    ouccc = Club.objects.get_or_create(name="OUCCC")[0]
     ouccc.save()
+
     athletes = ["Jamie Parkinson", "Luke Cotter", "Miles Weatherseed", 
     "Joseph Woods", "Jack Millar", "Noah Hurton", "Oliver Paulin"]
-    
-    Athlete.objects.all().delete()
+    # Athlete.objects.all().delete()
     for name in athletes:
-        athlete = Athlete(name=name, club=ouccc)
+        athlete = Athlete.objects.get_or_create(name=name, club=ouccc)[0]
         athlete.save()
 
 
-    # 1.5. Create events
-    events = [{"name": "Varsity athletics", "date": datetime(year=2020, month=5, day=11,tzinfo=pytz.UTC) },
-    {"name": "Cuppers", "date": datetime(year=2020, month=10, day=20,tzinfo=pytz.UTC) },
-    {"name": "MK Cross Challenge", "date": datetime(year=2020, month=11, day=5, tzinfo=pytz.UTC) },
-    {"name": "Varsity II-IV", "date": datetime(year=2020, month=11, day=28, tzinfo=pytz.UTC) },
-    {"name": "Varsity Blues", "date": datetime(year=2020, month=12, day=6, tzinfo=pytz.UTC) },
+    # # 1.5. Create events
+    events = [{"name": "Varsity athletics", "date": datetime(year=2020, month=5, day=11,tzinfo=pytz.UTC), "races":[] },
+    {"name": "Cuppers", "date": datetime(year=2020, month=10, day=20,tzinfo=pytz.UTC), "races":[] },
+    {"name": "MK Cross Challenge", "date": datetime(year=2020, month=11, day=5, tzinfo=pytz.UTC), "races":["Senior Men", "Senior Women"] },
+    {"name": "Varsity II-IV", "date": datetime(year=2020, month=11, day=28, tzinfo=pytz.UTC), "races":["Men II", "Women II", "Men III", "Men IV", "Women III"] },
+    {"name": "Varsity Blues", "date": datetime(year=2020, month=12, day=6, tzinfo=pytz.UTC), "races":["Men", "Women"] },
     ]
     
     for e in events:
-        event = Event(name=e["name"], date=e["date"],season=season)
+        event = Event.objects.get_or_create(name=e["name"], date=e["date"],season=season)[0]
         event.save()
 
+        races = e["races"]
+        for r in races:
+            race = Race(name=r, event=event, time=event.date, max_dividend=20.0+random.random()*100.0)
+            race.save()
+
+    # create races
+    # return
 
     # 2. Create bank
     print("Create bank")
@@ -131,11 +134,10 @@ def populate():
             share_to_sell = random.choice(shares_for_investor)
             volume = random_vol_of(share_to_sell.volume)
             
-            # This is the problem
-            # share_to_sell = Share(athlete=share_to_sell.athlete, volume=volume, is_virtual=True) #  share_to_sell.get_vol_of_share(volume)
-            # share_to_sell.save()
-
-            Trade.make_share_trade(share_to_sell.athlete, volume, creator=investor, price=random_price(volume), seller=investor)
+            try:
+                Trade.make_share_trade(share_to_sell.athlete, volume, creator=investor, price=random_price(volume), seller=investor)
+            except XChangeException:
+                pass
             
 
 
@@ -146,10 +148,10 @@ def populate():
 
             volume = random_vol_of(share_to_buy.volume)
 
-            # share_to_buy = share_to_buy.get_vol_of_share(volume)
-            # trade = Trade.make_trade(commodity=share_to_buy, seller=share_to_buy.owner, buyer=investor, creator=investor, price=random_price(volume))
-            # trade.save()
-            Trade.make_share_trade(share_to_buy.athlete, volume, creator=investor, price=random_price(volume), buyer=investor,  seller=share_to_buy.owner)
+            try:
+                Trade.make_share_trade(share_to_buy.athlete, volume, creator=investor, price=random_price(volume), buyer=investor,  seller=share_to_buy.owner)
+            except XChangeException:
+                pass
             
 
 
@@ -160,8 +162,11 @@ def populate():
             total_available_share_volume = athlete_to_buy.get_total_volume_of_shares()
             volume = random_vol_of(share_to_buy.volume)
 
-            Trade.make_share_trade(athlete_to_buy, volume, creator=investor, price=random_price(volume), 
+            try:
+                Trade.make_share_trade(athlete_to_buy, volume, creator=investor, price=random_price(volume), 
             buyer=investor,  seller=None)
+            except XChangeException:
+                pass
             
 
     # Action some trades
