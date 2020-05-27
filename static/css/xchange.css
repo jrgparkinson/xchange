@@ -9,7 +9,7 @@
     width:50px;
 }
 
-#active_trades {
+.active_trades {
     min-width: 800px;
 }
 ul.tradeList {
@@ -53,3 +53,65 @@ tr.noTradesFound {
     color: white;
     font-size: large;
 }
+
+.searchError{
+    color:red;
+    /* padding-left:10px; */
+    /* vertical-align: 10px; */
+}
+
+.tt-menu {
+    width: 422px;
+    margin: 12px 0;
+    padding: 8px 0;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    -webkit-border-radius: 8px;
+       -moz-border-radius: 8px;
+            border-radius: 8px;
+    -webkit-box-shadow: 0 5px 10px rgba(0,0,0,.2);
+       -moz-box-shadow: 0 5px 10px rgba(0,0,0,.2);
+            box-shadow: 0 5px 10px rgba(0,0,0,.2);
+  }
+  
+  .tt-suggestion {
+    padding: 3px 20px;
+    font-size: 18px;
+    line-height: 24px;
+  }
+  
+  .tt-suggestion:hover {
+    cursor: pointer;
+    color: #fff;
+    background-color: #0097cf;
+  }
+  
+  .tt-suggestion.tt-cursor {
+    color: #fff;
+    background-color: #0097cf;
+  
+  }
+  
+  .tt-suggestion p {
+    margin: 0;
+  }
+  
+
+  
+
+  /* .right-scroll-box {
+    overflow-y: scroll;
+} */
+
+.graph, .right-scroll-box {
+    height:400px;
+}
+
+/* .tableFixHead          { overflow-y: auto; height: 100px; } */
+.tableFixHead thead th { position: sticky; top: 0; background-color:gainsboro; padding: 10; margin:0; border-top:0; }
+
+/* Just common table stuff. Really. */
+/* table  { border-collapse: collapse; width: 100%; }
+th, td { padding: 8px 16px; }
+th     { background:#eee; } */

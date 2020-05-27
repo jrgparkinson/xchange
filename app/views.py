@@ -16,6 +16,10 @@ def index(request):
     context = {}
     return render(request, "app/index.html", context)
 
+def about(request):
+    context = {}
+    return render(request, "app/about.html", context)
+
 
 def profile(request):
     if request.user.is_authenticated:
@@ -63,9 +67,12 @@ def view_athlete(request, athlete_id):
 
     print(value_change)
 
+    active_trades = Trade.objects.all().filter(Q(status=Trade.PENDING))
+
     return render(request, 'app/athlete.html', {"athlete": athlete, 
     "value": {"current": np.round(current_value, 2),
-    "change": value_change}
+    "change": value_change},
+    "active_trades": active_trades
     })
 
 def retrieve_investor_portfolio(request):
@@ -157,45 +164,97 @@ def marketplace(request):
 
 
 
-@login_required(login_url='/login/')
+# @login_required(login_url='/login/')
 def retrieve_trades(request):
-    if "investor_id" in request.GET:
-        investor = Investor.objects.get(pk=request.GET["investor_id"])
-    else:
-        investor = request.user.investor
 
-    current_investor = request.user.investor
+    response = {}
+    try:
 
-    if "historical" in request.GET:
-        all_trades = Trade.objects.all().filter((Q(buyer=investor) | Q(seller=investor)) & ~Q(status=Trade.PENDING)) #.order_by(updated)
-    else:
-        all_trades = Trade.objects.all().filter((Q(buyer=investor) | Q(seller=investor)) & Q(status=Trade.PENDING)) #.order_by(updated)
-
-    all_trades = all_trades.order_by('-updated')
-
-    trades = []
-    for t in all_trades:
-        trade = t.serialize()
-
-        if t.seller == investor:
-            trade["type"] = "Sell"
+        if request.user.is_active:
+            current_investor = request.user.investor
         else:
-            trade["type"] = "Buy"
+            current_investor = None
 
-        trade["can_accept"] = False
+        if "investor_id" in request.GET:
+            investor = Investor.objects.get(pk=request.GET["investor_id"])
+        else:
+            investor = current_investor
 
-        # Can accept it if:
-        # a) we didn't make it
-        # and b) there's a seller and a buyer (direct trade) or no buyer (open trade) but we can become the buyer
-        if not t.creator == current_investor and ( (t.buyer and t.seller) or not t.seller == investor) and (t.buyer == current_investor or t.seller == current_investor):
-            trade["can_accept"] = True
+        if "athlete_id" in request.GET:
+            athlete = Athlete.objects.get(pk=request.GET["athlete_id"])
+            if "historical" in request.GET:
+                all_trades = Trade.objects.all().filter(Q(asset__share__athlete=athlete)  & ~Q(status=Trade.PENDING))
+            else:
+                all_trades = Trade.objects.all().filter(Q(asset__share__athlete=athlete) & Q(status=Trade.PENDING)) 
+            # all_trades = [t for t in all_trades if t.asset.is_share() and t.asset.share.athlete==athlete]
+        elif "historical" in request.GET:
+            all_trades = Trade.objects.all().filter((Q(buyer=investor) | Q(seller=investor)) & ~Q(status=Trade.PENDING))
+        else:
+            all_trades = Trade.objects.all().filter((Q(buyer=investor) | Q(seller=investor)) & Q(status=Trade.PENDING))
+
+        all_trades = all_trades.order_by('-updated')
+
+        trades = []
+        for t in all_trades:
+            trade = t.serialize()
+
+            if t.seller == investor:
+                trade["type"] = "Sell"
+            else:
+                trade["type"] = "Buy"
+
+            trade["can_accept"] = False
+
+            # Can accept it if:
+            # a) we didn't make it
+            # and b) there's a seller and a buyer (direct trade) or no buyer (open trade) but we can become the buyer
+            # if not t.creator == current_investor and ( (t.buyer and t.seller) or not t.seller == investor) and (t.buyer == current_investor or t.seller == current_investor):
+            if current_investor and not t.creator==current_investor:
+
+                # Options here: we can sell, or we can buy
+                # We can sell if: there is a buyer
+                if t.buyer and (t.seller is None or t.seller == current_investor):
+
+                    # if this is a shares trade, also need to ensure we have the shares to sell
+                    # if trade.asset.is_share() and current_investor.saleable_shares_in_athlete(trade.asset.share.athlete).volume > trade.asset.share.volume:
+                    trade["can_accept"] = True
+
+                    # For other types of trade, not sure what the criteria is
+
+                # WE can buy if: there is a seller, and we have enough cash!
+                if t.seller and (t.buyer is None or t.buyer==current_investor) and current_investor.capital > t.price:
+                    trade["can_accept"] = True
 
 
-        trades.append(trade)
+            trade["can_close"] = False
+            if current_investor and (t.creator == current_investor or t.seller==current_investor):
+                trade["can_close"] = (t.buyer == investor or t.seller==investor)
 
-    return JsonResponse({"trades": trades, 
-    "investor": investor.serialize(),
-    "current_investor": current_investor.serialize()}, safe=False)
+
+
+            trades.append(trade)
+
+
+        # print("Trades: " +str(trades))
+        if "athlete_id" in request.GET:
+            trades = sorted(trades, key=lambda t: t["price"]/t["asset"]["volume"])
+
+        response = {"trades": trades}
+
+        if investor:
+            response["investor"] = investor.serialize()
+        else:
+            response["investor"] = None
+
+        if current_investor is not None:
+            response["current_investor"] = current_investor.serialize()
+        else:
+            response["current_investor"] = None
+
+    except Exception as e:
+        print("Caught: " + str(e))
+
+    return JsonResponse(response, safe=False)
 
 @login_required(login_url='/login/')
 def action_trade(request):
@@ -214,6 +273,11 @@ def action_trade(request):
         print("Trade to modify: {}".format(trade))
     
         if change == "accept":
+            if (not trade.seller and trade.buyer != investor):
+                trade.seller = investor
+            if (not trade.buyer and trade.seller != investor):
+                trade.buyer = investor
+
             trade.accept_trade(action_by=investor)
         elif investor == trade.creator:
             trade.cancel_trade()
@@ -298,7 +362,7 @@ def make_error(e):
 
 def get_investors(request):
     inv = Investor.objects.all()
-    if request.GET["ignore_self"]:
+    if "ignore_self" in request.GET and request.GET["ignore_self"]:
         inv = [i for i in inv if not i == request.user.investor]
 
     investors = [i.serialize() for i in inv]

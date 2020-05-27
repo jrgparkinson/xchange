@@ -17,24 +17,99 @@
 {% endif %}
 </span>
 
+
+
 {% endblock %}
-<!--Hello, {{ user.username }}. <br><br> -->
 
-<!-- General summary of investor's portfolio and trade options <br><br>-->
+{% block search_area %}
+<div class="col-sm-3">
 
+    <div class="input-group mb-3" id="athlete-search">
+        <input type="text" class="form-control typeahead" id="athleteNameInput" placeholder="Athlete search"
+            aria-label="Athlete name" aria-describedby="basic-addon2">
+        <div class="input-group-append">
+            <button class="btn btn-outline-secondary" type="button" onclick="athleteSearch()">Go</button>
+        </div>
+        <div id="athleteNameError" class="searchError col-sm-4"></div>
+    </div>
 
+</div>
+{%endblock%}
 {% block content %}
 
 
 
-<div class="graph" style="width:50%; height:300px;">
+
+
+<div class="row">
+    <div class="col-sm">
+        <h2>Athlete value</h2>
+<div class="graph">
     <canvas id="athleteValue"></canvas>
 </div>
+
+    </div>
+    <div class="col-sm">
+        <h2>Active trades</h2>
+        <div class="right-scroll-box" style="overflow-y: scroll;">
+        <table class="table tableFixHead" id="active_trades">
+            <thead>
+              <tr>
+                <!-- <td scope="col" width="80"></td> -->
+                <th scope="col">Volume</th>
+                <th scope="col">Price</th>
+                <th scope="col">Seller</th>
+                <th scope="col">Buyer</th>
+                <th scope="col">Initiated by</th>
+                <th scope="col"></th>
+              </tr>
+            </thead>
+            <tbody>
+            
+              <tr class="noTradesFound">
+                <td scope="col" colspan=6>No trades found</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+    </div>
+
+</div>
+
+
+<div class="row">
+    <div class="col-sm">
+        <h2>Trading history</h2>
+        <div id="past_trades">
+            <table class="table" id="past_trades">
+                <thead>
+                    <tr>
+                        <td scope="col">Status</td>
+                        <th scope="col">Commodity</th>
+                        <th scope="col">Price</th>
+                        <td scope="col">Seller</td>
+                        <td scope="col">Buyer</td>
+                        <td scope="col">Initiated by</td>
+                        <td scope="col">Last updated</td>
+
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+
 
 {%endblock%}
 
 {% block footer %}
 
+<script type="text/javascript" src="{% static 'js/typeahead.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/trading.js' %}"></script>
 <script>
 
     function addAthleteToGraph(athlete_id) {
@@ -112,11 +187,60 @@
             });
         }
 
+    function reload_all_athlete_trades() {
+        reload_trades("active_trades", true, undefined, {"athlete": {{athlete.id}}});
+        reload_trades("past_trades", false, undefined, {"athlete": {{athlete.id}}});
+    }
 
     $(document).ready(function () {
         addAthleteToGraph({{ athlete.id }});
-    });
+        reload_all_athlete_trades();
 
+
+        populate_athlete_search();   
+
+    });  // end onf document ready
+
+    var athleteMapping = {};
+    var athletes = [];
+
+    function athleteSearch() {
+        var name = $("#athleteNameInput").val();
+        if (athletes.includes(name)) {
+            window.location.href = '/athlete/' + athleteMapping[name];
+        }
+        else {
+            $("#athleteNameError").html("Cannot find athlete");
+        }
+    }
+
+    function populate_athlete_search() {
+        $.ajax({
+        type: "GET",
+        url: '/get_athletes',  // URL to your view that serves new info
+        data: {}
+    })
+        .done(function (response) {
+            console.log("Athletes:");
+            console.log(response);
+            response.athletes.forEach(athlete => {
+                athleteMapping[athlete.name] = athlete.id;
+            });
+
+            athletes = Object.keys(athleteMapping);
+
+            $('#athlete-search .typeahead').typeahead({
+                hint: true,
+                highlight: true,
+                minLength: 1
+            }, 
+            {         
+                 name: 'athletes',
+                    source: substringMatcher(athletes),
+                });
+
+        }); 
+    }
 
 </script>
 

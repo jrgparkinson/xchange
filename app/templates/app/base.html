@@ -45,7 +45,14 @@
       <!-- Navbar Search -->
 
       <div class="nav-portfolio">
-         Your portfolio value: {{user.investor.capital|floatformat}} (cash) {{user.investor.share_value|floatformat}} (shares)
+        <span data-toggle="tooltip" data-placement="left" title="Your cash">
+          {{user.investor.capital|floatformat}} <i class="fas fa-coins fa-fw"></i>
+          </span>
+          | 
+          <span data-toggle="tooltip" data-placement="left" title="Your shares value">
+           {{user.investor.share_value|floatformat}} <i class="fas fa-file-invoice-dollar fa-fw"></i>
+          </span>
+           </div>
       </div>
       
 
@@ -145,6 +152,13 @@
 
         {% endif %}
 
+        <li class="nav-item {% if request.path == '/about/' %}active{% endif %}">
+          <a class="nav-link" href="/about/">
+            <i class="fas fa-fw fa-question-circle"></i>
+            <span>About</span></a>
+        </li>
+
+
        <!-- <li class="nav-item">
           <a class="nav-link" href="tables.html">
             <i class="fas fa-fw fa-table"></i>
@@ -241,6 +255,7 @@
 
     <!-- Custom scripts for all pages-->
     <script src="{% static 'js/sb-admin.min.js' %}"></script>
+    <script src="{% static 'js/typeahead.bundle.min.js' %}"></script>
 
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.26.0/moment-with-locales.min.js"></script>

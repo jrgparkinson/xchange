@@ -5,21 +5,32 @@
 
 
 {% block page_title %}{{investor.user.username}}{% endblock %}
-{% block search_area %} 
-<div class="col-sm">Searchbox to view different investor
+{% block search_area %}
+<div class="col-sm-3">
+
+    <div class="input-group mb-3" id="investor-search">
+        <input type="text" class="form-control typeahead" id="investorNameInput" placeholder="Investor search"
+            aria-label="Investor name" aria-describedby="basic-addon2">
+        <div class="input-group-append">
+            <button class="btn btn-outline-secondary" type="button" onclick="investorSearch()">Go</button>
+        </div>
+        <div id="investorNameError" class="searchError col-sm-4"></div>
+    </div>
+
 </div>
 {%endblock%}
 
 {% block content %}
 
 
-   
+
 
 
 <div class="row">
     <div class="col-sm">
         <h2>Portfolio</h2>
-        Current worth: {{worth.total|floatformat}} (shares: {{worth.shares|floatformat}}, cash: {{worth.cash|floatformat}})
+        Current worth: {{worth.total|floatformat}} (shares: {{worth.shares|floatformat}}, cash:
+        {{worth.cash|floatformat}})
         <div class="graph">
             <canvas id="investorValue"></canvas>
         </div>
@@ -28,20 +39,21 @@
         <h2>Shares owned</h2>
         <table class="table" id="shares_owned">
             <thead>
-              <tr>
-                <td scope="col">Athlete</td>
-                <th scope="col">Volume</th>    
-              </tr>
+                <tr>
+                    <td scope="col">Athlete</td>
+                    <th scope="col">Volume</th>
+                </tr>
             </thead>
             <tbody>
                 {% for share in shares %}
                 <tr>
-                    <td ><a href="/athlete/{{share.athlete.id}}" class="badge badge-danger">{{share.athlete.name}}</a></td>
-                    <th >{{share.volume|floatformat}}</th>    
-                  </tr>
+                    <td><a href="/athlete/{{share.athlete.id}}" class="badge badge-danger">{{share.athlete.name}}</a>
+                    </td>
+                    <th>{{share.volume|floatformat}}</th>
+                </tr>
                 {% endfor %}
             </tbody>
-          </table>
+        </table>
     </div>
 
 </div>
@@ -49,26 +61,26 @@
 
 <div class="row">
     <div class="col-sm">
-    <h2>Trading history</h2>
-    <div id="past_trades">
-        <table class="table" id="past_trades">
-          <thead>
-            <tr>
-              <td scope="col">Status</td>
-              <th scope="col">Commodity</th>
-              <th scope="col">Price</th>
-              <td scope="col">Seller</td>
-              <td scope="col">Buyer</td>
-              <td scope="col">Initiated by</td>
-              <td scope="col">Last updated</td>
-  
-            </tr>
-          </thead>
-          <tbody>
-          </tbody>
-        </table>
-      </div>
-</div>
+        <h2>Trading history</h2>
+        <div id="past_trades">
+            <table class="table" id="past_trades">
+                <thead>
+                    <tr>
+                        <td scope="col">Status</td>
+                        <th scope="col">Commodity</th>
+                        <th scope="col">Price</th>
+                        <td scope="col">Seller</td>
+                        <td scope="col">Buyer</td>
+                        <td scope="col">Initiated by</td>
+                        <td scope="col">Last updated</td>
+
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
 
 </div>
 
@@ -82,7 +94,8 @@
 {% block footer %}
 
 <script type="text/javascript" src="{% static 'js/trading.js' %}"></script>
-
+<script type="text/javascript" src="{% static 'js/typeahead.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/handlebars@latest/dist/handlebars.js"></script>
 
 <script>
 
@@ -98,30 +111,30 @@
                     display_error(response.error);
                 }
                 var ctx = document.getElementById('investorValue').getContext('2d');
-  
+
                 var portfolio_vals = [];
                 var portfolio_cash_vals = [];
                 var portfolio_share_vals = [];
                 response.combined.forEach(v => {
-                    portfolio_vals.push({x: new Date(v.time), y:Number(v.value).toFixed(2)});
+                    portfolio_vals.push({ x: new Date(v.time), y: Number(v.value).toFixed(2) });
                 });
 
                 response.shares.forEach(v => {
-                    portfolio_share_vals.push({x: new Date(v.time), y:Number(v.value).toFixed(2)});
+                    portfolio_share_vals.push({ x: new Date(v.time), y: Number(v.value).toFixed(2) });
                 });
 
                 response.cash.forEach(v => {
-                    portfolio_cash_vals.push({x: new Date(v.time), y:Number(v.value).toFixed(2)});
+                    portfolio_cash_vals.push({ x: new Date(v.time), y: Number(v.value).toFixed(2) });
                 });
 
-                
+
 
                 var dataset_total = {
                     label: "Total portfolio value",
                     borderColor: "blue",
                     data: portfolio_vals,
                     fill: false,
-                    lineTension:0,
+                    lineTension: 0,
                 };
 
                 var dataset_shares = {
@@ -129,7 +142,7 @@
                     borderColor: "red",
                     data: portfolio_share_vals,
                     fill: false,
-                    lineTension:0,
+                    lineTension: 0,
                 };
 
                 var dataset_cash = {
@@ -137,10 +150,10 @@
                     borderColor: "green",
                     data: portfolio_cash_vals,
                     fill: false,
-                    lineTension:0,
+                    lineTension: 0,
                 };
 
-                var data = {datasets: [dataset_total, dataset_cash, dataset_shares]};
+                var data = { datasets: [dataset_total, dataset_cash, dataset_shares] };
 
                 var myChart = new Chart(ctx, {
                     type: 'line',
@@ -189,12 +202,57 @@
             });
         }
 
+    var investorMapping = {}; // "jparkinson": 1, "asmith": 2, "lcotter": 3
+    var investors = [];
+
+
+    function investorSearch() {
+        var name = $("#investorNameInput").val();
+        if (investors.includes(name)) {
+            // console.log(name);
+            window.location.href = '/investor/' + investorMapping[name];
+        }
+        else {
+            $("#investorNameError").html("Cannot find investor");
+        }
+    }
 
     $(document).ready(function () {
         makeGraph({{ investor.id }});
 
-        reload_past_trades({{investor.id}});
-    });
+    reload_past_trades({{ investor.id }});
+
+
+
+    $.ajax({
+        type: "GET",
+        url: '/get_investors',  // URL to your view that serves new info
+        data: {}
+    })
+        .done(function (response) {
+            console.log("Investors:");
+            console.log(response);
+            response.investors.forEach(investor => {
+                investorMapping[investor.name] = investor.id;
+            });
+
+            investors = Object.keys(investorMapping);
+
+            $('#investor-search .typeahead').typeahead({
+                hint: true,
+                highlight: true,
+                minLength: 1
+            },
+                {
+                    name: 'investors',
+                    source: substringMatcher(investors)
+                });
+
+        });       
+
+    }); // end on document ready
+
+
 
 
 </script>

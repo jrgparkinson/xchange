@@ -53,6 +53,8 @@ class Entity(models.Model):
         else:
             return {"capital": self.capital}
 
+    
+
     def get_capital(self, time):
         current_capital = self.capital
 
@@ -259,6 +261,13 @@ class Entity(models.Model):
             return True
         except Investor.DoesNotExist:
             return False
+
+    @property
+    def print_name(self):
+        if self.is_investor():
+            return self.investor.user.username
+        else:
+            return self.bank.name
         
     def is_bank(self):
         try:

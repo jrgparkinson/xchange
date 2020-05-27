@@ -13,6 +13,7 @@ urlpatterns = [
     path('profile/', views.profile),
     path('portfolio/', views.portfolio),
     path('trades/', views.trades),
+    path('about/', views.about),
     path('marketplace/', views.marketplace),
     path('athlete/<int:athlete_id>/', views.view_athlete),
     path('investor/<int:investor_id>/', views.view_investor),
