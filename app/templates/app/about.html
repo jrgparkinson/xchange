@@ -6,7 +6,34 @@
 
 {% block content %}
 
-         About... 
+<h2>Overview</h2>
+This is a trading game based on the cross country (XC) season. The primary quantities which can be traded are shares in athletes, 
+which have value because dividends are paid to the owners of these shares after each race, the size of which is dependent on how the 
+athlete performs and the predetermined importance of the event. Athletes who finish higher will result in a higher dividend, 
+and therefore are worth more. 
+
+In addition to trading shares in athletes, it will also be possible (currently work in progress) to trade financial derivatives 
+based on these shares such as futures, options, and swaps.
+
+The aim of the game is to increase the value of your portfolio by clever trading with other players. At the end of the game, 
+the player with the most valuable portfolio wins.
+<h2>Start of the game</h2>
+At the start of the game, every player starts with £1000 and the bank owns 100 shares in each athlete. Before trading starts, 
+there will be a blind auction where every player can place bids for an ammount of shares in each athlete. The highest bid will win,
+as long as the player has sufficient funds to pay the bank, with bids being processed in order from the 
+greatest bid (per share) down to the smallest.
+
+Unsold shares will be available to purchase at a later date, either through another auction or buying directly from the bank for the
+current trading price of the athlete.
+<h2>Trading</h2>
+Any investor can trade with any other investor. A trade starts with an investor initiating a trade, by asking to buy or offering to sell
+some asset (typically some a share for some volume of an athlete) for some price.
+<h2>Assets</h2>
+<h3>Shares</h3>
+<h4>Dividends</h4>
+<h3>Futures and options</h3>
+<h3>Swaps</h3>
+<h2>End of the game</h2>
           {%endblock%}
 
 
