@@ -11,13 +11,13 @@
 
 <div class="row">
     <div class="col-sm-3">
-        <ul>
+        <ul class="eventList">
 
             {% for event in events %}
             <li>
                 <!-- <a class="event" data-event="{{event.id}}" href="#">{{event.name}} ({{event.date}})</a> -->
                 {{event.name}} ({{event.date}})
-                <ul>
+                <ul class="raceList">
                     {% for race in event.races.all %}
                     <li><a class="race" data-race="{{race.id}}" href="#">{{race.name}}</a></li>
                     {% endfor %}
@@ -32,23 +32,16 @@
         <div id="selectedRace">
             <h2 id="raceName">Varsity II</h2>
             <div class="row">
-                <div class="col-sm-3">When:</div>
-                <div class="col-sm-8" id="raceDate">date</div>
+                <div class="col-sm-3"><h4>Dividend formula</h4></div>
+                <div class="col-sm-9" id="raceDividend">formula</div>
             </div>
             <div class="row">
-                <div class="col-sm-3">Dividend formula:</div>
-                <div class="col-sm-8" id="raceDividend">formula</div>
+                <div class="col-sm-3"><h4>External links</h4></div>
+                <div class="col-sm-9" id="raceLink">link</div>
             </div>
+            <hr>
             <div class="row">
-                <div class="col-sm-3">External link:</div>
-                <div class="col-sm-8" id="raceLink">link</div>
-            </div>
-            <div class="row">
-                <div class="col-sm-3">External results:</div>
-                <div class="col-sm-8" id="raceResultsLink">link</div>
-            </div>
-            <div class="row">
-                <div class="col-sm-10" id="raceResultsTable">Results if available</div>
+                <div class="col-sm-12" id="raceResultsTable">Results if available</div>
             </div>
 
 
@@ -58,10 +51,6 @@
 
         <div id="selectedEvent">
             <h2 id="eventName"></h2>
-            <div class="row">
-                <div class="col-sm-2">Date:</div>
-                <div class="col-sm-2" id="eventDate">date</div>
-            </div>
             <div class="row">
                 <div class="col-sm-2">External link:</div>
                 <div class="col-sm-2" id="eventDate">link</div>
@@ -117,20 +106,85 @@
                     $("#noRaceSelected").show();
                     return;
                 }
+                var race = response.race;
 
-                
-                    var d = new Date(response.race.time);
-            $("#raceName").text(response.race.name);
-            $("#raceDate").text(d.toLocaleString());
-            var equation = "\\[ d= a + \\left(\\frac{N - p- 1}{N}\\right)^2 (b-a) \\]";
-            equation += " \\[ \\textrm{where } N=\\textrm{number of competitors}, p=\\textrm{position} \\]";
-            equation += "\\[  a=" + Number(response.race.min_dividend).toFixed(2) + ", b=" + Number(response.race.max_dividend).toFixed(2) + "\\]"
-            $("#raceDividend").text(equation);
-            $("#raceLink").text(response.race.event_details_link);
-            $("#raceResultsLink").text(response.race.race_results_link);
-            $("#raceResultsTable").text("\\( x== y^2 \\)");
 
-           
+                var d = new Date(race.time);
+                $("#raceName").text(race.event.name + " - " + race.name + " (" + d.toLocaleString() + ")");
+                // $("#raceDate").text(d.toLocaleString());
+                var equation = "\\[ d= a + \\left(\\frac{N - p- 1}{N}\\right)^2 (b-a) \\]";
+                equation += " \\[ \\textrm{where } N=\\textrm{number of competitors}, p=\\textrm{position} \\]";
+                equation += "\\[  a=" + Number(race.min_dividend).toFixed(2) + ", b=" + Number(race.max_dividend).toFixed(2) + "\\]"
+                $("#raceDividend").text(equation);
+
+                var links = '';
+                if (race.event_details_link) {
+                    links += '<a href="' + race.event_details_link + '">Race website</a>';
+                } else {
+                    links += 'Details (none available)';
+                }
+
+                links += ' | ';
+
+                if (race.race_results_link) {
+                    links += '<a href="' + race.race_results_link + '">External results</a>';
+                } else {
+                    links += 'External results (not available yet)';
+                }
+                $("#raceLink").text(links);
+
+                var resultsTitle = '<h3>Results</h3>';
+                var table = `<table class="table" id="raceResults">
+        <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Runner</th>
+                <th scope="col">Time (mm:ss)</th>
+                <th scope="col">Dividend per share</th>
+            </tr>
+        </thead>
+        <tbody>
+            
+        </tbody>
+    </table>`;
+
+
+
+                // Add rows
+                if (response.results) {
+                    $("#raceResultsTable").html(resultsTitle + table);
+                    response.results.forEach(result => {
+                        // console.log(result);
+                        var time =moment.duration(result.time);
+                        var s = String(time.get('seconds')).padStart(2, '0');
+                        
+                        var formatted_time = time.minutes() + ":" + s;
+                        if (time.hours() > 0) {
+                            formatted_time = time.hours() + ":" + formatted_time;
+                        }
+                        $("#raceResults tbody").append(` <tr>
+                <td>` + result.position + `</td>
+                <td>` + result.athlete.name + `</td>
+                <td>` + formatted_time + `</td>
+                <td>` + result.dividend + `</td>
+                </tr>`);
+                    });
+                } else {
+                    $("#raceResultsTable").html(resultsTitle + '<p>No results yet</p>');
+                //     var noResults = `<tr>
+                // <td colspan=4>No results yet</td>
+                // </tr>`;
+                //     $("#" + div + " tbody tr").remove();
+                //     $("#raceResults tbody").append(noResults);
+
+                }
+
+                $('#raceResults').DataTable({
+                    paging: false,
+
+                });
+
+
 
 
                 $("#selectedRace").show();
@@ -140,9 +194,9 @@
     }
 
     function hideEventRace() {
-            $("#selectedRace").hide();
-            $("#selectedEvent").hide();
-        }
+        $("#selectedRace").hide();
+        $("#selectedEvent").hide();
+    }
 
     $(document).ready(function () {
         // $('#leaderboard').DataTable({
@@ -150,7 +204,7 @@
 
         // });
         hideEventRace();
-       
+
 
         $("a.event").click(function (e) {
             hideEventRace();
@@ -159,6 +213,8 @@
         $("a.race").click(function (e) {
             hideEventRace();
             display_race($(this).attr("data-race"));
+            $("li.selected").removeClass("selected");
+            $(this).parent().addClass("selected");
         })
 
 

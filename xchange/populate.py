@@ -59,6 +59,13 @@ def populate():
             race = Race(name=r, event=event, time=event.date, max_dividend=20.0+random.random()*100.0)
             race.save()
 
+            # Create results
+            athletes = list(Athlete.objects.all())
+            random.shuffle(athletes)
+            for i in range(len(athletes)):
+                result = Result(athlete=athletes[i], race=race, position=i, time=timedelta(minutes=i, seconds=random.random()*60.0))
+                result.save()
+
     # create races
     # return
 

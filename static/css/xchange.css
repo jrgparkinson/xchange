@@ -111,7 +111,26 @@ tr.noTradesFound {
 /* .tableFixHead          { overflow-y: auto; height: 100px; } */
 .tableFixHead thead th { position: sticky; top: 0; background-color:gainsboro; padding: 10; margin:0; border-top:0; }
 
-/* Just common table stuff. Really. */
-/* table  { border-collapse: collapse; width: 100%; }
-th, td { padding: 8px 16px; }
-th     { background:#eee; } */
+ul.eventList, ul.eventList ul {
+    list-style: none;
+    padding:5px;
+}
+
+ul.eventList li {
+    font-weight: bold;
+}
+
+ul.raceList {
+    margin-left:0px;
+}
+
+ul.raceList li {
+    border-radius:5px;
+    padding:5px;
+    margin-top:5px;
+}
+ul.raceList li:hover, ul.raceList li.selected {
+    /* background-color: thistle; */
+    background-color: lightyellow;
+}
+

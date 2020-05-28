@@ -431,7 +431,13 @@ class Athlete(models.Model):
         # Volume weighted average
         # av = Athlete.compute_value_from_trades(trades)
         # print("Average of {} trades = {}".format(len(trades), av))
-        value = latest_trade.price / latest_trade.asset.share.volume
+        vol = latest_trade.asset.share.volume
+        if vol == 0:
+            if latest_trade.price != 0.0:
+                print("Warning! Trade with 0 volume: {}".format(latest_trade))
+            value = 0
+        else:
+            value = latest_trade.price / vol
         return value
 
     def get_total_volume_of_shares(self):
@@ -900,13 +906,15 @@ class Result(models.Model):
     athlete = models.ForeignKey(Athlete, related_name="%(app_label)s_%(class)s_athlete", on_delete=models.CASCADE)
     race = models.ForeignKey(Race, on_delete=models.CASCADE)
     position = models.IntegerField()
-    time = models.DurationField()
-    dividend = models.FloatField()
+    time = models.DurationField(null=True)
+    dividend = models.FloatField(null=True)
     dividend_distributed = models.BooleanField(default=False)
 
     def serialize(self):
         return {"athlete": self.athlete.serialize(),
-        "event": self.event.serialize(),
+        "race": self.race.serialize(),
+        "position": self.position,
+        "time": self.time,
         "dividend": self.dividend,
         "dividend_distributed": self.dividend_distributed}
 

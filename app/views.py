@@ -391,10 +391,10 @@ def get_race(request):
         race = Race.objects.get(pk=race_id)
 
         results = Result.objects.all().filter(race=race)
-        results = [r.serialize() for r in results]
+        results_arr = [r.serialize() for r in results]
 
         return JsonResponse({"race": race.serialize(),
-        "results": results})
+        "results": results_arr})
 
     except XChangeException as e:
         error = {"title": e.title, "description": e.desc}
