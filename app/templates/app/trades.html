@@ -33,6 +33,13 @@
 
             <button type="button" class="btn btn-primary mb-2" data-toggle="modal"
               data-target="#createShare">Share</button>
+
+              <button type="button" class="btn btn-primary mb-2" data-toggle="modal"
+              data-target="#createSwap" disabled>Swap</button>
+
+              <button type="button" class="btn btn-primary mb-2" data-toggle="modal"
+              data-target="#createOptionFuture" disabled>Option/future</button>
+
             <!-- <div id="commodityEntry"></div> -->
             <input type="text" class="form-control form-control" id="commodityEntry" 
             name="commodityEntry" required>
@@ -91,10 +98,10 @@
               <!-- <td scope="col" width="80"></td> -->
               <th scope="col">Commodity</th>
               <th scope="col">Price</th>
-              <td scope="col">Seller</td>
-              <td scope="col">Buyer</td>
-              <td scope="col">Initiated by</td>
-              <td scope="col"></td>
+              <th scope="col">Seller</th>
+              <th scope="col">Buyer</th>
+              <th scope="col">Initiated by</th>
+              <th scope="col"></th>
             </tr>
           </thead>
           <tbody>

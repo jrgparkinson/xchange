@@ -7,22 +7,326 @@
 
 {% block content %}
 
+<div class="row">
+    <div class="col-sm-12">
+        <h2>
+            <button type="button" class="btn btn-outline-success btn-lg asset-choice" data-asset="share">Shares</button>
+            <button type="button" class="btn btn-outline-success btn-lg asset-choice" data-asset="future">Futures</button>
+            <button type="button" class="btn btn-outline-success btn-lg asset-choice" data-asset="option">Options</button>
+            <button type="button" class="btn btn-outline-success btn-lg asset-choice" data-asset="swap">Swaps</button>
+        </h2>
+    </div>
+</div>
 
 <div class="row">
-  <div class="col-sm">
-      <h2>Buy</h2>
-     
-  </div>
-  <div class="col-sm">
-      <h2>Sell</h2>
-      </div>
-      </div>
+    <div class="col-sm-6" style="min-width:600px">
+        <h2>Buy</h2>
+
+        <div id="buyTable">
+            <table class="table buy" id="buy_share" data-asset="share">
+                <thead>
+                    <tr>
+                        <th scope="col">Athlete</th>
+                        <th scope="col">Volume</th>
+                        <th scope="col">Price/volume</th>
+                        <th scope="col">Seller</th>
+                        <th scope="col"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan=5>No trades found</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <table class="table buy" data-asset="option">
+                <thead>
+                    <tr>
+                        <th scope="col">Athlete</th>
+                        <th scope="col">Volume</th>
+                        <th scope="col">Price/volume</th>
+                        <th scope="col">Strike time</th>
+                        <th scope="col">Option holder</th>
+                        <th scope="col">Seller</th>
+                        <th scope="col"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan=5>No trades found</td>
+                    </tr>
+                </tbody>
+            </table>
+    
+            <table class="table buy" data-asset="future">
+                <thead>
+                    <tr>
+                        <th scope="col">Athlete</th>
+                        <th scope="col">Volume</th>
+                        <th scope="col">Price/volume</th>
+                        <th scope="col">Strike time</th>
+                        <th scope="col">Seller</th>
+                        <th scope="col"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan=5>No trades found</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <table class="table buy" data-asset="swap">
+                <thead>
+                    <tr>
+                        <th scope="col">Description</th>
+                        <th scope="col">Price</th>
+                        <th scope="col">Seller</th>
+                        <th scope="col"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan=5>No trades found</td>
+                    </tr>
+                </tbody>
+            </table>
+
+
+        </div>
+
+    </div>
+    <div class="col-sm-6"  style="min-width:600px">
+        <h2>Sell</h2>
+
+        <div id="sellTable">
+            <table class="table sell" id="sell_shares" data-asset="share">
+                <thead>
+                    <tr>
+                        <th scope="col">Athlete</th>
+                        <th scope="col">Volume</th>
+                        <th scope="col">Price/volume</th>
+                        <th scope="col">Buyer</th>
+                        <th scope="col"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan=5>No trades found</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <table class="table sell" data-asset="option">
+            <thead>
+                <tr>
+                    <th scope="col">Athlete</th>
+                    <th scope="col">Volume</th>
+                    <th scope="col">Price/volume</th>
+                    <th scope="col">Strike time</th>
+                    <th scope="col">Option holder</th>
+                    <th scope="col">Buyer</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan=5>No trades found</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <table class="table sell" data-asset="future">
+            <thead>
+                <tr>
+                    <th scope="col">Athlete</th>
+                    <th scope="col">Volume</th>
+                    <th scope="col">Price/volume</th>
+                    <th scope="col">Strike time</th>
+                    <th scope="col">Buyer</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan=5>No trades found</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <table class="table sell" data-asset="swap">
+            <thead>
+                <tr>
+                    <th scope="col">Description</th>
+                    <th scope="col">Price</th>
+                    <th scope="col">Buyer</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan=5>No trades found</td>
+                </tr>
+            </tbody>
+        </table>
+
+    </div>
+</div>
+
+
 
 
 {%endblock%}
+
 
 {% block js_footer %}
 
 
 
+{% endblock %}
+
+{%block footer %}
+<script type="text/javascript" src="{% static 'js/trading.js' %}"></script>
+
+<script type="text/javascript">
+    var selected_asset; // selected asset
+
+     function reload_marketplace_trades() {
+        console.log("Reload " + selected_asset);
+
+        // Remove datatable
+        $("table").each(function() {
+            if ($.fn.DataTable.isDataTable($(this))) {
+                    $(this).DataTable().destroy();
+            }
+        });
+
+        populate_table(selected_asset);
+    }
+
+    $(document).ready(function () {
+        selected_asset = "share";
+        $("table.sell").hide();
+        $("table.buy").hide();
+        populate_table("share");
+
+        $("button.asset-choice[data-asset="+selected_asset+"]").removeClass("btn-outline-success");
+        $("button.asset-choice[data-asset="+selected_asset+"]").addClass("btn-success");
+        
+
+        $("button.asset-choice").click(function () {
+            // alert($(this).attr("data-asset"));
+            selected_asset = $(this).attr("data-asset");
+
+            $("button.asset-choice").each(function() {
+                $(this).removeClass("btn-success");
+                $(this).addClass("btn-outline-success");
+            });
+
+            $(this).removeClass("btn-outline-success");
+            $(this).addClass("btn-success");
+
+            $("table.sell").hide();
+            $("table.buy").hide();
+
+            $("table").each(function(index) {
+                console.log($(this));
+                if ($.fn.DataTable.isDataTable($(this))) {
+                    $(this).DataTable().destroy();
+                    console.log("Destroy");
+                }
+
+            });
+
+            // $("table[data-asset=" + selected_asset + "]").show();
+
+            populate_table(selected_asset);
+
+        });
+    });
+
+    function populate_table(asset) {
+        var tables = $("table[data-asset=" + asset + "]");
+
+        $("table[data-asset=" + asset + "]").show();
+
+        // Get the trades
+        $.ajax({
+            type: "GET",
+            url: '/retrieve_trades/',  // URL to your view that serves new info
+            data: { "asset": asset }
+        })
+            .done(function (response) {
+                console.log(response);
+                if (response.error) {
+                    
+                    return;
+                }
+
+                $("table[data-asset=" + asset + "] tbody tr").remove();
+
+                var buy_exists = false;
+                var sell_exists = false;
+
+                response.trades.forEach(trade => {
+                    // console.log(trade);
+                    var row = '<tr data-trade="'+ trade.id +'">';
+
+                    var is_share = (trade.asset.athlete != undefined);
+                    if (is_share) {
+                        var share = trade.asset;
+                        row += '<td>' + format_athlete(share.athlete) + '</td>';
+                        row += '<td>' + Number(share.volume).toFixed(2) + '</td>';
+                        row += '<td>' + Number(trade.price/share.volume ).toFixed(2) + '</td>';
+                    }
+
+
+                    var other_party;
+                    var buy_sell;
+                    if (trade.seller) {
+                        other_party = trade.seller;
+                        buy_sell = 'buy';
+                        buy_exists = true;
+                    } else {
+                        other_party = trade.buyer;
+                        buy_sell = 'sell';
+                        sell_exists = true;
+                    }
+
+                    row += '<td>' + format_investor_display(response.investor, other_party) + '</td>';
+
+                    var actions = get_actions(trade);
+                    row += '<td>' + actions + '</td>';
+                    row += '</tr>';
+                    $("table[data-asset=" + asset + "]." + buy_sell + " tbody").append(row);
+                });
+
+                var none_exist = `<tr><td colspan=5>No trades found</td></tr>`;
+
+                $("table[data-asset=" + asset + "]").each(function (index) {
+                    var rowCount = $(this).find('tbody').find('tr').length;
+                    console.log("Row count: "+String(rowCount));
+                    if (rowCount > 0)
+                    {
+                        if (!$.fn.DataTable.isDataTable($(this))) {
+                            $(this).dataTable({
+                                paging: false,
+                            });
+                    }
+                }
+                else{
+                    $(this).find('tbody').append(none_exist);
+                }
+                });
+
+                
+
+
+
+            });
+    }
+
+</script>
 {% endblock %}

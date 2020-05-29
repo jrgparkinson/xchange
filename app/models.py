@@ -41,25 +41,25 @@ def round_time(time, interval="seconds"):
 
     return time
 
+
+
 class Entity(models.Model):
     INITIAL_CAPITAL = 1000
     capital = models.FloatField(default=INITIAL_CAPITAL)
 
     def serialize(self):
-        if self.is_bank():
-            s = self.bank.serialize()
+        # if self.is_bank():
+        #     s = self.bank.serialize()
 
-        elif self.is_investor():
-            s = self.investor.serialize()
-        else:
-            s = {"capital": self.capital}
+        # elif self.is_investor():
+        #     s = self.investor.serialize()
+        # else:
+        s = {"capital": self.capital}
 
         s["share_value"] = self.share_value
         s["total_value"] = self.total_value
 
         return s
-
-    
 
     def get_capital(self, time):
         current_capital = self.capital
@@ -259,7 +259,7 @@ class Entity(models.Model):
         """ Transfer cash from this entity to another
         """
         if self.capital < ammount:
-            raise InsufficientFunds
+            raise InsufficientFunds("Capital ({}) is less than the transfer ammount ({})".format(self.capital, ammount))
     
         self.capital = self.capital - ammount
         to.capital = to.capital + ammount
@@ -333,9 +333,17 @@ class Investor(Entity):
         return self.user.username
 
     def serialize(self):
+        # return {}
         return {"id": self.pk,
         "name": self.user.username,
             "capital": self.capital}
+
+# This is a quicker way of serializing an entity
+def serialize_entity(entity : Entity):
+    if entity.is_investor():
+        return entity.investor.serialize()
+    elif entity.is_bank():
+        return entity.bank.serialize()
 
 
 @receiver(post_save, sender=User)
@@ -445,6 +453,70 @@ class Athlete(models.Model):
         volume = np.sum(np.array([float(s.volume) for s in shares]))
         return volume
 
+class ShareIndexValue(models.Model):
+    athletes = models.ManyToManyField(to=Athlete)
+    value = models.FloatField()
+    date = models.DateTimeField(auto_now_add=True)
+
+    TOP10 = 'T'
+    TYPE_CHOICES = (
+        (TOP10, 'Top 10'),
+    )
+
+    index_type = models.CharField(max_length=1, choices=TYPE_CHOICES, default=TOP10)
+
+    @staticmethod
+    def daily_change(self):
+        return ShareIndexValue.get_daily_change(self.index_type)
+
+    @staticmethod
+    def compute_value(index_type):
+        if index_type == ShareIndexValue.TOP10:
+            # TODO: compute top 10 index and save value
+
+            # value = random.random()
+            athletes = Athlete.objects.all()
+            athletes = sorted(athletes, key=lambda a: a.get_value(), reverse=True)
+            if len(athletes) > 10:
+                athletes = athletes[:10]
+
+            value = np.mean(np.array([a.get_value() for a in athletes]))
+
+            # TODO: Indexes
+            t = ShareIndexValue(value=value)
+            t.save()
+            # t.value = value
+            t.athletes.add(*athletes)
+            t.save()
+
+        else:
+            raise XChangeException("Unknown index type " + str(index_type))
+
+    @staticmethod
+    def get_value(index_type):
+        """ Get latest value of the index """
+        values = ShareIndexValue.objects.all().filter(index_type=index_type).order_by('-date')
+        if len(values) > 0:
+            return values[0]
+        else:
+            return np.nan
+
+    @staticmethod
+    def get_daily_change(index_type):
+        """ Get % change in index value since 24 hours ago """
+        current_value = ShareIndexValue.get_value(index_type)
+
+        one_day_ago = current_time() - timedelta(days=1)
+        previous_values = ShareIndexValue.objects.all().filter(Q(index_type=index_type) & Q(date__lte=one_day_ago)).order_by('-date')
+        if len(previous_values) > 0:
+            prev_val = previous_values[0]
+        else:
+            return np.nan
+        
+        change = 100.0*(current_value - prev_val)/prev_val
+        return change
+
+
 class Asset(models.Model):
     """
     Something that can be bought and sold
@@ -462,7 +534,7 @@ class Asset(models.Model):
         if self.is_share():
             return self.share.serialize()
         else:
-            return {"owner": self.owner,
+            return {"owner": self.owner.serialize(),
             "virtual": self.is_virtual}
 
     def is_share(self):
@@ -471,6 +543,31 @@ class Asset(models.Model):
         except Share.DoesNotExist:
             return False
         return True
+
+    def is_option(self):
+        try:
+            x = self.option
+        except Option.DoesNotExist:
+            return False
+        return True
+
+    def is_swap(self):
+        try:
+            x = self.swap
+        except Swap.DoesNotExist:
+            return False
+        return True
+
+    def is_future(self):
+        try:
+            o = self.option
+            f = o.future
+        except Option.DoesNotExist:
+            return False
+        except Future.DoesNotExist:
+            return False
+        return True
+
 
     def __str__(self):
         if self.is_share():
@@ -579,6 +676,7 @@ class Swap(Asset):
     a_to_b_payment = models.TextField()
     b_to_a_payment = models.TextField()
 
+
 class Trade(models.Model):
     """ 
     Transfer of a asset between two entities.
@@ -620,7 +718,7 @@ class Trade(models.Model):
     def serialize(self):
         json = {"id": self.pk,
         "asset": self.asset.serialize(),
-        "creator": self.creator.serialize(),
+        "creator": serialize_entity(self.creator), # self.creator.investor.serialize(),
         "price": self.price,
         "created": self.created,
         "updated": self.updated,
@@ -628,9 +726,9 @@ class Trade(models.Model):
         "decision_dt": self.decision_dt}
 
         if self.buyer:
-            json["buyer"] = self.buyer.serialize()
+            json["buyer"] = serialize_entity(self.buyer)
         if self.seller:
-            json["seller"] = self.seller.serialize()
+            json["seller"] = serialize_entity(self.seller)
 
         return json
 
@@ -678,25 +776,31 @@ class Trade(models.Model):
 
     def accept_trade(self, action_by):
         if not self.buyer or not self.seller:
-            raise NoBuyerOrSeller
+            raise NoBuyerOrSeller("To complete this trade there must be a buyer (currently: {}) and a seller (currently: {})".format(self.buyer, self.seller))
 
         if not self.status == self.PENDING:
-            raise TradeNotPending
+            raise TradeNotPending("Trade status is {}".format(self.status_display))
         
         # Check action_by can do this - we must not be the creator
         if action_by == self.creator:
             print("Trade creator = {}".format(self.creator))
             print("Action by = {}".format(action_by))
-            raise NoActionPermission
+            raise NoActionPermission("You cannot accept a trade which you initiated")
 
         # Check buyer has cash
         if not self.buyer.capital >= self.price:
-            raise InsufficientFunds
+            raise InsufficientFunds("Buyer funds ({}) are less than the trade price ({})".format(self.buyer.capital, self.price))
 
         # Check seller has asset to sell
         if self.asset.is_share():
             if not self.seller.can_sell_asset(self.asset):
-                raise InsufficientShares
+                #format(seller.saleable_shares_in_athlete())
+                raise InsufficientShares("Seller does not have sufficient shares to fulfill trade.")
+
+
+            # Recompute top 10 index (try this first)
+            ShareIndexValue.compute_value(ShareIndexValue.TOP10)
+
 
             # Do the trade
             print("Accepted trade: {}".format(self)) #  for {} from {} to {}".format(self.asset, self.seller, self.buyer))
@@ -714,6 +818,8 @@ class Trade(models.Model):
             self.seller.save()
             self.buyer.save()
 
+
+            
             # print(" After, seller ({}) owns: {}".format(self.seller, self.seller.shares_in_athlete(self.asset.share.athlete)))
             # print(" After, buyer ({}) owns: {}".format(self.buyer, self.buyer.shares_in_athlete(self.asset.share.athlete)))
 
@@ -765,7 +871,7 @@ class Loan(models.Model):
         # Perform checks
         # Can't lend money you don't have
         if lender.capital < balance:
-            raise InsufficientFunds
+            raise InsufficientFunds("Lender has {} which is less than the balance {}".format(lender.capital, balance))
 
         
         next_payment_due = current_time() + interval
@@ -957,6 +1063,7 @@ def compute_dividends(race: Race):
         scaled_position = (race.num_competitors - (r.position-1))/race.num_competitors
         r.dividend = race.min_dividend + (race.max_dividend - race.min_dividend) * pow(scaled_position, 2)
         r.save()
+
 
 
 

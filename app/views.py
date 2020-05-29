@@ -10,6 +10,18 @@ from django.db.models import Q
 import re
 import json
 from django.core.serializers.json import DjangoJSONEncoder
+import time
+
+
+def handler404(request, exception):
+    return render(request, 'app/404.html', status=404)
+
+def handler403(request, exception):
+    return render(request, 'app/403.html', status=403)
+    
+def handler500(request):
+    return render(request, 'app/500.html', status=500)
+
 
 def index(request):
     # return HttpResponse("Hello, world. You're at the polls index.")
@@ -24,8 +36,28 @@ def index(request):
         investors_leaderboard.append(i)
         pos = pos + 1
 
+    athletes = Athlete.objects.all()
+    athletes = sorted(athletes, key=lambda a : a.get_value(), reverse=True)
+    if len(athletes) > 3:
+        top_athletes = athletes[:3]
+    else:
+        top_athletes = athletes
+
+
+    for i in range(len(athletes)):
+        a = athletes[i]
+        a.position = i + 1
+        athletes[i] = a
+    
+
+    # Stats
+    stats = {"top10": ShareIndexValue.get_value(ShareIndexValue.TOP10)}
+
     context = {"season": get_current_season(),
-    "leaderboard": investors_leaderboard}
+    "leaderboard": investors_leaderboard,
+    "stats": stats,
+    "top_athletes": top_athletes,
+    "athletes": athletes}
     return render(request, "app/index.html", context)
 
 def about(request):
@@ -60,13 +92,15 @@ def view_investor(request, investor_id):
     shares_total = investor.get_shares_wealth()
 
     current_val = investor.capital + shares_total
+    shares_owned = investor.get_shares_owned()
+    shares_owned = sorted(shares_owned, key=lambda share: share.volume, reverse=True)
 
     return render(request, 'app/investor.html', {
         "investor": investor,
         "worth": {"total": current_val,
         "shares": shares_total,
         "cash": investor.capital},
-        "shares": investor.get_shares_owned()})
+        "shares": shares_owned})
 
 def view_athlete(request, athlete_id):
     try:
@@ -184,8 +218,11 @@ def marketplace(request):
 
 
 
+
 # @login_required(login_url='/login/')
 def retrieve_trades(request):
+
+    init_time = time.time()
 
     response = {}
     try:
@@ -201,6 +238,7 @@ def retrieve_trades(request):
             investor = current_investor
 
         if "athlete_id" in request.GET:
+            print("Retrieve trades for athlete id {}".format(request.GET["athlete_id"]))
             athlete = Athlete.objects.get(pk=request.GET["athlete_id"])
             if "historical" in request.GET:
                 all_trades = Trade.objects.all().filter(Q(asset__share__athlete=athlete)  & ~Q(status=Trade.PENDING))
@@ -208,16 +246,59 @@ def retrieve_trades(request):
                 all_trades = Trade.objects.all().filter(Q(asset__share__athlete=athlete) & Q(status=Trade.PENDING)) 
             # all_trades = [t for t in all_trades if t.asset.is_share() and t.asset.share.athlete==athlete]
         elif "historical" in request.GET:
+            print("Retrieve historical trades ")
             all_trades = Trade.objects.all().filter((Q(buyer=investor) | Q(seller=investor)) & ~Q(status=Trade.PENDING))
+        elif "asset" in request.GET:
+            asset = request.GET["asset"]
+            print("Retrieve trades for asset {}".format(asset))
+            all_trades = Trade.objects.all().filter(Q(status=Trade.PENDING) & (Q(seller=None) | Q(buyer=None)))
+
+            # Get open trades only - either no seller or no buyer
+            # all_trades = [t for t in all_trades if (t.seller is None) or (t.buyer is None)]
+
+            if asset == 'share':
+                all_trades = [t for t in all_trades if t.asset.is_share() and t.asset.share.volume > 0]
+
+                # only retrieve shares where they can be actioned sensibly
+                actionable_trades = []
+                for t in all_trades:
+                    share = t.asset.share
+                    if t.seller:
+                        saleable_shares = t.seller.saleable_shares_in_athlete(share.athlete)
+                        if saleable_shares and saleable_shares.volume >= share.volume:
+                            actionable_trades.append(t)
+                    elif t.buyer and t.buyer.capital >= t.price:
+                        actionable_trades.append(t)
+
+                all_trades = actionable_trades
+            elif asset == 'option':
+                all_trades = [t for t in all_trades if t.asset.is_option()]
+            elif asset == 'future':
+                all_trades = [t for t in all_trades if t.asset.is_future()]
+            elif asset == 'swap':
+                all_trades = [t for t in all_trades if t.asset.is_swap()]
+                
         else:
+            print("Retrieve  standard trades")
+            print(request.GET)
             all_trades = Trade.objects.all().filter((Q(buyer=investor) | Q(seller=investor)) & Q(status=Trade.PENDING))
 
-        all_trades = all_trades.order_by('-updated')
+        # now sort
+        # print("Sort")
+        if "asset" in request.GET:
+            all_trades = sorted(all_trades, key = lambda t : t.updated, reverse=True)
+        else:
+            all_trades = all_trades.order_by('-updated')
 
         trades = []
+        
+        # trades = [t.serialize() for t in all_trades]
         for t in all_trades:
+
+ 
             trade = t.serialize()
 
+            
             if t.seller == investor:
                 trade["type"] = "Sell"
             else:
@@ -245,15 +326,11 @@ def retrieve_trades(request):
                 if t.seller and (t.buyer is None or t.buyer==current_investor) and current_investor.capital > t.price:
                     trade["can_accept"] = True
 
-
             trade["can_close"] = False
             if current_investor and (t.creator == current_investor or t.seller==current_investor):
                 trade["can_close"] = (t.buyer == investor or t.seller==investor)
 
-
-
             trades.append(trade)
-
 
         # print("Trades: " +str(trades))
         if "athlete_id" in request.GET:
@@ -273,6 +350,10 @@ def retrieve_trades(request):
 
     except Exception as e:
         print("Caught: " + str(e))
+        return JsonResponse({"error": str(e)})
+
+    # print("Execution time: {} seconds".format(time.time() - init_time))
+    # print("Serialize time: {} seconds".format(serialize_time))
 
     return JsonResponse(response, safe=False)
 
@@ -305,11 +386,24 @@ def action_trade(request):
             trade.reject_trade()
 
     except XChangeException as e:
-        error = {"title": e.title, "description": e.desc}
+        return JsonResponse(make_error(e))
+        # error = {"title": e.title, "description": e.desc}
     except Trade.DoesNotExist:
-        error = "Trade no longer exists"
+        error = {"title": "Trade no longer exists", "desc": "This really shouldn't have happened"}
+    except Exception as e:
+        error = {"title": "Internal error", "desc": "The gory details: <br>" + str(e)}
 
     return JsonResponse({"error": error})
+
+
+def get_portfolio_value(request):
+    if request.user.is_authenticated:
+        investor = request.user.investor
+
+        return JsonResponse({"capital": investor.capital, "shares": investor.share_value})
+
+    return JsonResponse({})
+
 
 @login_required(login_url='/login/')
 def create_trade(request):

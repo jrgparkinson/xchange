@@ -134,3 +134,55 @@ ul.raceList li:hover, ul.raceList li.selected {
     background-color: lightyellow;
 }
 
+
+.deletedTrade {
+    background-color: mistyrose;
+}
+
+.actionedTrade {
+    background-color: papayawhip;
+}
+
+.badgeContainer {
+    font-size: larger;
+}
+
+
+
+.statLabel {
+    color: darkblue;
+    font-size: 2em;
+    width:100%;
+
+    text-align: center;
+}
+
+.statDesc {
+    font-size: small;
+    color: gray;
+    
+    width:100%;
+    text-align: center;
+}
+
+.statValue {
+    /* font-size: x-large; */
+    font-size: 4em;
+    width:100%;
+    text-align: center;
+}
+
+.statSmallValues {
+    font-size: 1em;
+    width:100%;
+    text-align: left;
+
+}
+
+.statContainer {
+    width:100%;
+    border: 2px solid darkblue;
+    border-radius: 10px;
+    margin-bottom:10px;
+    padding:2px;
+}

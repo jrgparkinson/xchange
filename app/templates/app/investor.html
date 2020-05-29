@@ -29,8 +29,8 @@
 <div class="row">
     <div class="col-sm">
         <h2>Portfolio</h2>
-        Current worth: {{worth.total|floatformat}} (shares: {{worth.shares|floatformat}}, cash:
-        {{worth.cash|floatformat}})
+        Current worth: {{worth.total|floatformat:2}} (shares: {{worth.shares|floatformat:2}}, cash:
+        {{worth.cash|floatformat:2}})
         <div class="graph">
             <canvas id="investorValue"></canvas>
         </div>
@@ -40,16 +40,19 @@
         <table class="table" id="shares_owned">
             <thead>
                 <tr>
-                    <td scope="col">Athlete</td>
+                    <th scope="col">Athlete</th>
                     <th scope="col">Volume</th>
                 </tr>
             </thead>
             <tbody>
                 {% for share in shares %}
                 <tr>
-                    <td><a href="/athlete/{{share.athlete.id}}" class="badge badge-danger">{{share.athlete.name}}</a>
+                    <td><span class="badgeContainer">
+                        <a href="/athlete/{{share.athlete.id}}" class="badge badge-danger">
+                            {{share.athlete.name}}</a>
+                        </span>
                     </td>
-                    <th>{{share.volume|floatformat}}</th>
+                    <td>{{share.volume|floatformat:2}}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -66,13 +69,13 @@
             <table class="table" id="past_trades">
                 <thead>
                     <tr>
-                        <td scope="col">Status</td>
+                        <th scope="col">Status</th>
                         <th scope="col">Commodity</th>
                         <th scope="col">Price</th>
-                        <td scope="col">Seller</td>
-                        <td scope="col">Buyer</td>
-                        <td scope="col">Initiated by</td>
-                        <td scope="col">Last updated</td>
+                        <th scope="col">Seller</th>
+                        <th scope="col">Buyer</th>
+                        <th scope="col">Initiated by</th>
+                        <th scope="col">Last updated</th>
 
                     </tr>
                 </thead>
@@ -202,9 +205,8 @@
             });
         }
 
-    var investorMapping = {}; // "jparkinson": 1, "asmith": 2, "lcotter": 3
+    var investorMapping = {}; 
     var investors = [];
-
 
     function investorSearch() {
         var name = $("#investorNameInput").val();
@@ -221,6 +223,8 @@
         makeGraph({{ investor.id }});
 
     reload_past_trades({{ investor.id }});
+
+   
 
 
 

@@ -1,3 +1,5 @@
 .env/
 static/vendor/fontawesome-free/
 *.sqlite3
+.idea/
+*.pyc

@@ -57,6 +57,8 @@ function createShareFromModal() {
 }
 
 function actionTrade(trade_id, change) {
+    $("tr[data-trade="+trade_id+"]").addClass("actionedTrade");
+
     $.ajax({
         type: "GET",
         url: '/action_trade/',  // URL to your view that serves new info
@@ -66,13 +68,25 @@ function actionTrade(trade_id, change) {
             console.log(response);
             if (response.error) {
                 display_error(response.error);
+                $("tr[data-trade="+trade_id+"]").removeClass("actionedTrade");
             }
 
+            $("tr[data-trade="+trade_id+"]").hide();
+
             if (window.location.href.includes("trades")) {
+                console.log("Reload for trades");
                 reload_all();
             } else if (window.location.href.includes("athlete")) {
+                console.log("Reload for athletes");
                 reload_all_athlete_trades();
+            } else if (window.location.href.includes("marketplace")) {
+                console.log("Reload for marketplace");
+                reload_marketplace_trades();
+            } else {
+                console.log("Unknown post actionTrade ");
             }
+
+            populate_top_bar_portfolio();
         });
 }
 
@@ -152,20 +166,12 @@ function reload_trades(div, active, investor_id, other_opts) {
                 }
                 label = label + " for " + trade.price;
 
-                var closeAction = '<span data-toggle="tooltip" data-placement="left" title="Cancel/reject trade"><i class="fas fa-window-close fa-fw" onclick="actionTrade(' + trade.id + ', \'cancel\')"></i></span>';
-                var acceptAction = '<span data-toggle="tooltip" data-placement="left" title="Accept trade"><i class="fas fa-check-circle fa-fw" onclick="actionTrade(' + trade.id + ', \'accept\')"></i></span>';
+
+
+                actions = get_actions(trade);
 
                 var buyIcon = '<i class="fas fa-arrow-down fa-fw"></i>';
                 var sellIcon = '<i class="fas fa-arrow-up fa-fw"></i>';
-
-                var actions = "";
-                if (trade.can_close) {
-                    actions += closeAction;
-                }
-                // Can only action this if we're the buyer (these aren't open trades)
-                if (trade.can_accept) {
-                    actions += acceptAction;
-                }
 
                 // $("#active_trades").append("<li data-type='" + trade.type +"' data-id='"+trade.id+"'><div class='tradeLabel'>" + label +"</div><div class='tradeActions'>" + actions + "</div></li>")
                 // if (trade.seller) { seller = format_investor_display(response.investor,trade.seller); } else { seller = 'Open'; }
@@ -235,32 +241,23 @@ function reload_trades(div, active, investor_id, other_opts) {
                     $("#" + div + " tbody").append(newRow);
                     $("#" + div + " tr.noTradesFound").hide();
                 }
-            });
 
+
+            }); // end loop over trades
+
+            if (!active) {
+                var tab = $("table#" + div);
+                if ($.fn.DataTable.isDataTable(tab)) {
+                    tab.DataTable().destroy();
+                }
+                tab.dataTable({
+                    paging: false,
+                });
+            }
         });
 }
 
-function format_investor_display(current_inv, inv) {
-    if (!inv) {
-        return "Open";
-    }
 
-    if (current_inv && inv && current_inv.name == inv.name) {
-        return "You";
-    } else {
-        return '<a href="/investor/' + inv.id + '" class="badge badge-primary">' + inv.name + '</a>';
-    }
-}
-
-function format_asset(asset) {
-    if (asset.athlete) {
-        // this is a share
-        return 'Share (<a href="/athlete/' + asset.athlete.id + '" class="badge badge-danger">' + asset.athlete.name + '</a>, ' + Number(asset.volume).toFixed(2) + ')';
-    } else {
-        return "Unknown asset";
-    }
-
-}
 
 
 
@@ -279,55 +276,4 @@ function reload_all() {
 
 
 
-    //     	$(document.body).on('change','#trade_share_buy',function()
-    //     		{
-    //     				var runner_id = $('#trade_share_buy').find(":selected").val(); //$('#trade_share_buy option:selected').val();
-
-    //     				console.log(runner_id);
-
-    //     				console.log('Runner selected: ' + runner_id.toString());
-    //     				update_investors_with_shares(runner_id);
-    //     		});
-
-//   });
-
-//     function update_investors_with_shares(runner_id){
-
-
-//         $.ajax({
-//         	type: "GET",
-//             url: {% url 'get_investors' %},  // URL to your view that serves new info
-//             data: {'runner_id': runner_id}
-//         })
-//         .done(function(response) {
-
-//             //$('#make_trade').html(response);
-
-//             newOptions = response.investors;
-
-//             console.log(response);
-//             console.log(newOptions);
-
-//             $('#seller_id_responsive option:gt(0)').remove(); // remove all options, but not the first 
-//             var $el = $("#seller_id_responsive");
-
-// $.each(newOptions, function(key,value) {
-
-// 	var investor_id = value['investor_id'];
-
-// 	// Skip currently logged in user
-// 	var current_investor_id = {{request.user.investor.id}};
-// 	if (investor_id != current_investor_id)
-// 	{
-// 	var txt = value['investor_name'] + " - " + value['num_shares'] + " share(s)";
-
-//   $el.append($("<option></option>").attr("value", investor_id).text(txt));
-// }
-// });
-
-//            // console.log(response);
-
-//         });
-
-//     }
 

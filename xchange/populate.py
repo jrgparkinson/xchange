@@ -8,7 +8,7 @@ django.setup()
 from app.models import *
 from app.errors import *
 from django.contrib.auth.models import User
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.contrib.auth.hashers import make_password
 import numpy as np
 import random
@@ -82,6 +82,7 @@ def populate():
     {"name":"mweatherseed", "password": "cowleyclub", "email":"speed@gmail.com"},
     {"name":"jmillar", "password": "cowleyclub", "email":"millar@gmail.com"},
     {"name":"nhurton", "password": "cowleyclub", "email":"hurtlocker@gmail.com"},
+    {"name":"asmith", "password": "cowleyclub", "email":"smithsonian@gmail.com"},
     ]
 
     # Clean up
@@ -121,9 +122,10 @@ def populate():
                 creator=bank, price=random_price(r[i]*share.volume),
                 seller=bank, buyer=investors[i])
                 t.accept_trade(action_by=investors[i])
+                t.updated = current_time() - timedelta(days=1, hours=random.random())
                 t.save()
             except Exception as e:
-                print("Error")
+                print("Error: " + str(e))
             # share.transfer(to=investors[i], vol=r[i]*share.volume)
 
 

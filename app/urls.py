@@ -3,6 +3,10 @@ from django.contrib.auth import views as auth_views
 
 from . import views, requests
 
+handler404 = views.handler404
+handler500 = views.handler500
+handler403 = views.handler403
+
 urlpatterns = [
     path('', views.index, name='index'),
 
@@ -31,6 +35,9 @@ urlpatterns = [
     path("retrieve_investor_portfolio/", views.retrieve_investor_portfolio, name="retrieve_investor_portfolio"),
     path("get_race/", views.get_race, name="get_race"),
     path("get_event/", views.get_event, name="get_event"),
+    path("get_portfolio_value/", views.get_portfolio_value, name="get_portfolio_value"),
+
+    
 
     
     

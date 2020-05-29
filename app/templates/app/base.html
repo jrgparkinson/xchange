@@ -27,7 +27,7 @@
     <!-- Custom styles for this template-->
     <link href="{% static 'css/sb-admin.css' %}" rel="stylesheet">
 
-    <link href="{% static 'css/xchange.css' %}" rel="stylesheet">
+    <link href="{% static 'css/xchange.css' %}" type="text/css" rel="stylesheet">
 
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs4/dt-1.10.21/datatables.min.css"/>
  
@@ -50,11 +50,11 @@
 
       <div class="nav-portfolio">
         <span data-toggle="tooltip" data-placement="left" title="Your cash">
-          {{user.investor.capital|floatformat}} <i class="fas fa-coins fa-fw"></i>
+          <span id="investor_capital_top">{{user.investor.capital|floatformat:2}}</span> <i class="fas fa-coins fa-fw"></i>
           </span>
           | 
           <span data-toggle="tooltip" data-placement="left" title="Your shares value">
-           {{user.investor.share_value|floatformat}} <i class="fas fa-file-invoice-dollar fa-fw"></i>
+            <span id="investor_shares_top">{{user.investor.share_value|floatformat:2}}</span> <i class="fas fa-file-invoice-dollar fa-fw"></i>
           </span>
            </div>
       </div>
@@ -249,6 +249,7 @@
     <script src="{% static 'vendor/datatables/dataTables.bootstrap4.js' %}"></script>
 
     <!-- Custom scripts for all pages-->
+    <script src="{% static 'js/common.js' %}"></script>
     <script src="{% static 'js/sb-admin.min.js' %}"></script>
     <script src="{% static 'js/typeahead.bundle.min.js' %}"></script>
 
