@@ -1351,6 +1351,9 @@ class Result(models.Model):
             "dividend_distributed": self.dividend_distributed,
         }
 
+    def __str__(self):
+        return "{}. {} ({} - {})".format(self.position, self.athlete.name, self.race.name, self.race.event.name)
+
 
 # For dealing with auctions
 class Auction(models.Model):

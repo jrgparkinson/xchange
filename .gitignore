@@ -3,3 +3,5 @@ static/vendor/fontawesome-free/
 *.sqlite3
 .idea/
 *.pyc
+static_root/
+*__pycache__*

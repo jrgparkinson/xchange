@@ -196,7 +196,11 @@
         <footer class="sticky-footer">
           <div class="container my-auto">
             <div class="copyright text-center my-auto">
-             <span>XChange is a <a href="https://www.instagram.com/thecowleyclub/">Cowley Club</a> production. You Win Some, You Draw Some.</span>
+            XChange is a <a href="https://www.instagram.com/thecowleyclub/">Cowley Club</a> production. 
+            You Win Some, You Draw Some.
+            {% if user.is_superuser %}
+            <a href="/admin/">Admin</a>.
+            {% endif %}
             </div>
           </div>
         </footer>
