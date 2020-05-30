@@ -6,36 +6,42 @@ from django.contrib.auth.hashers import make_password
 import numpy as np
 import random
 
+
 def fill_test_data(apps, schema_editor):
     # We can't import the a model directly as it may be a newer
     # version than this migration expects. We use the historical version.
-
 
     # 1. Create athletes
     # import os
     # this_file_folder = os.path.dirname(os.path.abspath(__file__))
     # with open(os.path.join(this_file_folder, 'data', 'athletes.csv'), 'r') as f:
     #     athletes = f.readlines()
-    athletes = ["Jamie Parkinson", "Luke Cotter", "Miles Weatherseed", 
-    "Joseph Woods", "Jack Millar", "Noah Hurton", "Oliver Paulin"]
-    Athlete = apps.get_model('app', 'Athlete')
+    athletes = [
+        "Jamie Parkinson",
+        "Luke Cotter",
+        "Miles Weatherseed",
+        "Joseph Woods",
+        "Jack Millar",
+        "Noah Hurton",
+        "Oliver Paulin",
+    ]
+    Athlete = apps.get_model("app", "Athlete")
 
     for name in athletes:
         athlete = Athlete(name=name)
         athlete.save()
 
-
     # 1.5. Create events
-    events = [{"name": "Cuppers", "date": datetime(year=2020, month=10, day=20) },
-    {"name": "MK Cross Challenge", "date": datetime(year=2020, month=11, day=5) },
-    {"name": "Varsity II-IV", "date": datetime(year=2020, month=11, day=28) },
-    {"name": "Varsity Blues", "date": datetime(year=2020, month=12, day=6) },
+    events = [
+        {"name": "Cuppers", "date": datetime(year=2020, month=10, day=20)},
+        {"name": "MK Cross Challenge", "date": datetime(year=2020, month=11, day=5)},
+        {"name": "Varsity II-IV", "date": datetime(year=2020, month=11, day=28)},
+        {"name": "Varsity Blues", "date": datetime(year=2020, month=12, day=6)},
     ]
     Event = apps.get_model("app", "event")
     for e in events:
         event = Event(name=e["name"], date=e["date"])
         event.save()
-
 
     # 2. Create bank
     Bank = apps.get_model("app", "bank")
@@ -45,21 +51,29 @@ def fill_test_data(apps, schema_editor):
     # 3. Create users
     User = apps.get_model("auth", "User")
     Investor = apps.get_model("app", "Investor")
-    users = [{"name":"jparkinson", "password": "cowleyclub", "email":"jamie.parkinson@gmail.com"},
-    {"name":"lcotter", "password": "cowleyclub", "email":"luke.cotter@gmail.com"},
-    {"name":"jwoods", "password": "cowleyclub", "email":"joseph.woods@gmail.com"},
-    {"name":"mweatherseed", "password": "cowleyclub", "email":"speed@gmail.com"},
-    {"name":"jmillar", "password": "cowleyclub", "email":"millar@gmail.com"},
-    {"name":"nhurton", "password": "cowleyclub", "email":"hurtlocker@gmail.com"},
+    users = [
+        {
+            "name": "jparkinson",
+            "password": "cowleyclub",
+            "email": "jamie.parkinson@gmail.com",
+        },
+        {"name": "lcotter", "password": "cowleyclub", "email": "luke.cotter@gmail.com"},
+        {"name": "jwoods", "password": "cowleyclub", "email": "joseph.woods@gmail.com"},
+        {"name": "mweatherseed", "password": "cowleyclub", "email": "speed@gmail.com"},
+        {"name": "jmillar", "password": "cowleyclub", "email": "millar@gmail.com"},
+        {"name": "nhurton", "password": "cowleyclub", "email": "hurtlocker@gmail.com"},
     ]
 
     # Clean up
     User.objects.all().delete()
     for u in users:
 
-        user = User.objects.create(username=u["name"], password=make_password(u["password"]),
-         is_active=True,
-        email=u["email"])
+        user = User.objects.create(
+            username=u["name"],
+            password=make_password(u["password"]),
+            is_active=True,
+            email=u["email"],
+        )
         user.save()
 
         investor = Investor(user=user)
@@ -73,19 +87,18 @@ def fill_test_data(apps, schema_editor):
 
     # 4.5 Randomly assign shares to investors
     # This is like the IPO
-    # Except in the IPO, this is done via trades to the bank and 
+    # Except in the IPO, this is done via trades to the bank and
     # hence the bank acquires money which it can loan out
-    
+
     investors = Investor.objects.all()
     for share in Share.objects.all():
         r = np.array([random.random() for i in range(len(investors))])
-        r = r/np.sum(r)
+        r = r / np.sum(r)
         r = np.round(r, 2)
 
         # Create new shares of correct volume
         for i in range(len(investors)):
-            share.transfer(to=investors[i], volume=r[i]*share.volume)
-
+            share.transfer(to=investors[i], volume=r[i] * share.volume)
 
     # 5. Create some trades for each investor
     Trade = apps.get_model("app", "Trade")
@@ -101,12 +114,16 @@ def fill_test_data(apps, schema_editor):
                 volume = share_to_sell.volume
             else:
                 volume = share_to_sell.volume * random.random()
-            
+
             share_to_sell = share_to_sell.get_vol_of_share(volume)
 
-            trade = Trade(commodity=share_to_sell, seller=investor, creator=investor, price=random.random())
+            trade = Trade(
+                commodity=share_to_sell,
+                seller=investor,
+                creator=investor,
+                price=random.random(),
+            )
             trade.save()
-
 
         # create 3 offers to buy from a particular investor
         all_other_shares = [s for s in Share.objects.all() if not s.owner == investor]
@@ -120,9 +137,14 @@ def fill_test_data(apps, schema_editor):
 
             share_to_buy = share_to_buy.get_vol_of_share(volume)
 
-            trade = Trade(commodity=share_to_buy, seller=share_to_buy.owner, buyer=investor, creator=investor, price=random.random())
+            trade = Trade(
+                commodity=share_to_buy,
+                seller=share_to_buy.owner,
+                buyer=investor,
+                creator=investor,
+                price=random.random(),
+            )
             trade.save()
-
 
         # Create offers to buy a generic share
         all_athletes = Athlete.objects.all()
@@ -137,18 +159,23 @@ def fill_test_data(apps, schema_editor):
                 volume = total_available_share_volume * random.random()
 
             # Make the virtual commodity
-            virtual_share = Share(athlete=athlete_to_buy, volume=volume, is_virtual=True)
+            virtual_share = Share(
+                athlete=athlete_to_buy, volume=volume, is_virtual=True
+            )
             virtual_share.save()
 
-            trade = Trade(commodity=virtual_share, buyer=investor, creator=investor, price=random.random())
+            trade = Trade(
+                commodity=virtual_share,
+                buyer=investor,
+                creator=investor,
+                price=random.random(),
+            )
             trade.save()
 
         # accept an offer to sell if possible
 
         # accept an offer to buy if possible
 
-
-    
     # trade1 = Trade()
 
     # 6. Issue some dividends
@@ -157,7 +184,6 @@ def fill_test_data(apps, schema_editor):
     # Make some loans
     Loan = apps.get_model("app", "Loan")
 
-
     # Create some more complicated tradeables
     Dividend = apps.get_model("app", "Dividend")
 
@@ -165,7 +191,7 @@ def fill_test_data(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('app', '0001_initial'),
+        ("app", "0001_initial"),
     ]
 
     operations = [

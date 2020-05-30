@@ -11,59 +11,70 @@
 
 <div class="card">
     <div class="card-body">
-<div class="row">
-    <div class="col-sm-3 leftnav">
-        <ul class="eventList">
+        <div class="row">
+            <div class="col-sm-3 leftnav">
+                <ul class="eventList">
 
-            {% for event in events %}
-            <li>
-                <!-- <a class="event" data-event="{{event.id}}" href="#">{{event.name}} ({{event.date}})</a> -->
-                {{event.name}} ({{event.date}})
-                <ul class="raceList">
-                    {% for race in event.races.all %}
-                    <li><a class="race" data-race="{{race.id}}" href="#">{{race.name}}</a></li>
+                    {% for event in events %}
+                    <li>
+                        <!-- <a class="event" data-event="{{event.id}}" href="#">{{event.name}} ({{event.date}})</a> -->
+                        {{event.name}} ({{event.date}})
+                        <ul class="raceList">
+                            {% for race in event.races.all %}
+                            <li><a class="race" data-race="{{race.id}}" href="#">{{race.name}}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </li>
                     {% endfor %}
                 </ul>
-            </li>
-            {% endfor %}
-        </ul>
 
+            </div>
+
+            <div class="col-sm-8">
+                <div id="selectedRace">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <h2 id="raceName">Varsity II</h2>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <h4>Dividend formula</h4>
+                        </div>
+                        <div class="col-sm-4" id="raceDividend">formula</div>
+                        <div class="col-sm-5" style="min-width:300px" >
+                            <canvas id="dividendGraph"></canvas>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-3">
+                            <h4>External links</h4>
+                        </div>
+                        <div class="col-sm-9" id="raceLink">link</div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-sm-12" id="raceResultsTable">Results if available</div>
+                    </div>
+
+
+
+
+                </div>
+
+                <div id="selectedEvent">
+                    <h2 id="eventName"></h2>
+                    <div class="row">
+                        <div class="col-sm-2">External link:</div>
+                        <div class="col-sm-2" id="eventDate">link</div>
+                    </div>
+                </div>
+                <div id="noRaceSelected">
+                    <h4>Select a race to view results, dividends, and more</h4>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <div class="col-sm-8">
-        <div id="selectedRace">
-            <h2 id="raceName">Varsity II</h2>
-            <div class="row">
-                <div class="col-sm-3"><h4>Dividend formula</h4></div>
-                <div class="col-sm-9" id="raceDividend">formula</div>
-            </div>
-            <div class="row">
-                <div class="col-sm-3"><h4>External links</h4></div>
-                <div class="col-sm-9" id="raceLink">link</div>
-            </div>
-            <hr>
-            <div class="row">
-                <div class="col-sm-12" id="raceResultsTable">Results if available</div>
-            </div>
-
-
-
-
-        </div>
-
-        <div id="selectedEvent">
-            <h2 id="eventName"></h2>
-            <div class="row">
-                <div class="col-sm-2">External link:</div>
-                <div class="col-sm-2" id="eventDate">link</div>
-            </div>
-        </div>
-        <div id="noRaceSelected">
-            <h4>Select a race to view results, dividends, and more</h4>
-        </div>
-    </div>
-</div>
-</div>
 </div>
 
 
@@ -72,6 +83,7 @@
 
 {% block footer %}
 
+<script type="text/javascript" src="{% static 'js/common.js' %}"></script>
 <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
@@ -114,12 +126,78 @@
 
 
                 var d = new Date(race.time);
+                var a = race.min_dividend;
+                var b = race.max_dividend;
                 $("#raceName").text(race.event.name + " - " + race.name + " (" + d.toLocaleString() + ")");
                 // $("#raceDate").text(d.toLocaleString());
-                var equation = "\\[ d= a + \\left(\\frac{N - p- 1}{N}\\right)^2 (b-a) \\]";
-                equation += " \\[ \\textrm{where } N=\\textrm{number of competitors}, p=\\textrm{position} \\]";
-                equation += "\\[  a=" + Number(race.min_dividend).toFixed(2) + ", b=" + Number(race.max_dividend).toFixed(2) + "\\]"
+                var equation = "\\[ d= a + \\left(\\frac{N - p}{N-1}\\right)^2 (b-a) \\]";
+                equation += " \\[ \\textrm{where:}  \\]";
+                equation += " \\[  d=\\textrm{dividend per share}, \\]";
+                equation += " \\[  N=\\textrm{number of competitors}, \\]";
+                equation += " \\[  p=\\textrm{position}, \\]";
+                equation += "\\[  a=" + Number(a).toFixed(2) + ", b=" + Number(b).toFixed(2) + "\\]"
                 $("#raceDividend").text(equation);
+
+                // Make dividend graph
+                
+                var x_vals = [];
+                var dividends = [];
+                var N = 100;
+
+                for (var i = 0; i <= N; i++) {
+                    var relPos = i / N;
+                    x_vals.push(relPos);
+                    dividends.push(relPos * relPos * (b - a) + a);
+                }
+
+                var style = getComputedStyle(document.body);
+                var primCol = style.getPropertyValue('--fg-1');
+
+                var ctx = document.getElementById("dividendGraph");
+                ctx.height = 250;
+
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: x_vals,
+                        datasets: [{
+                            data: dividends,
+                            label: "Dividend",
+                            borderColor: "#3e95cd",
+                            fill: false
+                        },
+                        ]
+                    },
+                    options: {
+                        scales: {
+                            xAxes: [{
+                                scaleLabel: {
+                                    display: true,
+                                    labelString: "Scaled position: (N-p)/(N-1)"
+                                },
+                                gridLines: {
+                                    color: primCol,
+                                    zeroLineColor: primCol
+                                }
+                            }],
+                            yAxes: [
+                                {
+                                    scaleLabel: {
+                                        display: true,
+                                        labelString: "Dividend",
+                                    },
+                                    ticks: {
+                                        beginAtZero: true
+                                    },
+                                    gridLines: {
+                                        color: primCol,
+                                        zeroLineColor: primCol
+                                    }
+                                }
+                            ]
+                        },
+                    }
+                });
 
                 var links = '';
                 if (race.event_details_link) {
@@ -159,27 +237,23 @@
                     $("#raceResultsTable").html(resultsTitle + table);
                     response.results.forEach(result => {
                         // console.log(result);
-                        var time =moment.duration(result.time);
+                        var time = moment.duration(result.time);
                         var s = String(time.get('seconds')).padStart(2, '0');
-                        
+
                         var formatted_time = time.minutes() + ":" + s;
                         if (time.hours() > 0) {
                             formatted_time = time.hours() + ":" + formatted_time;
                         }
                         $("#raceResults tbody").append(` <tr>
                 <td>` + result.position + `</td>
-                <td>` + result.athlete.name + `</td>
+                <td>` + format_athlete(result.athlete) + `</td>
                 <td>` + formatted_time + `</td>
                 <td>` + result.dividend + `</td>
                 </tr>`);
                     });
                 } else {
                     $("#raceResultsTable").html(resultsTitle + '<p>No results yet</p>');
-                //     var noResults = `<tr>
-                // <td colspan=4>No results yet</td>
-                // </tr>`;
-                //     $("#" + div + " tbody tr").remove();
-                //     $("#raceResults tbody").append(noResults);
+
 
                 }
 
@@ -187,9 +261,6 @@
                     paging: false,
 
                 });
-
-
-
 
                 $("#selectedRace").show();
                 $("#noRaceSelected").hide();
@@ -203,22 +274,29 @@
     }
 
     $(document).ready(function () {
-        // $('#leaderboard').DataTable({
-        //   paging: false,
 
-        // });
+        setupChartStyles();
+
         hideEventRace();
 
+        var href = window.location.href;
 
-        $("a.event").click(function (e) {
-            hideEventRace();
-            display_event($(this).attr("data-event"));
-        })
+        trade_id = href.match(/races\/([0-9]+)/i);
+        console.log(trade_id);
+        if (trade_id) {
+            display_race(trade_id[1]);
+        }
+
+
+
         $("a.race").click(function (e) {
+            $("#noRaceSelected").hide();
             hideEventRace();
             display_race($(this).attr("data-race"));
             $("li.selected").removeClass("selected");
             $(this).parent().addClass("selected");
+
+            window.location.pathname = '/races/' + $(this).attr("data-race");
         })
 
 

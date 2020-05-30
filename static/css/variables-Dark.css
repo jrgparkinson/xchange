@@ -38,8 +38,8 @@
     --action-in-progres: papayawhip;
     
     --not-found: grey;
-    --error:red;
-
+    --error: red;
+    
     --search-pred-border: #ccc;
     --search-pred-border-2:rgba(0, 0, 0, 0.2);
     --suggestion-bg: var(--bg-4);

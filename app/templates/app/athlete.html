@@ -4,38 +4,31 @@
 {% block title %}{{athlete.name }}{% endblock %}
 
 
-{% block page_title %}{{athlete.name}} ({{athlete.club.name}}) - current value: {{value.current}} 
+{% block page_title %}{{athlete.name}} ({{athlete.club.name}})
 
-<span data-toggle="tooltip" data-placement="left" title="Daily change">
-{% if value.change == "NaN" %}
-{% elif value.change < 0 %}
-(<i class="fas fa-caret-down fa-fw" style="color: red;"></i> {{value.change}}%)
-{% elif value.change > 0 %}
-(<i class="fas fa-caret-up fa-fw" style="color: green;"></i> {{value.change}}%)
-{% else %}
-(<i class="fas fa-equals fa-fw" data-toggle="tooltip"></i>)
+{% if athlete.power_of_10 %}
+<a href="{{athlete.power_of_10}}" target="_blank"><img src="{% static "img/p10logo.jpg" %}"
+        style="width:62px; height:57px" alt="Power of 10" /></a>
 {% endif %}
-</span>
-
-
-
 {% endblock %}
 
 {% block search_area %}
 <div class="col-sm-3">
     <div class="row">
-    <div class="input-group mb-3" id="athlete-search">
-        <input type="text" class="form-control typeahead" id="athleteNameInput" placeholder="Athlete search"
-            aria-label="Athlete name" aria-describedby="basic-addon2">
-        <div class="input-group-append">
-            <button class="btn btn-outline-secondary" type="button" onclick="athleteSearch()">Go</button>
-        </div>
-        
+        <div id="athleteNameError" class="searchError"></div>
     </div>
-</div>
-<div class="row">
-    <div id="athleteNameError" class="searchError"></div>
-</div>
+    <div class="row">
+        <div class="input-group mb-3" id="athlete-search">
+            <input type="text" class="form-control typeahead" id="athleteNameInput" placeholder="Athlete search"
+                aria-label="Athlete name" aria-describedby="basic-addon2">
+            <div class="input-group-append">
+                <button class="btn btn-outline-secondary predict-search" type="button"
+                    onclick="athleteSearch()">Go</button>
+            </div>
+
+        </div>
+    </div>
+
 
 </div>
 {%endblock%}
@@ -50,74 +43,124 @@
         <div class="card">
             <div class="card-body">
 
-        <h2>Athlete value</h2>
-<div class="graph">
-    <canvas id="athleteValue"></canvas>
-</div>
+                <h2>Athlete value: {{value.current}}
 
-    </div>
-    </div>
+                    <span data-toggle="tooltip" data-placement="left" title="Daily change">
+                        {% if value.change == "NaN" %}
+                        {% elif value.change < 0 %}
+                        (<i class="fas fa-caret-down fa-fw" style="color: red;"></i> {{value.change}}%)
+                        {% elif value.change > 0 %}
+                        (<i class="fas fa-caret-up fa-fw" style="color: green;"></i> {{value.change}}%)
+                        {% else %}
+                        (<i class="fas fa-equals fa-fw" data-toggle="tooltip"></i>)
+                        {% endif %}
+                    </span>
+
+                </h2>
+                <div class="graph">
+                    <canvas id="athleteValue"></canvas>
+                </div>
+
+            </div>
+        </div>
     </div>
     <div class="col-sm">
         <div class="card">
             <div class="card-body">
 
-        <h2>Active trades</h2>
-        <div class="right-scroll-box" style="overflow-y: scroll;">
-        <table class="table tableFixHead" id="active_trades">
-            <thead>
-              <tr>
-                <!-- <td scope="col" width="80"></td> -->
-                <th scope="col">Volume</th>
-                <th scope="col">Price</th>
-                <th scope="col">Seller</th>
-                <th scope="col">Buyer</th>
-                <th scope="col">Initiated by</th>
-                <th scope="col"></th>
-              </tr>
-            </thead>
-            <tbody>
-            
-              <tr class="noTradesFound">
-                <td scope="col" colspan=6>No trades found</td>
-              </tr>
-            </tbody>
-          </table>
+                <h2>Active trades</h2>
+                <div class="right-scroll-box" style="overflow-y: auto;">
+                    <table class="table tableFixHead" id="active_trades">
+                        <thead>
+                            <tr>
+                                <!-- <td scope="col" width="80"></td> -->
+                                <th scope="col">Volume</th>
+                                <th scope="col">Price</th>
+                                <th scope="col">Seller</th>
+                                <th scope="col">Buyer</th>
+                                <th scope="col">Initiated by</th>
+                                <th scope="col"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr class="noTradesFound">
+                                <td scope="col" colspan=6>No trades found</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
-    </div>
-    </div>
     </div>
 
 </div>
-
 
 <div class="row">
     <div class="col-sm">
         <div class="card">
             <div class="card-body">
 
-        <h2>Trading history</h2>
-        <div id="past_trades">
-            <table class="table" id="past_trades">
-                <thead>
-                    <tr>
-                        <td scope="col">Status</td>
-                        <th scope="col">Commodity</th>
-                        <th scope="col">Price</th>
-                        <td scope="col">Seller</td>
-                        <td scope="col">Buyer</td>
-                        <td scope="col">Initiated by</td>
-                        <td scope="col">Last updated</td>
+                <h2>Results and dividends</h2>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Event</th>
+                            <th scope="col">Race</th>
+                            <th scope="col">Position</th>
+                            <th scope="col">Dividend</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in results %}
+                        <tr>
+                            <td><a href="/races/{{r.race.id}}">{{r.race.event.name}} ({{r.race.event.date}})</a></td>
+                            <td>{{r.race.name}}</td>
+                            <td>{{r.position}}</td>
+                            <td>{{r.dividend}}</td>
+                        </tr>
+                        {% endfor %}
 
-                    </tr>
-                </thead>
-                <tbody>
-                </tbody>
-            </table>
+                        {% if not results %}
+                        <tr>
+                            <td colspan=4>None found</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+
+            </div>
         </div>
     </div>
 </div>
-</div>
+
+<div class="row">
+    <div class="col-sm">
+        <div class="card">
+            <div class="card-body">
+
+                <h2>Trading history</h2>
+                <div id="past_trades">
+                    <table class="table" id="past_trades">
+                        <thead>
+                            <tr>
+                                <th scope="col">Status</th>
+                                <th scope="col">Commodity</th>
+                                <th scope="col">Price</th>
+                                <th scope="col">Seller</th>
+                                <th scope="col">Buyer</th>
+                                <th scope="col">Initiated by</th>
+                                <th scope="col">Last updated</th>
+
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 
@@ -142,24 +185,26 @@
                     display_error(response.error);
                 }
                 var ctx = document.getElementById('athleteValue').getContext('2d');
-  
+
                 var trade_data_vals = [];
                 response.trades.forEach(t => {
-                    trade_data_vals.push({x: new Date(t.updated), y:Number(t.price)/Number(t.asset.volume)});
+                    trade_data_vals.push({ x: new Date(t.updated), y: Number(t.price) / Number(t.asset.volume) });
                 });
+
+                trade_data_vals.push({ x: new Date(), y: trade_data_vals[trade_data_vals.length - 1].y })
 
                 var trade_dataset = {
                     label: "Trading price per volume",
                     borderColor: "blue",
                     data: trade_data_vals,
                     fill: false,
-                    lineTension:0,
+                    lineTension: 0,
                 };
 
-                var data = {datasets: [trade_dataset]};
+                var data = { datasets: [trade_dataset] };
 
                 var opts = defaultChartOptions("Value per volume");
-                                            
+
                 var myChart = new Chart(ctx, {
                     type: 'line',
                     data: data,
@@ -169,8 +214,8 @@
         }
 
     function reload_all_athlete_trades() {
-        reload_trades("active_trades", true, undefined, {"athlete": {{athlete.id}}});
-        reload_trades("past_trades", false, undefined, {"athlete": {{athlete.id}}});
+        reload_trades("active_trades", true, undefined, { "athlete": {{ athlete.id }}});
+    reload_trades("past_trades", false, undefined, { "athlete": {{ athlete.id }}});
     }
 
     $(document).ready(function () {
@@ -178,10 +223,10 @@
 
 
         addAthleteToGraph({{ athlete.id }});
-        reload_all_athlete_trades();
+    reload_all_athlete_trades();
 
 
-        populate_athlete_search();   
+    populate_athlete_search();   
 
 
 
@@ -202,31 +247,37 @@
 
     function populate_athlete_search() {
         $.ajax({
-        type: "GET",
-        url: '/get_athletes',  // URL to your view that serves new info
-        data: {}
-    })
-        .done(function (response) {
-            console.log("Athletes:");
-            console.log(response);
-            response.athletes.forEach(athlete => {
-                athleteMapping[athlete.name] = athlete.id;
-            });
-
-            athletes = Object.keys(athleteMapping);
-
-            $('#athlete-search .typeahead').typeahead({
-                hint: true,
-                highlight: true,
-                minLength: 1
-            }, 
-            {         
-                 name: 'athletes',
-                    source: substringMatcher(athletes),
+            type: "GET",
+            url: '/get_athletes',  // URL to your view that serves new info
+            data: {}
+        })
+            .done(function (response) {
+                console.log("Athletes:");
+                console.log(response);
+                response.athletes.forEach(athlete => {
+                    athleteMapping[athlete.name] = athlete.id;
                 });
 
-        }); 
+                athletes = Object.keys(athleteMapping);
+
+                $('#athlete-search .typeahead').typeahead({
+                    hint: true,
+                    highlight: true,
+                    minLength: 1
+                },
+                    {
+                        name: 'athletes',
+                        source: substringMatcher(athletes),
+                    });
+
+            });
     }
+
+    $("#athleteNameInput").on('keypress', function (e) {
+        if (e.which == 13) {
+            athleteSearch();
+        }
+    });
 
 </script>
 

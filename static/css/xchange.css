@@ -108,10 +108,6 @@ tr.noTradesFound {
 
   
 
-  /* .right-scroll-box {
-    overflow-y: scroll;
-} */
-
  .right-scroll-box {
     height:300px;
 }
@@ -123,7 +119,6 @@ div.graph {
     padding:10px;
 }
 
-/* .tableFixHead          { overflow-y: auto; height: 100px; } */
 .tableFixHead thead th { position: sticky; top: 0;
      background-color:var(--table-fixed-header);
       padding: 10; margin:0; border-top:0; }
@@ -239,11 +234,14 @@ a:hover, a:active {
 }
 
 ul.errorlist {
-    color: var(--error);
+    color: var(--fg-1);
     list-style: none;
-    width:100%;
-    background-color: var(--bg-3);
+    /* width:100%; */
+    /* background-color: var(--bg-3); */
+    background-color: var(--cancel);
     border-radius: 10px;
+    padding:10px;
+    border: 1px solid var(--error);
 }
 
 .formError {
@@ -279,3 +277,8 @@ button.page-choice {
     margin-bottom:10px;
 }
 
+
+button.predict-search {
+    background-color: var(--bg-3);
+    color: var(--fg-1);
+}

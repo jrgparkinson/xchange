@@ -12,7 +12,7 @@
 
 <div class="row">
   <div class="col-sm-8">
-    
+
       <button type="button" class="btn btn-success btn-lg page-choice" data-page="investor">
         Investor leaderboard</button>
       <button type="button" class="btn btn-outline-success btn-lg page-choice" data-page="athlete">
@@ -97,16 +97,21 @@
         {{stats.top10.value|floatformat:2}}
         {% if stats.top10.daily_change %}
 
-       
+       <div style="padding:0px; margin-top:-40px;">
+        <span style="padding:0px; margin: 0px;" data-toggle="tooltip" data-placement="left" title="Daily change">
 {% if stats.top10.daily_change < 0 %}
-(<i class="fas fa-caret-down fa-fw" style="color: red;"></i> {{stats.top10.daily_change}}%)
+<i class="fas fa-caret-down fa-fw" style="color: red; vertical-align:middle; margin-right:-20px; margin-bottom:-10px"></i>
+<span style="font-size:0.5em">{{stats.top10.daily_change|floatformat:1}}%</span>
 {% elif stats.top10.daily_change > 0 %}
-(<i class="fas fa-caret-up fa-fw" style="color: green;"></i> {{stats.top10.daily_change}}%)
+<i class="fas fa-caret-up fa-fw" style="color: green; vertical-align:middle; margin-right:-20px; margin-bottom:-10px"></i>
+<span style="font-size:0.5em">{{stats.top10.daily_change|floatformat:1}}%</span>
 {% else %}
-(<i class="fas fa-equals fa-fw" data-toggle="tooltip"></i>)
+<i class="fas fa-equals fa-fw" data-toggle="tooltip"></i>
 {% endif %}
+</span>
 
 {% endif %}
+</div>
 
       </div>
       <div class="statDesc">

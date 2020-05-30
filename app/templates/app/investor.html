@@ -9,12 +9,17 @@
 <div class="col-sm-3">
 
     <div class="input-group mb-3" id="investor-search">
+        <div class="row">
+        <div id="investorNameError" class="searchError col-sm-4"></div>
+</div>
+<div class="row">
         <input type="text" class="form-control typeahead" id="investorNameInput" placeholder="Investor search"
             aria-label="Investor name" aria-describedby="basic-addon2">
         <div class="input-group-append">
-            <button class="btn btn-outline-secondary" type="button" onclick="investorSearch()">Go</button>
+            <button class="btn btn-outline-secondary predict-search" type="button" onclick="investorSearch()">Go</button>
         </div>
-        <div id="investorNameError" class="searchError col-sm-4"></div>
+        </div>
+        
     </div>
 
 </div>
@@ -233,6 +238,11 @@
     }); // end on document ready
 
 
+        $("#investorNameInput").on('keypress',function(e) {
+    if(e.which == 13) {
+        investorSearch();
+    }
+});
 
 
 </script>
