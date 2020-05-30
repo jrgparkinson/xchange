@@ -1,0 +1,60 @@
+:root {
+    /* Taken from the material theme */
+    --bg-primary: #303030;
+    --bg-secondary: #212121;
+    --top-nav: #000;
+
+    --bg-2: #303030;
+    --bg-3: #424242;
+    --bg-4: #525252;
+    --bg-5: #636363;
+
+    --fg-1: #fff;
+    --fg-2: rgb(200, 200, 200);
+    /* --fg-2: rgb(20, 20, 20); */
+
+    --fg-primary:var(--fg-1);
+    --fg-secondary: var(--fg-2);
+
+
+    --nav-color: var(--bg-secondary); /* #212529;*/
+    --bg-color: var(--bg-primary); /* #fff;*/
+    --main-text: var(--fg-primary); /* #000;*/
+    --nav-active: var(--fg-secondary); /*  #fff;*/
+    --nav-text-unselected: rgba(255, 255, 255, 0.5);
+    --nav-text-selected: rgba(255, 255, 255, 0.75);
+    --form-label: #495057;
+    --form-label-2: #777;
+    --footer-bg:var(--bg-3);
+    
+    --scroll-to-top: var(--fg-secondary); /* #fff;*/
+    --scroll-to-top-bg:  rgba(189, 191, 194, 0.5);
+    --scroll-to-top-hover: rgba(189, 191, 194, 0.8);
+
+    --buy:var(--bg-4);
+    --sell: var(--bg-5);
+    --cancel: #800000;
+    --accept: rgb(40,100,50); /* lightgreen;*/
+    --action-in-progres: papayawhip;
+    
+    --not-found: grey;
+    --error:red;
+
+    --search-pred-border: #ccc;
+    --search-pred-border-2:rgba(0, 0, 0, 0.2);
+    --suggestion-bg: var(--bg-4);
+
+    --table-fixed-header: var(--bg-2);
+
+    --menu-selected: var(--bg-3);
+
+    --stat:#FF3F80;
+    --stat-desc: grey;
+
+    --link: #007bff;
+    /* --link-active: #eb0aff; */
+    --link-active: rgba(226, 23, 253, 1);
+
+    --border: rgba(0,0,0, 0.0);
+    --internal-border: var(--bg-3);
+}

@@ -25,8 +25,15 @@
     <link href="{% static 'vendor/datatables/dataTables.bootstrap4.css' %}" rel="stylesheet">
 
     <!-- Custom styles for this template-->
+    {% if user.is_authenticated %}
+    {% with 'css/variables-'|add:user.investor.print_uitheme|add:'.css' as cssvars %}
+    <link href="{% static cssvars %}" rel="stylesheet">
+{% endwith %}
+    
+    {% else %}
+    <link href="{% static 'css/variables-Dark.css' %}" rel="stylesheet">
+    {% endif %}
     <link href="{% static 'css/sb-admin.css' %}" rel="stylesheet">
-
     <link href="{% static 'css/xchange.css' %}" type="text/css" rel="stylesheet">
 
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs4/dt-1.10.21/datatables.min.css"/>
@@ -37,11 +44,11 @@
 
   <body id="page-top">
 
-    <nav class="navbar navbar-expand navbar-dark bg-dark static-top">
+    <nav class="navbar navbar-expand top-nav static-top">
 
       <a class="navbar-brand mr-1" href="/">XChange</a>
 
-      <button class="btn btn-link btn-sm text-white order-1 order-sm-0" id="sidebarToggle" href="#">
+      <button class="btn btn-link btn-sm order-1 order-sm-0" id="sidebarToggle" href="#">
         <i class="fas fa-bars"></i>
       </button>
 
@@ -181,7 +188,7 @@
         <footer class="sticky-footer">
           <div class="container my-auto">
             <div class="copyright text-center my-auto">
-            <!--  <span>Copyright © Your Website 2018</span>-->
+             <span>XChange is a <a href="https://www.instagram.com/thecowleyclub/">Cowley Club</a> production.</span>
             </div>
           </div>
         </footer>
@@ -191,6 +198,8 @@
 
     </div>
     <!-- /#wrapper -->
+
+  
 
     <!-- Scroll to Top Button-->
     <a class="scroll-to-top rounded" href="#page-top">
@@ -244,6 +253,7 @@
     <script src="{% static 'vendor/jquery-easing/jquery.easing.min.js' %}"></script>
 
     <!-- Page level plugin JavaScript-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.26.0/moment-with-locales.min.js"></script>
     <script src="{% static 'vendor/chart.js/Chart.min.js' %}"></script>
     <script src="{% static 'vendor/datatables/jquery.dataTables.js' %}"></script>
     <script src="{% static 'vendor/datatables/dataTables.bootstrap4.js' %}"></script>
@@ -253,15 +263,12 @@
     <script src="{% static 'js/sb-admin.min.js' %}"></script>
     <script src="{% static 'js/typeahead.bundle.min.js' %}"></script>
 
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.26.0/moment-with-locales.min.js"></script>
-    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.26.0/moment.min.js"></script> -->
-    <!-- <script src="https://cdnjs.com/libraries/Chart.js"></script> -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
+   
     <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@0.7.7"></script>
 
-    <script type="text/javascript" src="https://cdn.datatables.net/v/bs4/dt-1.10.21/datatables.min.js"></script>
+    
 <script>
 
   function display_error(error) {

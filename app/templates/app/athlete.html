@@ -23,15 +23,19 @@
 
 {% block search_area %}
 <div class="col-sm-3">
-
+    <div class="row">
     <div class="input-group mb-3" id="athlete-search">
         <input type="text" class="form-control typeahead" id="athleteNameInput" placeholder="Athlete search"
             aria-label="Athlete name" aria-describedby="basic-addon2">
         <div class="input-group-append">
             <button class="btn btn-outline-secondary" type="button" onclick="athleteSearch()">Go</button>
         </div>
-        <div id="athleteNameError" class="searchError col-sm-4"></div>
+        
     </div>
+</div>
+<div class="row">
+    <div id="athleteNameError" class="searchError"></div>
+</div>
 
 </div>
 {%endblock%}
@@ -43,13 +47,21 @@
 
 <div class="row">
     <div class="col-sm">
+        <div class="card">
+            <div class="card-body">
+
         <h2>Athlete value</h2>
 <div class="graph">
     <canvas id="athleteValue"></canvas>
 </div>
 
     </div>
+    </div>
+    </div>
     <div class="col-sm">
+        <div class="card">
+            <div class="card-body">
+
         <h2>Active trades</h2>
         <div class="right-scroll-box" style="overflow-y: scroll;">
         <table class="table tableFixHead" id="active_trades">
@@ -73,12 +85,17 @@
           </table>
         </div>
     </div>
+    </div>
+    </div>
 
 </div>
 
 
 <div class="row">
     <div class="col-sm">
+        <div class="card">
+            <div class="card-body">
+
         <h2>Trading history</h2>
         <div id="past_trades">
             <table class="table" id="past_trades">
@@ -99,7 +116,8 @@
             </table>
         </div>
     </div>
-
+</div>
+</div>
 </div>
 
 
@@ -107,7 +125,7 @@
 {%endblock%}
 
 {% block footer %}
-
+<script type="text/javascript" src="{% static 'js/common.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/typeahead.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/trading.js' %}"></script>
 <script>
@@ -140,49 +158,12 @@
 
                 var data = {datasets: [trade_dataset]};
 
+                var opts = defaultChartOptions("Value per volume");
+                                            
                 var myChart = new Chart(ctx, {
                     type: 'line',
                     data: data,
-                    options: {
-                        scales: {
-                            xAxes: [{
-                                type: 'time',
-                                // distribution: 'series'
-                                ticks: {
-                                    autoSkip: true,
-                                    maxTicksLimit: 10,
-                                },
-                                // time: timeStep,
-                                scaleLabel: {
-                                    display: true,
-                                    labelString: "Time"
-                                },
-                            }],
-                            yAxes: [
-                                {
-                                    scaleLabel: {
-                                        display: true,
-                                        labelString: "Value per volume"
-                                    },
-                                    ticks: {
-                                        beginAtZero: true
-                                    }
-                                }
-                            ]
-                        },
-                        plugins: {
-                            zoom: {
-                                zoom: {
-                                    enabled: true,
-                                    mode: 'y',
-                                    speed: 0.05
-                                },
-                                pan: {
-                                    enabled: true,
-                                }
-                            }
-                        }
-                    }
+                    options: opts,
                 });
             });
         }
@@ -193,11 +174,16 @@
     }
 
     $(document).ready(function () {
+        setupChartStyles();
+
+
         addAthleteToGraph({{ athlete.id }});
         reload_all_athlete_trades();
 
 
         populate_athlete_search();   
+
+
 
     });  // end onf document ready
 

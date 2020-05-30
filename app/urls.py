@@ -2,6 +2,7 @@ from django.urls import path
 from django.contrib.auth import views as auth_views
 
 from . import views, requests
+from app.forms import UserLoginForm
 
 handler404 = views.handler404
 handler500 = views.handler500
@@ -11,9 +12,15 @@ urlpatterns = [
     path('', views.index, name='index'),
 
     path('register/', views.register),
-    # path('login/', auth_views.login, {'template_name': 'login.html'}, name='login'),
-    path('login/', auth_views.LoginView.as_view(redirect_authenticated_user=True)),
+    path('login/', auth_views.LoginView.as_view(authentication_form=UserLoginForm, redirect_authenticated_user=True), name='login'),
     path('logout/', views.logout_view),
+    path('password_reset/', auth_views.PasswordResetView.as_view(), name='password_reset'),
+    path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
+    path('reset/<uidb64>/<token>/',
+        auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+    path('reset/done/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
+
+
     path('profile/', views.profile),
     path('portfolio/', views.portfolio),
     path('trades/', views.trades),

@@ -323,14 +323,28 @@ class Investor(Entity):
     """
     An investor is an individual who trades stuff
     """
+    LIGHT = 'L'
+    DARK = 'D'
+    OXFORD = 'O'
+    CAMBRIDGE = 'C'
+    THEMES = (
+        (LIGHT, 'Light'),
+        (DARK, 'Dark'),
+        (OXFORD, 'Oxford'),
+        (CAMBRIDGE, 'Cambridge'),
+    )
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    
+    uitheme = models.CharField(max_length=1, choices=THEMES, default=LIGHT)    
 
     def __str__(self):
         return "{} ({})".format(self.user.username, self.capital)
 
     def __repr__(self):
         return self.user.username
+
+    def print_uitheme(self):
+        return dict(Investor.THEMES)[self.uitheme]
 
     def serialize(self):
         # return {}

@@ -1,0 +1,59 @@
+:root {
+
+    --bg-1: #E0E0E0;
+    --bg-2: #F5F5F5;
+    --bg-3: #FAFAFA;
+    --bg-4: #ffffff;
+
+    --fg-1: rgb(60, 60, 60);
+    --fg-2: rgb(100,100,100);
+
+    --bg-primary: #fff;
+    --bg-secondary: #F5F5F5;
+
+    --fg-primary: #000;
+    --fg-secondary: var(--fg-1);
+
+    --top-nav: var(--bg-1);
+    --nav-color: var(--bg-2); /* #212529;*/
+    --bg-color: var(--bg-primary); /* #fff;*/
+    --main-text: var(--fg-primary); /* #000;*/
+    --nav-active: var(--fg-1); /*  #fff;*/
+    --nav-text-unselected: rgba(30,30,30, 0.5);
+    --nav-text-selected: rgba(30,30,30, 0.75);
+    --form-label: #495057;
+    --form-label-2: #777;
+    --footer-bg: var(--bg-3);
+    
+    --scroll-to-top: var(--fg-1); /* #fff;*/
+    --scroll-to-top-bg:  rgba(52, 58, 64, 0.5);
+    --scroll-to-top-hover: #343a40;
+
+    --buy:thistle;
+    --sell: wheat;
+    --cancel: mistyrose;
+    --accept: lightgreen;
+    --action-in-progres: papayawhip;
+    
+    --not-found: grey;
+    --error:red;
+
+    --search-pred-border: #ccc;
+    --search-pred-border-2:rgba(0, 0, 0, 0.2);
+    --suggestion-bg: #0097cf;
+
+    --table-fixed-header: gainsboro;
+
+    --menu-selected: var(--bg-1); /* lightyellow;*/
+
+    --stat: darkblue;
+    --stat-desc: grey;
+
+    --link: #007bff;
+    --link-active:#0056b3;
+
+    --border: rgba(0,0,0,.25);
+    --internal-border: var(--bg-1);
+}
+
+

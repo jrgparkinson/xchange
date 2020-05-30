@@ -3,7 +3,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import logout
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import authenticate, login
-from app.forms import SignUpForm
+from app.forms import *
 from app.models import *
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
@@ -73,11 +73,37 @@ def races(request):
     context = {"events": events_and_races}
     return render(request, "app/races.html", context)
 
+@login_required(login_url='/login/')
 def profile(request):
-    if request.user.is_authenticated:
-        return render(request, 'app/profile.html')
-    else:
-        return render(request, 'app/index.html')
+    user = request.user
+    inv = user.investor
+    error = None
+
+    if request.method == 'POST':
+        # create a form instance and populate it with data from the request:
+        form = ProfileForm(request.POST)
+        # check whether it's valid:
+        if form.is_valid():
+            # process the data in form.cleaned_data as required
+            # ...
+            # redirect to a new URL:
+            print(form["uitheme"])
+            inv.uitheme = form.cleaned_data["uitheme"]
+            user.first_name = form.cleaned_data["first_name"]
+            user.last_name = form.cleaned_data["last_name"]
+
+            inv.save()
+            user.save()
+
+        else:
+            error = "Invalid form"
+
+    form = ProfileForm(initial={'first_name': request.user.first_name, 
+    'last_name': request.user.last_name, 
+    'uitheme': inv.uitheme,
+    "error": error})
+
+    return render(request, 'app/profile.html', {'form': form})
 
 @login_required(login_url='/login/')
 def portfolio(request):
@@ -170,7 +196,7 @@ def register(request):
                 login(request, user)
                 user.save()
                 
-                return redirect('/')
+                return redirect('/profile/')
                 
                 
         else:

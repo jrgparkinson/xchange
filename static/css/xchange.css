@@ -1,3 +1,11 @@
+html, body {
+    background-color: var(--bg-color);
+    color: var(--main-text);
+}
+
+h1, h2, h3, h4, h5, h6, p {
+    color: var(--main-text);
+}
 
 .tradeLabel {
     float:left;
@@ -18,20 +26,20 @@ ul.tradeList {
 
 tr.buy {   
     /* color: black; */
-    background-color: thistle;
+    background-color: var(--buy);
 }
 
 tr.sell {
     /* color: gray; */
-    background-color: wheat;
+    background-color: var(--sell);
 }
 
 tr.cancelled, tr.rejected {
-    background-color: mistyrose;
+    background-color: var(--cancel);
 }
 
 tr.accepted {
-    background-color: lightgreen;
+    background-color: var(--accept);
 }
 
 tr.pending {
@@ -44,18 +52,18 @@ tr.tradeHeader {
 }
 
 tr.noTradesFound {
-    color: grey;
+    color: var(--not-found);
 }
 
 .nav-portfolio {
     text-align: center;
     width: calc(100% - 300px);
-    color: white;
+    color: var(--nav-active);
     font-size: large;
 }
 
 .searchError{
-    color:red;
+    color:var(--error);
     /* padding-left:10px; */
     /* vertical-align: 10px; */
 }
@@ -64,15 +72,15 @@ tr.noTradesFound {
     width: 422px;
     margin: 12px 0;
     padding: 8px 0;
-    background-color: #fff;
-    border: 1px solid #ccc;
-    border: 1px solid rgba(0, 0, 0, 0.2);
+    background-color:var(--bg-color);
+    border: 1px solid var(--search-pred-border);
+    border: 1px solid var(--search-pred-border-2);
     -webkit-border-radius: 8px;
        -moz-border-radius: 8px;
             border-radius: 8px;
-    -webkit-box-shadow: 0 5px 10px rgba(0,0,0,.2);
-       -moz-box-shadow: 0 5px 10px rgba(0,0,0,.2);
-            box-shadow: 0 5px 10px rgba(0,0,0,.2);
+    -webkit-box-shadow: 0 5px 10px var(--search-pred-border-2);
+       -moz-box-shadow: 0 5px 10px var(--search-pred-border-2);
+            box-shadow: 0 5px 10px var(--search-pred-border-2);
   }
   
   .tt-suggestion {
@@ -83,13 +91,13 @@ tr.noTradesFound {
   
   .tt-suggestion:hover {
     cursor: pointer;
-    color: #fff;
-    background-color: #0097cf;
+    color: var(--nav-active);
+    background-color: var(--suggestion-bg);
   }
   
   .tt-suggestion.tt-cursor {
-    color: #fff;
-    background-color: #0097cf;
+    color: var(--nav-active);
+    background-color: var(--suggestion-bg);
   
   }
   
@@ -104,12 +112,21 @@ tr.noTradesFound {
     overflow-y: scroll;
 } */
 
-.graph, .right-scroll-box {
-    height:400px;
+ .right-scroll-box {
+    height:300px;
+}
+
+div.graph {
+    /* height:300px; */
+    background-color: var(--bg-4);
+    border-radius: 10px;
+    padding:10px;
 }
 
 /* .tableFixHead          { overflow-y: auto; height: 100px; } */
-.tableFixHead thead th { position: sticky; top: 0; background-color:gainsboro; padding: 10; margin:0; border-top:0; }
+.tableFixHead thead th { position: sticky; top: 0;
+     background-color:var(--table-fixed-header);
+      padding: 10; margin:0; border-top:0; }
 
 ul.eventList, ul.eventList ul {
     list-style: none;
@@ -131,16 +148,21 @@ ul.raceList li {
 }
 ul.raceList li:hover, ul.raceList li.selected {
     /* background-color: thistle; */
-    background-color: lightyellow;
+    background-color: var(--menu-selected);
+    color: var(--link-active);
+}
+
+li.selected a {
+    color: var(--link-active);
 }
 
 
 .deletedTrade {
-    background-color: mistyrose;
+    background-color: var(--cancel);
 }
 
 .actionedTrade {
-    background-color: papayawhip;
+    background-color: var(--action-in-progress);
 }
 
 .badgeContainer {
@@ -150,7 +172,7 @@ ul.raceList li:hover, ul.raceList li.selected {
 
 
 .statLabel {
-    color: darkblue;
+    color: var(--stat);
     font-size: 2em;
     width:100%;
 
@@ -159,7 +181,7 @@ ul.raceList li:hover, ul.raceList li.selected {
 
 .statDesc {
     font-size: small;
-    color: gray;
+    color:var(--stat-desc);
     
     width:100%;
     text-align: center;
@@ -181,8 +203,79 @@ ul.raceList li:hover, ul.raceList li.selected {
 
 .statContainer {
     width:100%;
-    border: 2px solid darkblue;
+    border: 2px solid var(--stat);
     border-radius: 10px;
     margin-bottom:10px;
     padding:2px;
 }
+
+.card {
+    margin-bottom: 15px;
+    border-color: var(--border);
+
+    /* border-width: 2px; */
+}
+
+div.card-body, div.card {
+    background-color: var(--bg-3);
+}
+
+input.form-control, select.form-control, select.custom-select {
+    background-color: var(--bg-3);
+    color: var(--fg-1);
+}
+
+input.form-control:focus, select.form-control:focus,  select.custom-select:focus {
+    background-color: var(--bg-4);
+    color: var(--fg-1);
+}
+
+a {
+    color: var(--link);
+}
+a:hover, a:active {
+    text-decoration: none;
+    color: var(--link-active);
+}
+
+ul.errorlist {
+    color: var(--error);
+    list-style: none;
+    width:100%;
+    background-color: var(--bg-3);
+    border-radius: 10px;
+}
+
+.formError {
+    color: var(--error);
+}
+
+.formHelp {
+    color: var(--fg-2); 
+}
+
+.formHelp ul {
+    list-style: none;
+}
+
+div.dropdown-menu {
+    background-color: var(--bg-3);
+}
+
+a.dropdown-item:hover {
+    background-color: var(--bg-4);
+    color: var(--fg-2);
+}
+
+thead {
+    background-color: var(--bg-2);
+}
+
+.leftnav {
+    border-right:1px solid var(--internal-border);
+}
+
+button.page-choice {
+    margin-bottom:10px;
+}
+

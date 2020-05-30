@@ -47,9 +47,118 @@ function populate_top_bar_portfolio() {
     })
         .done(function (response) {
             if (response.capital && response.shares) {
-            $("#investor_capital_top").text(Number(response.capital).toFixed(2));
-            $("#investor_shares_top").text(Number(response.shares).toFixed(2));
+                $("#investor_capital_top").text(Number(response.capital).toFixed(2));
+                $("#investor_shares_top").text(Number(response.shares).toFixed(2));
             }
         });
 
 }
+
+function setupChartStyles() {
+
+    var style = getComputedStyle(document.body);
+    var primCol = style.getPropertyValue('--fg-1');
+    var bgcol = style.getPropertyValue('--bg-4');
+    // var chartCol = style.getPropertyValue('--chartColor');
+    Chart.defaults.global.defaultFontColor = primCol;
+    Chart.defaults.global.defaultColor = bgcol;
+}
+
+function defaultChartOptions(ylab) {
+    var style = getComputedStyle(document.body);
+    var primCol = style.getPropertyValue('--fg-1');
+    var bgcol = style.getPropertyValue('--bg-4');
+    // var chartCol = style.getPropertyValue('--chartColor');
+    // Chart.defaults.global.defaultFontColor = primCol;
+    // Chart.defaults.global.defaultColor = bgcol;
+
+    return {
+        scales: {
+            xAxes: [{
+                type: 'time',
+                ticks: {
+                    autoSkip: true,
+                    maxTicksLimit: 10,
+                },
+                
+                scaleLabel: {
+                    display: true,
+                    labelString: "Time"
+                },
+                gridLines: {
+                    color: primCol,
+                    zeroLineColor: primCol
+                }
+            }],
+            yAxes: [
+                {
+                    scaleLabel: {
+                        display: true,
+                        labelString: ylab,
+                    },
+                    ticks: {
+                        beginAtZero: true
+                    },
+                    gridLines: {
+                        color: primCol,
+                        zeroLineColor: primCol
+                    }
+                }
+            ]
+        },
+        plugins: {
+            zoom: {
+                zoom: {
+                    enabled: true,
+                    mode: 'xy',
+                    speed: 0.05
+                },
+                pan: {
+                    enabled: true,
+                }
+            }
+        }
+    };
+}
+
+
+// {
+//     scales: {
+//         xAxes: [{
+//             type: 'time',
+//             // distribution: 'series'
+//             ticks: {
+//                 autoSkip: true,
+//                 maxTicksLimit: 10,
+//             },
+//             // time: timeStep,
+//             scaleLabel: {
+//                 display: true,
+//                 labelString: "Time"
+//             },
+//         }],
+//         yAxes: [
+//             {
+//                 scaleLabel: {
+//                     display: true,
+//                     labelString: "Value"
+//                 },
+//                 ticks: {
+//                     beginAtZero: true
+//                 }
+//             }
+//         ]
+//     },
+//     plugins: {
+//         zoom: {
+//             zoom: {
+//                 enabled: true,
+//                 mode: 'xy',
+//                 speed: 0.05
+//             },
+//             pan: {
+//                 enabled: true,
+//             }
+//         }
+//     }
+// }

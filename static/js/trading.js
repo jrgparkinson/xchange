@@ -6,7 +6,7 @@ function populateTradeWithSelect() {
         data: { "ignore_self": true }
     })
         .done(function (response) {
-            console.log(response);
+            // console.log(response);
             if (response.error) {
                 display_error(response.error);
             }
@@ -32,7 +32,7 @@ function populateAthletes() {
         data: {}
     })
         .done(function (response) {
-            console.log(response);
+            // console.log(response);
             if (response.error) {
                 display_error(response.error);
             }
@@ -65,7 +65,7 @@ function actionTrade(trade_id, change) {
         data: { "id": trade_id, "change": change }
     })
         .done(function (response) {
-            console.log(response);
+            // console.log(response);
             if (response.error) {
                 display_error(response.error);
                 $("tr[data-trade="+trade_id+"]").removeClass("actionedTrade");

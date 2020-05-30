@@ -27,15 +27,22 @@
 
 
 <div class="row">
-    <div class="col-sm">
+    <div class="col-sm-6">
+
+        <div class="card">
+            <div class="card-body">
         <h2>Portfolio</h2>
         Current worth: {{worth.total|floatformat:2}} (shares: {{worth.shares|floatformat:2}}, cash:
         {{worth.cash|floatformat:2}})
         <div class="graph">
             <canvas id="investorValue"></canvas>
         </div>
+        </div>
+        </div>
     </div>
-    <div class="col-sm">
+    <div class="col-sm-6">
+        <div class="card">
+            <div class="card-body">
         <h2>Shares owned</h2>
         <table class="table" id="shares_owned">
             <thead>
@@ -58,12 +65,17 @@
             </tbody>
         </table>
     </div>
+    </div>
+    </div>
 
 </div>
 
 
 <div class="row">
     <div class="col-sm">
+        <div class="card">
+            <div class="card-body">
+
         <h2>Trading history</h2>
         <div id="past_trades">
             <table class="table" id="past_trades">
@@ -83,6 +95,8 @@
                 </tbody>
             </table>
         </div>
+    </div>
+    </div>
     </div>
 
 </div>
@@ -161,46 +175,7 @@
                 var myChart = new Chart(ctx, {
                     type: 'line',
                     data: data,
-                    options: {
-                        scales: {
-                            xAxes: [{
-                                type: 'time',
-                                // distribution: 'series'
-                                ticks: {
-                                    autoSkip: true,
-                                    maxTicksLimit: 10,
-                                },
-                                // time: timeStep,
-                                scaleLabel: {
-                                    display: true,
-                                    labelString: "Time"
-                                },
-                            }],
-                            yAxes: [
-                                {
-                                    scaleLabel: {
-                                        display: true,
-                                        labelString: "Value"
-                                    },
-                                    ticks: {
-                                        beginAtZero: true
-                                    }
-                                }
-                            ]
-                        },
-                        plugins: {
-                            zoom: {
-                                zoom: {
-                                    enabled: true,
-                                    mode: 'xy',
-                                    speed: 0.05
-                                },
-                                pan: {
-                                    enabled: true,
-                                }
-                            }
-                        }
-                    }
+                    options: defaultChartOptions("Value"),
                 });
             });
         }
@@ -220,6 +195,7 @@
     }
 
     $(document).ready(function () {
+        setupChartStyles();
         makeGraph({{ investor.id }});
 
     reload_past_trades({{ investor.id }});

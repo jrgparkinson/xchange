@@ -1,0 +1,54 @@
+:root {
+    --bg-primary: #fff;
+    --bg-secondary: #212529;
+
+    --bg-3: #fff;
+    --bg-4: #ededed;
+
+    --fg-primary: #000;
+    --fg-secondary: #fff;
+
+    --top-nav: #343a40;
+    --nav-color: var(--bg-secondary); /* #212529;*/
+    --bg-color: var(--bg-primary); /* #fff;*/
+    --main-text: var(--fg-primary); /* #000;*/
+    --nav-active: var(--fg-secondary); /*  #fff;*/
+    --nav-text-unselected: rgba(255, 255, 255, 0.5);
+    --nav-text-selected: rgba(255, 255, 255, 0.75);
+    --form-label: #495057;
+    --form-label-2: #777;
+    --footer-bg: var(--bg-3);
+    
+    --scroll-to-top: var(--fg-secondary); /* #fff;*/
+    --scroll-to-top-bg:  rgba(52, 58, 64, 0.5);
+    --scroll-to-top-hover: #343a40;
+
+    --buy:thistle;
+    --sell: wheat;
+    --cancel: mistyrose;
+    --accept: lightgreen;
+    --action-in-progres: papayawhip;
+    
+    --not-found: grey;
+    --error:red;
+
+    --search-pred-border: #ccc;
+    --search-pred-border-2:rgba(0, 0, 0, 0.2);
+    --suggestion-bg: #0097cf;
+
+    --table-fixed-header: gainsboro;
+
+    --menu-selected: lightyellow;
+
+    --stat: darkblue;
+    --stat-desc: grey;
+
+    --link: #007bff;
+    --link-active:#0056b3;
+
+}
+
+
+
+/* dark */
+
