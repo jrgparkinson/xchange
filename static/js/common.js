@@ -3,6 +3,10 @@ function format_investor_display(current_inv, inv) {
         return "Open";
     }
 
+    if (inv.name == "The Cowley Club Bank") {
+        return inv.name;
+    }
+
     if (current_inv && inv && current_inv.name == inv.name) {
         return "You";
     } else {
@@ -122,43 +126,13 @@ function defaultChartOptions(ylab) {
 }
 
 
-// {
-//     scales: {
-//         xAxes: [{
-//             type: 'time',
-//             // distribution: 'series'
-//             ticks: {
-//                 autoSkip: true,
-//                 maxTicksLimit: 10,
-//             },
-//             // time: timeStep,
-//             scaleLabel: {
-//                 display: true,
-//                 labelString: "Time"
-//             },
-//         }],
-//         yAxes: [
-//             {
-//                 scaleLabel: {
-//                     display: true,
-//                     labelString: "Value"
-//                 },
-//                 ticks: {
-//                     beginAtZero: true
-//                 }
-//             }
-//         ]
-//     },
-//     plugins: {
-//         zoom: {
-//             zoom: {
-//                 enabled: true,
-//                 mode: 'xy',
-//                 speed: 0.05
-//             },
-//             pan: {
-//                 enabled: true,
-//             }
-//         }
-//     }
-// }
+function updateZoom() {
+    var zoom = '';
+    if($("#xzoom").prop('checked')) { zoom += 'x'; }
+    if($("#yzoom").prop('checked')) { zoom += 'y'; }
+    console.log("zoom = " + zoom);
+    chart.options.plugins.zoom.zoom.mode = zoom;
+    chart.update();
+}
+
+$("input.zoom").change(updateZoom);

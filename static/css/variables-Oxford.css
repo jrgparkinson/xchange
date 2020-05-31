@@ -1,16 +1,20 @@
 :root {
+    /* --oxford-blue: ‎#002147; */
+    --oxford-blue:rgb(0,33,71);
+    --inverted:rgb(213, 164, 25);
 
-    --bg-1: #E0E0E0;
-    --bg-2: #F5F5F5;
-    --bg-3: #FAFAFA;
+    --lighter-1: rgb(57, 77, 120);
+    --lighter-3: rgb(229, 240, 255);
+    
+    --bg-1:var(--oxford-blue);
+    --bg-2: var(--lighter-1);
+    --bg-3: var(--lighter-3);
     --bg-4: #ffffff;
 
-    --fg-primary: #000;
     --fg-1: rgb(60, 60, 60);
     --fg-2: rgb(100,100,100);
-    --fg-3: var(--fg-primary);
-    
-    --fg-nav: var(--fg-primary);
+    --fg-3: var(--oxford-blue);
+    --fg-primary: #000;
 
     --bg-primary: var(--bg-4);
     --bg-secondary: var(--bg-2);
@@ -18,14 +22,18 @@
     --fg-alternate: var(--fg-primary);
     --fg-secondary: var(--fg-1);
 
-    --top-nav: var(--bg-1);
+    --fg-nav: #fff;
+
+    --top-nav: var(--oxford-blue);
     --nav-color: var(--bg-2); /* #212529;*/
-    --nav-color-selected: var(--nav-color);
+    --nav-color-selected: rgb(65, 87, 135); /* Slightly lighter than background */
     --bg-color: var(--bg-primary); /* #fff;*/
+
     --main-text: var(--fg-primary); /* #000;*/
-    --nav-active: var(--fg-1); /*  #fff;*/
-    --nav-text-unselected: rgba(30,30,30, 0.5);
-    --nav-text-selected: rgba(30,30,30, 0.75);
+
+    --nav-active: var(--fg-nav); /*  #fff;*/
+    --nav-text-unselected: rgba(255,255,255, 0.75);
+    --nav-text-selected: rgba(255,255,255, 1.0);
     --form-label: #495057;
     --form-label-2: #777;
     --footer-bg: var(--bg-3);
@@ -47,15 +55,17 @@
     --suggestion-bg: #0097cf;
 
     --table-fixed-header: gainsboro;
-    --table-fixed-head-text: var(--fg-1);
+    --table-fixed-head-text: var(--fg-nav);
 
-    --menu-selected: var(--bg-1); /* lightyellow;*/
+    --menu-selected: var(--bg-4); /* lightyellow;*/
 
-    --stat: darkblue;
+    --stat: var(--oxford-blue);
     --stat-desc: grey;
 
-    --link: #007bff;
-    --link-active:#0056b3;
+    /* --link: #007bff;
+    --link-active:#0056b3; */
+    --link: var(--inverted);
+    --link-active: var(--oxford-blue);
 
     --border: rgba(0,0,0,.25);
     --internal-border: var(--bg-1);

@@ -11,13 +11,16 @@
 
     --fg-1: #fff;
     --fg-2: rgb(200, 200, 200);
+    --fg-3: var(--fg-1);
+    --fg-alternate: #000;
     /* --fg-2: rgb(20, 20, 20); */
 
     --fg-primary:var(--fg-1);
     --fg-secondary: var(--fg-2);
-
+    --fg-nav: var(--fg-primary);
 
     --nav-color: var(--bg-secondary); /* #212529;*/
+    --nav-color-selected: var(--nav-color);
     --bg-color: var(--bg-primary); /* #fff;*/
     --main-text: var(--fg-primary); /* #000;*/
     --nav-active: var(--fg-secondary); /*  #fff;*/
@@ -33,8 +36,10 @@
 
     --buy:var(--bg-4);
     --sell: var(--bg-5);
-    --cancel: #800000;
-    --accept: rgb(40,100,50); /* lightgreen;*/
+    /* --cancel: #800000; */
+    /* --accept: rgb(40,100,50);  */
+    --accept: #03DAC6;
+    --cancel: #CF6679;
     --action-in-progres: papayawhip;
     
     --not-found: grey;
@@ -45,15 +50,16 @@
     --suggestion-bg: var(--bg-4);
 
     --table-fixed-header: var(--bg-2);
+    --table-fixed-head-text: var(--fg-1);
 
     --menu-selected: var(--bg-3);
 
     --stat:#FF3F80;
     --stat-desc: grey;
-
-    --link: #007bff;
+ 
+    --link: #BB86FC; /* #3700B3;*/
     /* --link-active: #eb0aff; */
-    --link-active: rgba(226, 23, 253, 1);
+    --link-active:#FF3F80;
 
     --border: rgba(0,0,0, 0.0);
     --internal-border: var(--bg-3);

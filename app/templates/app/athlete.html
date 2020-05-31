@@ -34,15 +34,42 @@
 {%endblock%}
 {% block content %}
 
+<style id="datatables_crazyfix">
+    .tab-content .tab-pane {
+        visibility: hidden;
+        display: block;
+    }
+    </style>
 
-
-
-
-<div class="row">
-    <div class="col-sm">
+<ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+    <li class="nav-item">
+      <a class="nav-link active" id="pills-value-tab" data-toggle="pill" 
+      href="#pills-value" role="tab" aria-controls="pills-value" aria-selected="true">
+         Value</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" id="pills-active-tab" data-toggle="pill" 
+      href="#pills-active" role="tab" aria-controls="pills-active" aria-selected="false">
+          Active trades</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" id="pills-results-tab" data-toggle="pill" 
+      href="#pills-results" role="tab" aria-controls="pills-results" aria-selected="false">
+      Results and dividends</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="pills-history-tab" data-toggle="pill" 
+        href="#pills-history" role="tab" aria-controls="pills-history" aria-selected="false">
+        Trade history</a>
+      </li>
+  </ul>
+  <div class="tab-content" id="pills-tabContent">
+    <div class="tab-pane fade show active" id="pills-value" role="tabpanel" aria-labelledby="pills-value-tab">
         <div class="card">
-            <div class="card-body">
+            <div class="card-body"  > <!--style="height: 500px;" -->
 
+                <div class="row">
+                    <div class="col-sm-10">
                 <h2>Athlete value: {{value.current}}
 
                     <span data-toggle="tooltip" data-placement="left" title="Daily change">
@@ -57,23 +84,29 @@
                     </span>
 
                 </h2>
+            </div>
+            <div class="col">
+                {% include 'app/zoom.html' %}
+            </div>
+            </div>
                 <div class="graph">
                     <canvas id="athleteValue"></canvas>
                 </div>
 
             </div>
         </div>
+
     </div>
-    <div class="col-sm">
+    <div class="tab-pane fade" id="pills-active" role="tabpanel" aria-labelledby="pills-active-tab">
         <div class="card">
             <div class="card-body">
 
-                <h2>Active trades</h2>
-                <div class="right-scroll-box" style="overflow-y: auto;">
-                    <table class="table tableFixHead" id="active_trades">
+                <!-- <h2 style="margin-bottom:-30px">Active trades</h2> -->
+                <div> <!--style="overflow-y: auto;"-->
+                    <table class="table" id="active_trades">
                         <thead>
                             <tr>
-                                <!-- <td scope="col" width="80"></td> -->
+                                
                                 <th scope="col">Volume</th>
                                 <th scope="col">Price</th>
                                 <th scope="col">Seller</th>
@@ -84,24 +117,21 @@
                         </thead>
                         <tbody>
 
-                            <tr class="noTradesFound">
+                            <!-- <tr class="noTradesFound">
                                 <td scope="col" colspan=6>No trades found</td>
-                            </tr>
+                            </tr> -->
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
+
     </div>
-
-</div>
-
-<div class="row">
-    <div class="col-sm">
+    <div class="tab-pane fade" id="pills-results" role="tabpanel" aria-labelledby="pills-results-tab">
         <div class="card">
             <div class="card-body">
 
-                <h2>Results and dividends</h2>
+                <!-- <h2>Results and dividends</h2> -->
                 <table class="table">
                     <thead>
                         <tr>
@@ -131,15 +161,13 @@
 
             </div>
         </div>
-    </div>
-</div>
 
-<div class="row">
-    <div class="col-sm">
+    </div>
+    <div class="tab-pane fade" id="pills-history" role="tabpanel" aria-labelledby="pills-history-tab">
         <div class="card">
             <div class="card-body">
 
-                <h2>Trading history</h2>
+                <!-- <h2>Trading history</h2> -->
                 <div id="past_trades">
                     <table class="table" id="past_trades">
                         <thead>
@@ -161,6 +189,33 @@
             </div>
         </div>
     </div>
+  </div>
+
+
+
+
+<div class="row">
+    <div class="col-sm-11">
+        
+    </div>
+</div>
+<div class="row">
+    <div class="col-sm-12">
+        
+    </div>
+
+</div>
+
+<div class="row">
+    <div class="col-sm">
+        
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-sm">
+       
+    </div>
 </div>
 
 
@@ -172,6 +227,8 @@
 <script type="text/javascript" src="{% static 'js/typeahead.js' %}"></script>
 <script type="text/javascript" src="{% static 'js/trading.js' %}"></script>
 <script>
+
+    var chart=undefined;
 
     function addAthleteToGraph(athlete_id) {
         $.ajax({
@@ -205,7 +262,7 @@
 
                 var opts = defaultChartOptions("Value per volume");
 
-                var myChart = new Chart(ctx, {
+                chart = new Chart(ctx, {
                     type: 'line',
                     data: data,
                     options: opts,
@@ -214,8 +271,11 @@
         }
 
     function reload_all_athlete_trades() {
+        console.log("Reload active trades athlete page");
         reload_trades("active_trades", true, undefined, { "athlete": {{ athlete.id }}});
-    reload_trades("past_trades", false, undefined, { "athlete": {{ athlete.id }}});
+
+        reload_trades("past_trades", false, undefined, { "athlete": {{ athlete.id }}});
+
     }
 
     $(document).ready(function () {
@@ -223,12 +283,12 @@
 
 
         addAthleteToGraph({{ athlete.id }});
-    reload_all_athlete_trades();
+        reload_all_athlete_trades();
 
 
-    populate_athlete_search();   
+        populate_athlete_search();   
 
-
+        $("#datatables_crazyfix").remove();
 
     });  // end onf document ready
 
@@ -252,8 +312,8 @@
             data: {}
         })
             .done(function (response) {
-                console.log("Athletes:");
-                console.log(response);
+                // console.log("Athletes:");
+                // console.log(response);
                 response.athletes.forEach(athlete => {
                     athleteMapping[athlete.name] = athlete.id;
                 });
@@ -279,6 +339,15 @@
         }
     });
 
+    
+
 </script>
+
+
+// <script>
+//     jQuery(function($){
+//         $("#datatables_crazyfix").remove();
+//     });
+// </script>
 
 {% endblock %}

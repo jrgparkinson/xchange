@@ -121,7 +121,13 @@ div.graph {
 
 .tableFixHead thead th { position: sticky; top: 0;
      background-color:var(--table-fixed-header);
-      padding: 10; margin:0; border-top:0; }
+      padding: 10; margin:0; border-top:0;
+      
+    }
+
+thead, th {
+    color: var(--table-fixed-head-text);
+}
 
 ul.eventList, ul.eventList ul {
     list-style: none;
@@ -216,13 +222,18 @@ div.card-body, div.card {
 }
 
 input.form-control, select.form-control, select.custom-select {
-    background-color: var(--bg-3);
+    background-color: var(--bg-4);
     color: var(--fg-1);
 }
 
 input.form-control:focus, select.form-control:focus,  select.custom-select:focus {
     background-color: var(--bg-4);
     color: var(--fg-1);
+}
+
+.form-control:disabled, .form-control[readonly] {
+    background-color: var(--bg-2);
+    color: var(--fg-2);
 }
 
 a {
@@ -258,6 +269,11 @@ ul.errorlist {
 
 div.dropdown-menu {
     background-color: var(--bg-3);
+    color: var(--fg-3);
+}
+
+div.dropdown-menu a {
+    color: var(--fg-3);
 }
 
 a.dropdown-item:hover {
@@ -281,4 +297,21 @@ button.page-choice {
 button.predict-search {
     background-color: var(--bg-3);
     color: var(--fg-1);
+}
+
+
+/* Bids */
+
+tr.accepted, input.accepted {
+    background-color: var(--accept);
+    color: var(--fg-alternate);
+}
+
+tr.rejected, input.rejected {
+    background-color: var(--cancel);
+    color: var(--fg-alternate);
+}
+
+.top-nav, .top-nav a {
+    color: var(--fg-nav);
 }

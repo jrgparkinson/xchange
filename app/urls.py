@@ -44,6 +44,7 @@ urlpatterns = [
     path("races/<int:race_id>", views.races),
     path("races/", views.races),
     path("bank/", views.bank),
+    path("auction/", views.auction),
     path("marketplace/", views.marketplace),
     path("athlete/<int:athlete_id>/", views.view_athlete),
     path("investor/<int:investor_id>/", views.view_investor),

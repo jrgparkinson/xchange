@@ -21,7 +21,7 @@
                         {{event.name}} ({{event.date}})
                         <ul class="raceList">
                             {% for race in event.races.all %}
-                            <li><a class="race" data-race="{{race.id}}" href="#">{{race.name}}</a></li>
+                            <li data-race="{{race.id}}"><a class="race" data-race="{{race.id}}" href="#">{{race.name}}</a></li>
                             {% endfor %}
                         </ul>
                     </li>
@@ -292,11 +292,14 @@
         $("a.race").click(function (e) {
             $("#noRaceSelected").hide();
             hideEventRace();
-            display_race($(this).attr("data-race"));
+            var race = $(this).attr("data-race");
+            display_race(race);
             $("li.selected").removeClass("selected");
-            $(this).parent().addClass("selected");
+            console.log("Race:" + race);
+            // console.log($(this).parent);
+            $("li[data-race="+race+"]").addClass("selected");
 
-            window.location.pathname = '/races/' + $(this).attr("data-race");
+            window.history.pushState("object or string", "Title", "/races/" + race);
         })
 
 

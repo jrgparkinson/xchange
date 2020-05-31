@@ -99,6 +99,7 @@ body.fixed-nav.sidebar-toggled #content-wrapper {
 
 .navbar-nav .nav-item.active .nav-link {
   color: var(--nav-active);
+  background-color: var(--nav-color-selected);
 }
 
 .navbar-nav .nav-item.dropdown .dropdown-toggle::after {

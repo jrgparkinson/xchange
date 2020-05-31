@@ -8,15 +8,17 @@ import numpy as np
 from app.errors import *
 from django.db.models import Q
 from django.contrib import admin  # .admin.ModelAdmin import message_user
-
+import re
 
 class Season(models.Model):
 
     OPEN = "O"
     SUSPENDED = "S"
+    FINISHED = "F"
     STATUS_CHOICES = (
         (OPEN, "Open"),
         (SUSPENDED, "Suspended"),
+        (FINISHED, "Finished"),
     )
 
     status = models.CharField(max_length=1, choices=STATUS_CHOICES, default=OPEN)
@@ -24,6 +26,15 @@ class Season(models.Model):
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
 
+    def __str__(self):
+        return "{}: {} - {} ({})".format(self.name, 
+        self.start_time.strftime("%m/%d/%Y, %H:%M:%S"), 
+        self.end_time.strftime("%m/%d/%Y, %H:%M:%S"), 
+        self.print_status)
+
+    @property
+    def print_status(self):
+        return dict(self.STATUS_CHOICES)[self.status]
 
 def current_time():
     return datetime.now(pytz.utc)
@@ -70,7 +81,7 @@ class Entity(models.Model):
 
         # Transactions for this entity
         cash_transactions = TransactionHistory.objects.all().filter(
-            (Q(sender=self) | Q(recipient=self)) & Q(timestamp_gte=time)
+            (Q(sender=self) | Q(recipient=self)) & Q(timestamp__gte=time)
         )
 
         # Add/remove cash to get back to point in time we care about
@@ -348,7 +359,15 @@ class Entity(models.Model):
     @property
     def print_name(self):
         if self.is_investor():
-            return self.investor.user.username
+            return self.investor.display_name
+        else:
+            return self.bank.name
+
+    @property
+    def to_html(self):
+        if self.is_investor():
+            # return self.investor.display_name
+            return '<span class="badgeContainer"><a href="/investor/' + str(self.id) + '" class="badge badge-primary">' + self.display_name + '</a></span>'
         else:
             return self.bank.name
 
@@ -414,17 +433,26 @@ class Investor(Entity):
     uitheme = models.CharField(max_length=1, choices=THEMES, default=LIGHT)
 
     def __str__(self):
-        return "{} ({})".format(self.user.username, self.capital)
+        return "{} ({})".format(self.display_name, self.capital)
 
     def __repr__(self):
-        return self.user.username
+        return self.display_name
 
     def print_uitheme(self):
         return dict(Investor.THEMES)[self.uitheme]
 
+    @property
+    def display_name(self):
+        if self.user.first_name:
+            name = self.user.first_name
+            if self.user.last_name:
+                name = name + " " + self.user.last_name
+        else:
+            return self.user.username
+
     def serialize(self):
         # return {}
-        return {"id": self.pk, "name": self.user.username, "capital": self.capital}
+        return {"id": self.pk, "name": self.display_name, "capital": self.capital}
 
 
 # This is a quicker way of serializing an entity
@@ -478,6 +506,11 @@ class Athlete(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def to_html(self):
+        # return self.name
+        return '<span class="badgeContainer"><a href="/athlete/' + str(self.id) + '" class="badge badge-danger">' + self.name + '</a></span>'
 
     def serialize(self):
         return {"id": self.pk, "name": self.name}
@@ -594,12 +627,13 @@ class ShareIndexValue(models.Model):
 
             value = np.mean(np.array([a.get_value() for a in athletes]))
 
-            # TODO: Indexes
-            t = ShareIndexValue(value=value)
-            t.save()
-            # t.value = value
-            t.athletes.add(*athletes)
-            t.save()
+            try:
+                t = ShareIndexValue(value=value)
+                t.save()
+                t.athletes.add(*athletes)
+                t.save()
+            except Exception:
+                print("Unable to make shareIndexValue for value: {}".format(value))
 
         else:
             raise XChangeException("Unknown index type " + str(index_type))
@@ -940,6 +974,18 @@ class Trade(models.Model):
     def status_display(self):
         return dict(self.STATUS_CHOICES)[self.status]
 
+    def is_possible(self):
+        if self.buyer and self.buyer.capital < self.price:
+            return False
+    
+        if self.seller and self.asset.is_share():
+            saleable = self.seller.saleable_shares_in_athlete(self.asset.share.athlete)
+            if not saleable or saleable.volume < self.asset.share.volume:
+                return False
+
+        print("Trade is possible: {}".format(self))
+        return True
+
     def reject_trade(self):
         if not self.status == self.PENDING:
             raise TradeNotPending(
@@ -978,8 +1024,8 @@ class Trade(models.Model):
         # Check buyer has cash
         if not self.buyer.capital >= self.price:
             raise InsufficientFunds(
-                "Buyer funds ({}) are less than the trade price ({})".format(
-                    self.buyer.capital, self.price
+                "Buyer ({}) does not have enough funds ({} < {})".format(
+                    self.buyer.print_name, self.buyer.capital, self.price
                 )
             )
 
@@ -988,7 +1034,7 @@ class Trade(models.Model):
             if not self.seller.can_sell_asset(self.asset):
                 # format(seller.saleable_shares_in_athlete())
                 raise InsufficientShares(
-                    "Seller does not have sufficient shares to fulfill trade."
+                    "Seller ({}) does not have sufficient shares to fulfill trade.".format(self.seller.print_name)
                 )
 
             # Recompute top 10 index (try this first)
@@ -1007,7 +1053,7 @@ class Trade(models.Model):
 
             # Transfer cash if all successful (have already confirmed the cash is available to transfer)
             b = self.buyer
-            b.transfer_cash_to(ammount=self.price, to=self.seller, reason=str(self))
+            b.transfer_cash_to(ammount=self.price, to=self.seller, reason="Share trade: " + str(self))
 
             self.seller.save()
             self.buyer.save()
@@ -1089,7 +1135,7 @@ class Loan(models.Model):
             repayment_interval=interval,
             next_payment_due=next_payment_due,
         )
-        lender.transfer_cash_to(balance, recipient, reason=str(loan))
+        lender.transfer_cash_to(balance, recipient, reason="Loan created: " + str(loan))
 
         # Create recurring payment schedule here
         # TODO
@@ -1118,7 +1164,7 @@ class Loan(models.Model):
         if self.recipient.capital > interest_ammount:
 
             self.recipient.transfer_cash_to(
-                interest_ammount, self.lender, reason=str(self)
+                interest_ammount, self.lender, reason="Loan interest payment: " + str(self)
             )
 
         else:
@@ -1127,7 +1173,7 @@ class Loan(models.Model):
             # self.lender.capital = self.lender.capital + ammount_payable
             # self.recipient.capital = 0
             self.recipient.transfer_cash_to(
-                ammount_payable, self.lender, reason=str(self)
+                ammount_payable, self.lender, reason="Loan interest payment: " + str(self)
             )
 
             # Create new debt
@@ -1146,7 +1192,7 @@ class Loan(models.Model):
         self.save()
 
     def repay_loan(self, ammount):
-        self.recipient.transfer_cash_to(ammount, self.lender, reason=str(self))
+        self.recipient.transfer_cash_to(ammount, self.lender, reason="Loan repayment: "+ str(self))
 
 
 def pay_all_loans():
@@ -1196,6 +1242,8 @@ class Debt(models.Model):
 class TransactionHistory(models.Model):
     """ We should keep a track of all transactions made """
 
+    SHARE_REASON = r"([a-zA-Z\s]+): ([\d\.]+).*from ([a-zA-Z\s]+) to ([a-zA-Z\s]+).*for ([\d\.]+).*"
+
     sender = models.ForeignKey(
         Entity,
         related_name="%(app_label)s_%(class)s_from",
@@ -1223,6 +1271,63 @@ class TransactionHistory(models.Model):
             "ammount": self.ammount,
             "reason": self.reason,
         }
+
+    
+    def description(self, investor: Investor):
+
+        share_match = re.match(TransactionHistory.SHARE_REASON, self.reason)
+        if share_match:
+            athlete = share_match.groups()[0]
+            volume = float(share_match.groups()[1])
+            sender = share_match.groups()[2]
+            recipient = share_match.groups()[3]
+            price = float(share_match.groups()[4])
+
+            athlete = Athlete.objects.get(name=athlete)
+
+            # trade = Trade.objects.get(status=Trade.ACCEPTED,seller__name=sender,buyer__name=recipient,asset__share__athlete__name=athlete)
+
+            desc = ""
+            other_party = ""
+            if self.recipient == investor:
+                desc = desc + "Sold "
+                other_party = self.sender
+            else:
+                desc = desc + "Bought "
+                other_party = self.recipient
+
+            desc = desc + " {} shares in {} from {}".format(volume, athlete.to_html, other_party.to_html)
+            return desc
+
+        return self.reason
+        
+    def cash_in(self, investor: Investor):
+        if self.sender == investor:
+            return ""
+        else:
+            return self.ammount
+        
+    
+    def cash_out(self, investor: Investor):
+        if self.recipient == investor:
+            return ""
+        else:
+            return self.ammount
+        
+
+    @property
+    def transaction_type(self):
+
+        share_match = re.match(TransactionHistory.SHARE_REASON, self.reason)
+        if share_match:
+            return "Trade (Share)"
+
+        return None
+        # return "type"
+
+    
+    def balance(self, investor: Investor):
+        return investor.get_capital(self.timestamp + timedelta(milliseconds=1))
 
 
 class Event(models.Model):
@@ -1254,7 +1359,7 @@ class Race(models.Model):
     num_competitors = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
-        return "{} ({})".format(self.name, self.time.strftime("%d/%m/%Y %H:%m"))
+        return "{} - {} ({})".format(self.event.name, self.name, self.time.strftime("%d/%m/%Y %H:%m"))
 
     def serialize(self):
         return {
@@ -1341,6 +1446,9 @@ class Result(models.Model):
     dividend = models.FloatField(null=True, blank=True)
     dividend_distributed = models.BooleanField(default=False)
 
+    class Meta:
+       unique_together = ('race', 'athlete',)
+
     def serialize(self):
         return {
             "athlete": self.athlete.serialize(),
@@ -1362,7 +1470,13 @@ class Auction(models.Model):
     start_date = models.DateTimeField()
     end_date = models.DateTimeField()
     season = models.ForeignKey(Season, on_delete=models.CASCADE)
+    bank = models.ForeignKey(Bank, on_delete=models.CASCADE)
+    is_current = models.BooleanField(default=False)
 
+    def __str__(self):
+        return "{} (Ends: {})".format(self.name, self.end_date)
+
+    # TODO: on create hook - populate lots with bank owned shares
 
 class Lot(models.Model):
     athlete = models.ForeignKey(
@@ -1371,7 +1485,19 @@ class Lot(models.Model):
         on_delete=models.CASCADE,
     )
     volume = models.FloatField()
+    auction = models.ForeignKey(Auction, on_delete=models.CASCADE)
 
+    def __str__(self):
+        return "{} ({})".format(self.athlete.name, np.round(self.volume, 2))
+
+@receiver(post_save, sender=Auction)
+def create_lots_after_auction_created(sender, instance : Auction, created, **kwargs):
+    if created:
+        bank_shares = instance.bank.get_shares_owned()
+
+        for share in bank_shares:
+            lot = Lot(athlete=share.athlete, volume=share.volume, auction=instance)
+            lot.save()
 
 class Bid(models.Model):
     PENDING = "P"
@@ -1388,10 +1514,15 @@ class Bid(models.Model):
     bidder = models.ForeignKey(
         Entity, related_name="%(app_label)s_%(class)s_bidder", on_delete=models.CASCADE
     )
-    auction = models.ForeignKey(Auction, on_delete=models.CASCADE)
+    # auction = models.ForeignKey(Auction, on_delete=models.CASCADE)
     lot = models.ForeignKey(Lot, on_delete=models.CASCADE)
     volume = models.FloatField()
     price_per_volume = models.FloatField()
+
+    class Meta:
+        # Each bidder can only have one bid on a lot
+        unique_together = ('bidder', 'lot',)
+
 
 
 def compute_dividends(race: Race):

@@ -1,10 +1,10 @@
 {% extends 'app/base.html' %}
 {% load static %}
 
-{% block title %}{{investor.user.username}}{% endblock %}
+{% block title %}{{investor.display_name}}{% endblock %}
 
 
-{% block page_title %}{{investor.user.username}}{% endblock %}
+{% block page_title %}{{investor.display_name}}{% endblock %}
 {% block search_area %}
 <div class="col-sm-3">
 
@@ -32,20 +32,22 @@
 
 
 <div class="row">
-    <div class="col-sm-6">
+    <div class="col-sm-8">
 
         <div class="card">
             <div class="card-body">
-        <h2>Portfolio</h2>
-        Current worth: {{worth.total|floatformat:2}} (shares: {{worth.shares|floatformat:2}}, cash:
-        {{worth.cash|floatformat:2}})
+        <h4> Current worth: {{worth.total|floatformat:2}} (shares: {{worth.shares|floatformat:2}}, cash:
+            {{worth.cash|floatformat:2}})</h4>
+       
+        
+        {% include 'app/zoom.html' %}
         <div class="graph">
             <canvas id="investorValue"></canvas>
         </div>
         </div>
         </div>
     </div>
-    <div class="col-sm-6">
+    <div class="col-sm-4">
         <div class="card">
             <div class="card-body">
         <h2>Shares owned</h2>
@@ -120,6 +122,7 @@
 <script src="https://cdn.jsdelivr.net/npm/handlebars@latest/dist/handlebars.js"></script>
 
 <script>
+    var chart = undefined;
 
     function makeGraph(id) {
         $.ajax({
@@ -177,7 +180,7 @@
 
                 var data = { datasets: [dataset_total, dataset_cash, dataset_shares] };
 
-                var myChart = new Chart(ctx, {
+                chart = new Chart(ctx, {
                     type: 'line',
                     data: data,
                     options: defaultChartOptions("Value"),

@@ -70,10 +70,115 @@ def about(request):
     context = {}
     return render(request, "app/about.html", context)
 
+@login_required(login_url="/login/")
+def auction(request):
+
+    if request.method == "POST":
+
+        # build list of lot details
+        lot_bids_form = {}
+
+        for field in list(dict(request.POST).keys()):
+
+            # print(field)
+            m = re.match(r"^lot_(\d+)_([a-zA-Z]+)$", field)
+            if m:
+                
+                lot_id = int(m.groups()[0])
+                value = request.POST[field]
+
+                # validate value
+                if not re.match(r"[0-9\.]+", value):
+                    value = 0.0
+                    # print("Invalid value: {}".format(value))
+                    # continue
+
+                if lot_id not in list(lot_bids_form.keys()):
+                    lot_bids_form[lot_id] = {"volume": 0.0, "price": 0.0}
+
+                price_volume= str(m.groups()[1])
+                lot_bids_form[lot_id][price_volume] = float(value)
+
+        
+        # Save:
+        print(lot_bids_form)
+        
+        for id, val in lot_bids_form.items():
+            try:
+                lot = Lot.objects.get(pk=id)
+
+                # Double check we can do this
+                if lot.auction.start_date > current_time() or lot.auction.end_date < current_time():
+                    continue
+
+                bid = Bid.objects.all().filter(lot=lot,bidder=request.user.investor)
+                if not bid:
+                    bid = Bid.objects.create(lot=lot,bidder=request.user.investor,price_per_volume=val["price"], volume=val["volume"])
+                else:
+                    bid = bid[0]
+                    bid.price_per_volume = val["price"]
+                    bid.volume = val["volume"]
+
+                
+                if bid.volume > bid.lot.volume:
+                    bid.volume = bid.lot.volume
+
+                bid.save()
+
+            except Exception as e:
+                print(e)
+                continue
+
+
+    # current_auction = Auction.objects.all().filter(Q(start_date__lte=current_time()) & Q(end_date__gte=current_time()))
+    current_auction = Auction.objects.all().filter(is_current=True)
+    lots_bid = []
+    # auction = None
+    if len(current_auction) > 0:
+        current_auction = current_auction[0]
+
+        if current_auction.start_date < current_time() and current_auction.end_date > current_time():
+            current_auction.active = True
+
+        lots = Lot.objects.all().filter(auction=current_auction)
+
+        for lot in lots:
+            # Check for an existing bid
+            bid = Bid.objects.all().filter(lot=lot,bidder=request.user.investor)
+            lot.style = ""
+            if bid:
+                print(bid)
+                lot.current_bid = bid[0]
+
+                if lot.current_bid.status == Bid.ACCEPTED:
+                    lot.style = " accepted"
+                elif lot.current_bid.status == Bid.REJECTED:
+                    lot.style = " rejected";
+
+            lots_bid.append(lot)
+
+    context = {"lots_bid": lots_bid, "auction": current_auction, "all_auctions": Auction.objects.all()}
+    return render(request, "app/auction.html", context)
+
 
 @login_required(login_url="/login/")
 def bank(request):
-    context = {"loans": [], "shares_to_sell": []}
+    investor = request.user.investor
+
+    transaction_history = TransactionHistory.objects.all().filter(Q(sender=investor) | Q(recipient=investor))
+    transaction_history = transaction_history.order_by('-timestamp')
+    transactions = []
+    for t in transaction_history:
+        t.description = t.description(investor)
+        t.cash_in = t.cash_in(investor)
+        t.cash_out = t.cash_out(investor)
+        # t.transaction_type = t.transaction_type(investor)
+        t.balance = t.balance(investor)
+
+        transactions.append(t)
+
+    context = {"loans": [], "shares_to_sell": [],
+    "transactions": transactions}
     return render(request, "app/bank.html", context)
 
 
@@ -167,7 +272,10 @@ def view_athlete(request, athlete_id):
     current_value = athlete.get_value(current_time())
     print("Current value = {}".format(current_value))
     value_one_day_ago = athlete.get_value(current_time() - timedelta(days=1.0))
-    value_change = 100.0 * (current_value - value_one_day_ago) / current_value
+    if value_one_day_ago == 0:
+        value_change = np.nan
+    else:
+        value_change = 100.0 * (current_value - value_one_day_ago) / value_one_day_ago
     if np.isnan(value_change):
         value_change = "NaN"
     else:
@@ -177,6 +285,9 @@ def view_athlete(request, athlete_id):
 
     active_trades = Trade.objects.all().filter(Q(status=Trade.PENDING))
 
+    # Only show trades which can actually be accepted
+    possible_active_trades = [t for t in active_trades if t.is_possible()]
+
     results = Result.objects.all().filter(athlete=athlete).order_by("time")
 
     return render(
@@ -185,7 +296,7 @@ def view_athlete(request, athlete_id):
         {
             "athlete": athlete,
             "value": {"current": np.round(current_value, 2), "change": value_change},
-            "active_trades": active_trades,
+            "active_trades": possible_active_trades,
             "results": results,
         },
     )
@@ -318,6 +429,8 @@ def retrieve_trades(request):
                 all_trades = Trade.objects.all().filter(
                     Q(asset__share__athlete=athlete) & Q(status=Trade.PENDING)
                 )
+
+            all_trades = [t for t in all_trades if t.is_possible()]
             # all_trades = [t for t in all_trades if t.asset.is_share() and t.asset.share.athlete==athlete]
         elif "historical" in request.GET:
             print("Retrieve historical trades ")
@@ -343,18 +456,19 @@ def retrieve_trades(request):
 
                 # only retrieve shares where they can be actioned sensibly
                 actionable_trades = []
-                for t in all_trades:
-                    share = t.asset.share
-                    if t.seller:
-                        saleable_shares = t.seller.saleable_shares_in_athlete(
-                            share.athlete
-                        )
-                        if saleable_shares and saleable_shares.volume >= share.volume:
-                            actionable_trades.append(t)
-                    elif t.buyer and t.buyer.capital >= t.price:
-                        actionable_trades.append(t)
+                # for t in all_trades:
+                #     share = t.asset.share
+                #     if t.seller:
+                #         saleable_shares = t.seller.saleable_shares_in_athlete(
+                #             share.athlete
+                #         )
+                #         if saleable_shares and saleable_shares.volume >= share.volume:
+                #             actionable_trades.append(t)
+                #     elif t.buyer and t.buyer.capital >= t.price:
+                #         actionable_trades.append(t)
 
-                all_trades = actionable_trades
+                # all_trades = actionable_trades
+                all_trades = [t for t in all_trades if t.is_possible()]
             elif asset == "option":
                 all_trades = [t for t in all_trades if t.asset.is_option()]
             elif asset == "future":
@@ -371,7 +485,8 @@ def retrieve_trades(request):
 
         # now sort
         # print("Sort")
-        if "asset" in request.GET:
+        # if "asset" in request.GET:
+        if isinstance(all_trades, list):
             all_trades = sorted(all_trades, key=lambda t: t.updated, reverse=True)
         else:
             all_trades = all_trades.order_by("-updated")

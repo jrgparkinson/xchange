@@ -78,7 +78,7 @@
             {% if user.first_name %}
             {{user.first_name}} {{user.last_name}}
             {% else %}
-            {{user.username}} 
+            {{user.display_name}} 
             {% endif %}
           </a>
           <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
@@ -136,6 +136,12 @@
             <span>Bank</span></a>
         </li>
 
+        <li class="nav-item {% if request.path == '/auction/' %}active{% endif %}">
+          <a class="nav-link" href="/auction/">
+            <i class="fas fa-fw fa-gavel"></i>
+            <span>Auction</span></a>
+        </li>
+
 
 
         {% else %}
@@ -156,7 +162,7 @@
 
         {% endif %}
 
-        <li class="nav-item {% if request.path == '/races/' %}active{% endif %}">
+        <li class="nav-item {% if '/races/' in request.path %}active{% endif %}">
           <a class="nav-link" href="/races/">
             <i class="fas fa-fw fa-flag-checkered"></i>
             <span>Races</span></a>

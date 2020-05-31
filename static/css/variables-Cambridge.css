@@ -1,16 +1,21 @@
 :root {
+    /* --cambridge-blue: ‎#002147; */
+    --cambridge-blue:rgb(163, 193, 173);
+    --inverted:rgb(0, 117, 165);
 
-    --bg-1: #E0E0E0;
-    --bg-2: #F5F5F5;
-    --bg-3: #FAFAFA;
+    /* --lighter-1: rgb(57, 77, 120);
+    --lighter-3: rgb(229, 240, 255); */
+    
+    --bg-1:var(--cambridge-blue);
+    --bg-2: rgb(217, 237, 223);
+    --bg-3: rgb(245, 255, 248);
     --bg-4: #ffffff;
 
-    --fg-primary: #000;
     --fg-1: rgb(60, 60, 60);
     --fg-2: rgb(100,100,100);
-    --fg-3: var(--fg-primary);
     
-    --fg-nav: var(--fg-primary);
+    --fg-primary: #000;
+    --fg-3: var(--fg-primary);
 
     --bg-primary: var(--bg-4);
     --bg-secondary: var(--bg-2);
@@ -18,14 +23,18 @@
     --fg-alternate: var(--fg-primary);
     --fg-secondary: var(--fg-1);
 
-    --top-nav: var(--bg-1);
+    --fg-nav: #000;
+
+    --top-nav: var(--cambridge-blue);
     --nav-color: var(--bg-2); /* #212529;*/
-    --nav-color-selected: var(--nav-color);
+    --nav-color-selected: var(--nav-color); /* Slightly lighter than background */
     --bg-color: var(--bg-primary); /* #fff;*/
+
     --main-text: var(--fg-primary); /* #000;*/
-    --nav-active: var(--fg-1); /*  #fff;*/
-    --nav-text-unselected: rgba(30,30,30, 0.5);
-    --nav-text-selected: rgba(30,30,30, 0.75);
+
+    --nav-active: var(--fg-nav); /*  #fff;*/
+    --nav-text-unselected: rgba(0,0,0, 0.5);
+    --nav-text-selected: rgba(0,0,0, 0.75);
     --form-label: #495057;
     --form-label-2: #777;
     --footer-bg: var(--bg-3);
@@ -47,15 +56,15 @@
     --suggestion-bg: #0097cf;
 
     --table-fixed-header: gainsboro;
-    --table-fixed-head-text: var(--fg-1);
+    --table-fixed-head-text: var(--fg-nav);
 
-    --menu-selected: var(--bg-1); /* lightyellow;*/
+    --menu-selected: var(--bg-2); /* lightyellow;*/
 
-    --stat: darkblue;
+    --stat: var(--cambridge-blue);
     --stat-desc: grey;
 
-    --link: #007bff;
-    --link-active:#0056b3;
+    --link: var(--inverted);
+    --link-active: rgb(200, 123, 110); /* rgb(0, 97, 138);*/
 
     --border: rgba(0,0,0,.25);
     --internal-border: var(--bg-1);

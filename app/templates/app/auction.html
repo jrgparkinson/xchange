@@ -1,0 +1,142 @@
+{% extends 'app/base.html' %}
+{% load static %}
+
+{% block title %}Auction{% endblock %}
+
+
+{% block page_title %}
+{% if not auction %}
+No auctions in progress
+{% else %}
+{{ auction.name }}
+{% endif %}
+{% endblock %}
+
+{% block search_area %}
+
+{%endblock%}
+{% block content %}
+
+
+
+
+
+<div class="row">
+    <div class="col-sm">
+        <div class="card">
+            <div class="card-body">
+
+                {% if auction %}
+
+                <div class="row">
+                    <div class="col-sm-12">
+                        {% if auction.active %}
+                        <h4>Auction closes: {{auction.end_date}} Place your bids below before then.</h4>
+                        {% else %}
+                        <h4>Auction has closed. You can see your bids below. </h4>
+                        <p>If the bids have been processed, they will be highlighted 
+                            either green (accepted) or red (rejected)</p>
+                        {% endif %}
+                    </div>
+
+                </div>
+
+                <form method="POST" action="">
+                   
+                    
+                    {% if auction.active %}
+                    {% csrf_token %} 
+                <div class="row">
+                    <div class="col-sm-1">
+                        <button class="btn btn-success" name="submit_top" type="submit">Save bids</button>
+                    </div>
+                </div>
+                {% endif %}
+
+                
+
+                    <table class="table" id="lots">
+                        <thead>
+                            <tr>
+                                <th scope="col">Athlete</th>
+                                <th scope="col">Available volume</th>
+                                <th scope="col">Bid for volume</th>
+                                <th scope="col">Bid price per volume</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for lot in lots_bid %}
+                            <tr class="{{lot.style}}">
+                                <td>{{lot.athlete.name}}</td>
+                                <td>{{lot.volume}}</td>
+                                <td>
+                                    <!-- TODO: style accepted/rejected bids -->
+                                    <input class="form-control" type="number" step="0.01" name="lot_{{lot.id}}_volume"
+                                    {% if lot.current_bid %}
+                                    value="{{lot.current_bid.volume}}"
+                                    {% endif %} 
+                                    
+                                    {% if not auction.active %}disabled{% endif %}>
+                                </td>
+                                <td>
+                                    <input class="form-control" type="number" step="0.01" name="lot_{{lot.id}}_price"
+                                    {% if lot.current_bid %}
+                                    value="{{lot.current_bid.price_per_volume}}"
+                                    {% endif %}
+                                    {% if not auction.active %}disabled{% endif %}>
+                                </td>
+                                
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    {% if auction.active %}
+                    <div class="row" style="margin-top:10px">
+                        <div class="col-sm-1">
+                            <button class="btn btn-success" name="submit_bottom" type="submit">Save bids</button>
+                        </div>
+                    </div>
+                    {% endif %}
+                </form>
+
+                
+                {% else %}
+                No auctions in progress. 
+                
+                <br><br>Scheduled auctions: <br>
+
+                {% if all_auctions %}
+
+                {% for a in all_auctions %}
+                {{a.name}} from {{a.start_date}} to {{a.end_date}} <br>
+                {% endfor %}
+
+                {% else %}
+                None
+                {% endif %}
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+{%endblock%}
+
+{% block footer %}
+<script type="text/javascript" src="{% static 'js/common.js' %}"></script>
+
+<script>
+    $(document).ready(function () {
+        $('#lots').DataTable({
+            paging: false,
+        });
+    });
+</script>
+
+{% endblock %}

@@ -315,12 +315,20 @@
 
                 $("table[data-asset=" + asset + "]").each(function (index) {
                     var rowCount = $(this).find('tbody').find('tr').length;
-                    console.log("Row count: "+String(rowCount));
+                    // console.log("Row count: "+String(rowCount));
                     if (rowCount > 0)
                     {
                         if (!$.fn.DataTable.isDataTable($(this))) {
+                            var order = [];
+                            if ($(this).attr('id')  == "buy_share") {
+                                order = [2, 'asc'];
+                            } else if ($(this).attr('id')  == "sell_shares") {
+                                order = [2, 'desc'];
+                            }
+
                             $(this).dataTable({
                                 paging: false,
+                                order: order,
                             });
                     }
                 }
