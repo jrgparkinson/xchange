@@ -7,162 +7,164 @@
 
 {% block content %}
 
-<div class="card" style="width: 32%; float:left;">
-  <div class="card-body">
-    <h2 class="card-title">Make a trade</h2>
-    <!--<h6 class="card-subtitle mb-2 text-muted">Card subtitle</h6>-->
-    <p class="card-text">
-    <div id="make_trade">
-      <form id="formCreateTrade">
-        <div class="form-group row">
-          <div class="col-sm-6">
-            <div class="custom-control custom-radio custom-control-inline">
-              <input type="radio" id="buy" name="buysell" value="buy" class="custom-control-input"  >
-              <label class="custom-control-label" for="buy">Buy</label>
+<div class="row">
+  <div class="col-sm-12 col-md-4">
+    <div class="card">
+      <div class="card-body">
+        <h2 class="card-title">Make a trade</h2>
+        <!--<h6 class="card-subtitle mb-2 text-muted">Card subtitle</h6>-->
+        <p class="card-text">
+        <div id="make_trade">
+          <form id="formCreateTrade">
+            <div class="form-group row">
+              <div class="col-sm-6">
+                <div class="custom-control custom-radio custom-control-inline">
+                  <input type="radio" id="buy" name="buysell" value="buy" class="custom-control-input">
+                  <label class="custom-control-label" for="buy">Buy</label>
+                </div>
+                <div class="custom-control custom-radio custom-control-inline">
+                  <input type="radio" id="sell" name="buysell" value="sell" class="custom-control-input" checked>
+                  <label class="custom-control-label" for="sell">Sell</label>
+                </div>
+              </div>
             </div>
-            <div class="custom-control custom-radio custom-control-inline">
-              <input type="radio" id="sell" name="buysell" value="sell" class="custom-control-input"  checked>
-              <label class="custom-control-label" for="sell">Sell</label>
+
+            <div class="form-group row">
+              <label for="commodity" class="col-sm-4 col-form-label col-form-label">Commodity:</label>
+              <div class="col-sm-6">
+
+                <button type="button" class="btn btn-primary mb-2" data-toggle="modal"
+                  data-target="#createShare">Share</button>
+
+                <button type="button" class="btn btn-primary mb-2" data-toggle="modal" data-target="#createSwap"
+                  disabled>Swap</button>
+
+                <button type="button" class="btn btn-primary mb-2" data-toggle="modal" data-target="#createOptionFuture"
+                  disabled>Option/future</button>
+
+                <!-- <div id="commodityEntry"></div> -->
+                <input type="text" class="form-control form-control" id="commodityEntry" name="commodityEntry" required>
+              </div>
             </div>
-          </div>
-        </div>
 
-        <div class="form-group row">
-          <label for="commodity" class="col-sm-4 col-form-label col-form-label">Commodity:</label>
-          <div class="col-sm-6">
+            <div class="form-group row">
+              <label for="tradeWith" class="col-sm-4 col-form-label col-form-label">Trade with:</label>
+              <div class="col-sm-8">
+                <select class="custom-select" name="tradeWith" id="tradeWith">
+                  <option selected>Open</option>
+                </select>
+              </div>
+            </div>
 
-            <button type="button" class="btn btn-primary mb-2" data-toggle="modal"
-              data-target="#createShare">Share</button>
 
-              <button type="button" class="btn btn-primary mb-2" data-toggle="modal"
-              data-target="#createSwap" disabled>Swap</button>
+            <div class="form-group row">
+              <label for="price" class="col-sm-4 col-form-label col-form-label">Price</label>
+              <div class="col-sm-8">
+                <input type="number" step="0.01" name="price" class="form-control form-control" id="price" required>
+              </div>
+            </div>
 
-              <button type="button" class="btn btn-primary mb-2" data-toggle="modal"
-              data-target="#createOptionFuture" disabled>Option/future</button>
+            <div class="form-group row">
+              <div class="col-sm-9"></div>
+              <div class="col-sm-2">
+                <button type="submit" class="btn btn-primary mb-2">Create</button>
+              </div>
+            </div>
 
-            <!-- <div id="commodityEntry"></div> -->
-            <input type="text" class="form-control form-control" id="commodityEntry" 
-            name="commodityEntry" required>
-          </div>
-        </div>
-
-        <div class="form-group row">
-          <label for="tradeWith" class="col-sm-4 col-form-label col-form-label">Trade with:</label>
-          <div class="col-sm-8">
-            <select class="custom-select" name="tradeWith" id="tradeWith">
-              <option selected>Open</option>
-            </select>
-          </div>
+          </form>
         </div>
 
 
-        <div class="form-group row">
-          <label for="price" class="col-sm-4 col-form-label col-form-label">Price</label>
-          <div class="col-sm-8">
-            <input type="number" step="0.01" name="price" class="form-control form-control" id="price" required>
-          </div>
-        </div>
+        </p>
 
-        <div class="form-group row">
-          <div class="col-sm-9"></div>
-          <div class="col-sm-2">
-            <button type="submit" class="btn btn-primary mb-2">Create</button>
-          </div>
-        </div>
-
-      </form>
+      </div>
     </div>
-
-
-    </p>
-    <!--<a href="#" class="card-link">Card link</a>
-    <a href="#" class="card-link">Another link</a>-->
   </div>
-</div>
+  <div class="col-sm-12 col-md-8">
+    <div id="right-container">
 
-<div id="right-container" style="width:65%; float:right;">
+      <div class="card">
+        <div class="card-body">
+          <h2 class="card-title">Your active trade requests</h2>
 
-  <div class="card" style="width: 100%;">
-    <div class="card-body">
-      <h2 class="card-title">Your active trade requests</h2>
+          <p class="card-text">
 
-      <p class="card-text">
+          <div style="overflow-x: auto;">
 
-      <div>
-        <!-- <ul class="tradeList" id="active_trades">
-  </ul> -->
+            <table class="table active_trades" id="active_trades">
+              <thead>
+                <tr>
+                  <!-- <td scope="col" width="80"></td> -->
+                  <th scope="col">Commodity</th>
+                  <th scope="col">Price</th>
+                  <th scope="col">Seller</th>
+                  <th scope="col">Buyer</th>
+                  <th scope="col">Initiated by</th>
+                  <th scope="col"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="buyHeader tradeHeader buy">
+                  <td scope="col" colspan=7>Buy</td>
+                </tr>
+                <tr class="noTradesFound buy">
+                  <td scope="col" colspan=7>No trades found</td>
+                </tr>
+                <tr class="sellHeader tradeHeader sell">
+                  <td scope="col" colspan=7>Sell</td>
+                </tr>
+                <tr class="noTradesFound sell">
+                  <td scope="col" colspan=7>No trades found</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
-        <table class="table active_trades" id="active_trades">
-          <thead>
-            <tr>
-              <!-- <td scope="col" width="80"></td> -->
-              <th scope="col">Commodity</th>
-              <th scope="col">Price</th>
-              <th scope="col">Seller</th>
-              <th scope="col">Buyer</th>
-              <th scope="col">Initiated by</th>
-              <th scope="col"></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr class="buyHeader tradeHeader buy">
-              <td scope="col" colspan=7>Buy</td>
-            </tr>
-            <tr class="noTradesFound buy">
-              <td scope="col" colspan=7>No trades found</td>
-            </tr>
-            <tr class="sellHeader tradeHeader sell">
-              <td scope="col" colspan=7>Sell</td>
-            </tr>
-            <tr class="noTradesFound sell">
-              <td scope="col" colspan=7>No trades found</td>
-            </tr>
-          </tbody>
-        </table>
+          </p>
+
+        </div>
       </div>
 
-      </p>
-
-    </div>
-  </div>
-
-
-
-</div>
-
-
-
-<div class="card" style="width: 100%; float:left; margin-top:25px">
-  <div class="card-body">
-    <h2 class="card-title">Trading history</h2>
-    <!--<h6 class="card-subtitle mb-2 text-muted">Card subtitle</h6>-->
-    <p class="card-text">
-
-    <div id="past_trades">
-      <table class="table" id="past_trades">
-        <thead>
-          <tr>
-            <td scope="col">Status</td>
-            <th scope="col">Commodity</th>
-            <th scope="col">Price</th>
-            <td scope="col">Seller</td>
-            <td scope="col">Buyer</td>
-            <td scope="col">Initiated by</td>
-            <td scope="col">Last updated</td>
-
-          </tr>
-        </thead>
-        <tbody>
-        </tbody>
-      </table>
     </div>
 
-    </p>
-    <!--<a href="#" class="card-link">Card link</a>
-    <a href="#" class="card-link">Another link</a>-->
   </div>
 </div>
 
+<div class="row">
+  <div class="col-sm-12">
+
+    <div class="card" style="width: 100%; float:left; margin-top:25px">
+      <div class="card-body">
+        <h2 class="card-title">Trading history</h2>
+        <!--<h6 class="card-subtitle mb-2 text-muted">Card subtitle</h6>-->
+        <p class="card-text">
+
+        <div id="past_trades">
+          <table class="table" id="past_trades">
+            <thead>
+              <tr>
+                <td scope="col">Status</td>
+                <th scope="col">Commodity</th>
+                <th scope="col">Price</th>
+                <td scope="col">Seller</td>
+                <td scope="col">Buyer</td>
+                <td scope="col">Initiated by</td>
+                <td scope="col">Last updated</td>
+
+              </tr>
+            </thead>
+            <tbody>
+            </tbody>
+          </table>
+        </div>
+
+        </p>
+       
+      </div>
+    </div>
+
+  </div>
+</div>
 
 <!-- Modal -->
 <div class="modal fade" id="createShare" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
@@ -249,13 +251,13 @@
           if (data.error) {
             display_error(data.error);
           }
-        // alert(data); // show response from the php script.
-        reload_all();
-      }
-     });
+          // alert(data); // show response from the php script.
+          reload_all();
+        }
+      });
 
 
+    });
   });
-});
 </script>
 {% endblock %}

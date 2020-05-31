@@ -248,6 +248,7 @@ function reload_trades(div, active, investor_id, other_opts) {
             if (athlete_filter) {
                 tab.dataTable({
                     paging: false,
+                    scrollx: true,
                     // "pageLength": 5,
                     // "scrollY": "300px",
                     // "scrollCollapse": true,
@@ -256,6 +257,7 @@ function reload_trades(div, active, investor_id, other_opts) {
             } else {
                 tab.dataTable({
                     paging: false,
+                    scrollx: true,
                 });
             }
         }

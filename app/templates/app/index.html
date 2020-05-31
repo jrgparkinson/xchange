@@ -1,4 +1,3 @@
-
 {% extends 'app/base.html' %}
 {% load static %}
 
@@ -11,35 +10,36 @@
 
 
 <div class="row">
-  <div class="col-sm-8">
+  <div class="col-md-8 col-sm-12">
 
-      <button type="button" class="btn btn-success btn-lg page-choice" data-page="investor">
-        Investor leaderboard</button>
-      <button type="button" class="btn btn-outline-success btn-lg page-choice" data-page="athlete">
-          Athlete trading prices</button>
-          
+    <button type="button" class="btn btn-success btn-lg page-choice" data-page="investor">
+      Investor leaderboard</button>
+    <button type="button" class="btn btn-outline-success btn-lg page-choice" data-page="athlete">
+      Athlete trading prices</button>
 
-          <div class="card">
-            <div class="card-body">
+
+    <div class="card">
+      <div class="card-body">
 
         <div class="page" id="investor">
 
-      <table class="table" id="leaderboard">
-        <thead>
-            <tr>
+          <table class="table" id="leaderboard">
+            <thead>
+              <tr>
                 <th scope="col">#</th>
                 <th scope="col">Player</th>
                 <th scope="col">Total value</th>
                 <th scope="col">Shares</th>
                 <th scope="col">Cash</th>
                 <th scope="col">Derivatives</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for investor in leaderboard %}
-            <tr>
-              <td>{{investor.position}}</td>
-                <td><span class="badgeContainer"><a href="/investor/{{investor.id}}" class="badge badge-danger">{{investor.print_name}}</a></span>
+              </tr>
+            </thead>
+            <tbody>
+              {% for investor in leaderboard %}
+              <tr>
+                <td>{{investor.position}}</td>
+                <td><span class="badgeContainer"><a href="/investor/{{investor.id}}"
+                      class="badge badge-danger">{{investor.print_name}}</a></span>
                 </td>
                 <td>
                   {{investor.total_value|floatformat:2}}
@@ -51,43 +51,44 @@
                 <td>
                   {{investor.derivatives_value|floatformat:2}}
                 </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+        </div>
+
+        <div class="page" id="athlete">
+
+          <table class="table" id="athlete">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Athlete</th>
+                <th scope="col">Current trading price</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for a in athletes %}
+              <tr>
+                <td>{{a.position}}</td>
+                <td><span class="badgeContainer"><a href="/athlete/{{a.id}}"
+                      class="badge badge-danger">{{a.name}}</a></span>
+                </td>
+                <td>
+                  {{a.get_value|floatformat:2}}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
 
   </div>
-
-  <div class="page" id="athlete">
-
-    <table class="table" id="athlete">
-      <thead>
-          <tr>
-              <th scope="col">#</th>
-              <th scope="col">Athlete</th>
-              <th scope="col">Current trading price</th>
-          </tr>
-      </thead>
-      <tbody>
-          {% for a in athletes %}
-          <tr>
-            <td>{{a.position}}</td>
-              <td><span class="badgeContainer"><a href="/athlete/{{a.id}}" class="badge badge-danger">{{a.name}}</a></span>
-              </td>
-              <td>
-                {{a.get_value|floatformat:2}}
-              </td>
-          </tr>
-          {% endfor %}
-      </tbody>
-  </table>
-  </div>
-
-  </div>
-  </div>
-
-  </div>
-  <div class="col-sm-3">
+  <div class="col-md-3 col-sm-8">
     <h2>Stats</h2>
     <div class="statContainer">
       <div class="statLabel">
@@ -97,21 +98,23 @@
         {{stats.top10.value|floatformat:2}}
         {% if stats.top10.daily_change %}
 
-       <div style="padding:0px; margin-top:-40px;">
-        <span style="padding:0px; margin: 0px;" data-toggle="tooltip" data-placement="left" title="Daily change">
-{% if stats.top10.daily_change < 0 %}
-<i class="fas fa-caret-down fa-fw" style="color: red; vertical-align:middle; margin-right:-20px; margin-bottom:-10px"></i>
-<span style="font-size:0.5em">{{stats.top10.daily_change|floatformat:1}}%</span>
-{% elif stats.top10.daily_change > 0 %}
-<i class="fas fa-caret-up fa-fw" style="color: green; vertical-align:middle; margin-right:-20px; margin-bottom:-10px"></i>
-<span style="font-size:0.5em">{{stats.top10.daily_change|floatformat:1}}%</span>
-{% else %}
-<i class="fas fa-equals fa-fw" data-toggle="tooltip"></i>
-{% endif %}
-</span>
+        <div style="padding:0px; margin-top:-40px;">
+          <span style="padding:0px; margin: 0px;" data-toggle="tooltip" data-placement="left" title="Daily change">
+            {% if stats.top10.daily_change < 0 %}
+            <i class="fas fa-caret-down fa-fw"
+              style="color: red; vertical-align:middle; margin-right:-20px; margin-bottom:-10px"></i>
+            <span style="font-size:0.5em">{{stats.top10.daily_change|floatformat:1}}%</span>
+            {% elif stats.top10.daily_change > 0 %}
+            <i class="fas fa-caret-up fa-fw"
+              style="color: green; vertical-align:middle; margin-right:-20px; margin-bottom:-10px"></i>
+            <span style="font-size:0.5em">{{stats.top10.daily_change|floatformat:1}}%</span>
+            {% else %}
+            <i class="fas fa-equals fa-fw" data-toggle="tooltip"></i>
+            {% endif %}
+          </span>
 
-{% endif %}
-</div>
+          {% endif %}
+        </div>
 
       </div>
       <div class="statDesc">
@@ -129,62 +132,75 @@
           {% for a in top_athletes %}
           <li>
             <span class="badgeContainer"><a href="/athlete/{{a.id}}" class="badge badge-primary">
-            {{a.name}} ({{a.get_value|floatformat:2}})
-          </a>
-        </span>
-      </li>
+                {{a.name}} ({{a.get_value|floatformat:2}})
+              </a>
+            </span>
+          </li>
           {% endfor %}
-          </ol>
+        </ol>
       </div>
       <div class="statDesc">
         Athletes with the highest current trading price
       </div>
     </div>
-   
-    </div>
+
+  </div>
 </div>
-    
-        
-          {%endblock%}
 
 
-      {% block footer %}
+{%endblock%}
 
-    <!-- Demo scripts for this page-->
-    <!-- <script src="{% static 'js/demo/datatables-demo.js' %}"></script>
+
+{% block footer %}
+
+<!-- Demo scripts for this page-->
+<!-- <script src="{% static 'js/demo/datatables-demo.js' %}"></script>
     <script src="{% static 'js/demo/chart-area-demo.js' %}"></script> -->
-    <script type="text/javascript">
+<script type="text/javascript">
 
-    function show_page(p) {
-      $("div.page").hide();
-      $("#" + p).show();
+  function show_page(p) {
+    $("div.page").hide();
+    $("#" + p).show();
 
-      $("button.page-choice").each(function() {
-        $(this).removeClass("btn-success");
-        $(this).addClass("btn-outline-success");
-        // $(this).removeClass("btn-outline-success");
-      })
+    $("button.page-choice").each(function () {
+      $(this).removeClass("btn-success");
+      $(this).addClass("btn-outline-success");
+      // $(this).removeClass("btn-outline-success");
+    })
 
-      $("button[data-page=" + p +"]").removeClass("btn-outline-success");
-      $("button[data-page=" + p +"]").addClass("btn-success");
-    }
+    $("button[data-page=" + p + "]").removeClass("btn-outline-success");
+    $("button[data-page=" + p + "]").addClass("btn-success");
+  }
 
-    $(document).ready(function() {
-      $('#leaderboard').DataTable({
-        paging: false,
-      });
-
-      $('table#athlete').DataTable({
-        paging: false,
-      });
-
-      show_page("investor");
-
-      $("button.page-choice").click(function() {
-        var p = $(this).attr("data-page");
-        show_page(p);
-        
-      });
+  $(document).ready(function () {
+    $('#leaderboard').DataTable({
+      paging: false,
+      scrollx: true,
+      scrollx: true,
+      // fixedHeader: {
+      //       header: true,
+      //       headerOffset: 45,
+      //       },
     });
+
+    $('table#athlete').DataTable({
+      paging: false,
+      scrollx: true,
+      scrollx: true,
+    });
+
+    show_page("investor");
+
+    $("button.page-choice").click(function () {
+      var p = $(this).attr("data-page");
+      show_page(p);
+
+    });
+
+
+
+  });
+
+  
 </script>
-    {% endblock %}
+{% endblock %}

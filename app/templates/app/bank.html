@@ -11,44 +11,41 @@
 {%endblock%}
 {% block content %}
 
+<style id="datatables_crazyfix">
+    .tab-content .tab-pane {
+        visibility: hidden;
+        display: block;
+    }
+    </style>
 
+<ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+    <li class="nav-item">
+        <a class="nav-link active" id="pills-transactions-tab" data-toggle="pill" href="#pills-transactions" role="tab"
+            aria-controls="pills-transactions" aria-selected="true">
+            Transactions</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="pills-buy-tab" data-toggle="pill" href="#pills-buy" role="tab" aria-controls="pills-buy"
+            aria-selected="false">
+            Buy</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="pills-loans-tab" data-toggle="pill" href="#pills-loans" role="tab"
+            aria-controls="pills-loans" aria-selected="false">
+            Loans</a>
+    </li>
 
+</ul>
+<div class="tab-content" id="pills-tabContent">
+    <div class="tab-pane fade show active" id="pills-transactions" role="tabpanel"
+        aria-labelledby="pills-transactions-tab">
 
-
-<div class="row">
-    <div class="col-sm-6">
         <div class="card">
             <div class="card-body">
 
-                <h2>Loans</h2>
-
-                <p>Coming soon.</p>
-
-            </div>
-        </div>
-    </div>
-
-    <div class="col-sm-6">
-        <div class="card">
-            <div class="card-body">
-   
-
-                <h2>Buy shares</h2>
-                <p>Coming soon. The bank will sell any shares it has for the current market price + 5%</p>
-            </div>
-        </div>
-    </div>
-
-</div>
-
-<div class="row">
-    <div class="col-sm">
-        <div class="card">
-            <div class="card-body">
-   
 
                 <h2>Your transactions</h2>
-               
+
                 <table class="table" id="transactions">
                     <thead>
                         <tr>
@@ -64,15 +61,36 @@
                         {% for t in transactions %}
                         <tr>
                             <td>{{t.timestamp}}</td>
-                          <td>{{t.description|safe}}</td>
-                          <td>{{t.transaction_type}}</td>
-                          <td>{{t.cash_in|floatformat:2}}</td>
-                          <td>{{t.cash_out|floatformat:2}}</td>
-                          <td>{{t.balance|floatformat:2}}</td>                            
+                            <td>{{t.description|safe}}</td>
+                            <td>{{t.transaction_type}}</td>
+                            <td>{{t.cash_in|floatformat:2}}</td>
+                            <td>{{t.cash_out|floatformat:2}}</td>
+                            <td>{{t.balance|floatformat:2}}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
+
+            </div>
+        </div>
+    </div>
+    <div class="tab-pane fade show" id="pills-buy" role="tabpanel" aria-labelledby="pills-buy-tab">
+        <div class="card">
+            <div class="card-body">
+
+
+                <h2>Buy shares</h2>
+                <p>Coming soon. The bank will sell any shares it has for the current market price + 5%</p>
+            </div>
+        </div>
+    </div>
+    <div class="tab-pane fade show" id="pills-loans" role="tabpanel" aria-labelledby="pills-loans-tab">
+        <div class="card">
+            <div class="card-body">
+
+                <h2>Loans</h2>
+
+                <p>Coming soon.</p>
 
             </div>
         </div>
@@ -83,17 +101,20 @@
 
 
 
+
+
 {%endblock%}
 
 {% block footer %}
 <script type="text/javascript" src="{% static 'js/common.js' %}"></script>
 
 <script>
-    $(document).ready(function() {
-      $('#transactions').DataTable({
-        paging: false,
-        order: [],
-      });
+    $(document).ready(function () {
+        $('#transactions').DataTable({
+            paging: false,
+            scrollx: true,
+            order: [],
+        });
     });
 </script>
 

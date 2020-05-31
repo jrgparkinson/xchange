@@ -62,6 +62,13 @@ tr.noTradesFound {
     font-size: large;
 }
 
+@media (max-width:600px) {
+    .nav-portfolio {
+        right:0px;
+        width:300px;
+    }
+}
+
 .searchError{
     color:var(--error);
     /* padding-left:10px; */
@@ -117,6 +124,13 @@ div.graph {
     background-color: var(--bg-4);
     border-radius: 10px;
     padding:10px;
+    min-height: 300px;
+}
+
+@media (min-width:800px) {
+    div.graph {
+        min-height:400px;
+    }
 }
 
 .tableFixHead thead th { position: sticky; top: 0;
@@ -217,6 +231,10 @@ li.selected a {
     /* border-width: 2px; */
 }
 
+    /* div.page {
+        width:300px;
+    } */
+
 div.card-body, div.card {
     background-color: var(--bg-3);
 }
@@ -314,4 +332,18 @@ tr.rejected, input.rejected {
 
 .top-nav, .top-nav a {
     color: var(--fg-nav);
+}
+
+.dataTables_wrapper {
+    overflow-x:auto;
+}
+
+/* 
+div.dataTables_wrapper div.row div.dataTables_filter {
+    position: sticky;
+    left: 0;
+} */
+
+#buyTable, #sellTable {
+    overflow-x:auto;
 }

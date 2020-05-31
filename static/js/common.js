@@ -77,6 +77,7 @@ function defaultChartOptions(ylab) {
     // Chart.defaults.global.defaultColor = bgcol;
 
     return {
+        maintainAspectRatio: false,
         scales: {
             xAxes: [{
                 type: 'time',
@@ -136,3 +137,8 @@ function updateZoom() {
 }
 
 $("input.zoom").change(updateZoom);
+
+
+$(document).ready(function() {
+    $("#datatables_crazyfix").remove();
+});

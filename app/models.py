@@ -367,7 +367,7 @@ class Entity(models.Model):
     def to_html(self):
         if self.is_investor():
             # return self.investor.display_name
-            return '<span class="badgeContainer"><a href="/investor/' + str(self.id) + '" class="badge badge-primary">' + self.display_name + '</a></span>'
+            return '<span class="badgeContainer"><a href="/investor/' + str(self.id) + '" class="badge badge-primary">' + self.investor.display_name + '</a></span>'
         else:
             return self.bank.name
 
@@ -481,14 +481,6 @@ class Club(models.Model):
         return self.name
 
 
-class Team(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    club = models.ForeignKey(Club, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return "{} ({})".format(self.name, self.club)
-
-
 class Athlete(models.Model):
     """
     An athlete who earns dividends for their share holders
@@ -499,7 +491,6 @@ class Athlete(models.Model):
     name = models.CharField(max_length=100, unique=True)
     power_of_10 = models.URLField()
     club = models.ForeignKey(Club, on_delete=models.CASCADE)
-    team_last_year = models.ForeignKey(Team, on_delete=models.CASCADE, null=True)
 
     def __repr__(self):
         return self.name
@@ -1242,7 +1233,7 @@ class Debt(models.Model):
 class TransactionHistory(models.Model):
     """ We should keep a track of all transactions made """
 
-    SHARE_REASON = r"([a-zA-Z\s]+): ([\d\.]+).*from ([a-zA-Z\s]+) to ([a-zA-Z\s]+).*for ([\d\.]+).*"
+    SHARE_REASON = r"([a-zA-Z\s]+): ([\d\.]+).*from ([a-zA-Z\s]+).* to ([a-zA-Z\s]+).*for ([\d\.]+).*"
 
     sender = models.ForeignKey(
         Entity,
@@ -1275,7 +1266,8 @@ class TransactionHistory(models.Model):
     
     def description(self, investor: Investor):
 
-        share_match = re.match(TransactionHistory.SHARE_REASON, self.reason)
+        
+        share_match = re.match(TransactionHistory.SHARE_REASON, self.reason.replace('Share trade: ', ''))
         if share_match:
             athlete = share_match.groups()[0]
             volume = float(share_match.groups()[1])
@@ -1289,15 +1281,21 @@ class TransactionHistory(models.Model):
 
             desc = ""
             other_party = ""
+            from_to = ""
             if self.recipient == investor:
                 desc = desc + "Sold "
                 other_party = self.sender
+                from_to = "to"
             else:
                 desc = desc + "Bought "
                 other_party = self.recipient
+                from_to = "from"
 
-            desc = desc + " {} shares in {} from {}".format(volume, athlete.to_html, other_party.to_html)
+            desc = desc + " {0:.2f} shares in {1} {2} {3}".format(volume, athlete.to_html, from_to, other_party.to_html)
             return desc
+
+        else:
+            print("Couldn't determine transaction reason")
 
         return self.reason
         

@@ -21,7 +21,7 @@
                         {{event.name}} ({{event.date}})
                         <ul class="raceList">
                             {% for race in event.races.all %}
-                            <li data-race="{{race.id}}"><a class="race" data-race="{{race.id}}" href="#">{{race.name}}</a></li>
+                            <li data-race="{{race.id}}"><a class="race" data-race="{{race.id}}" href="#selectedRace">{{race.name}}</a></li>
                             {% endfor %}
                         </ul>
                     </li>
@@ -30,27 +30,30 @@
 
             </div>
 
+           
+
             <div class="col-sm-8">
                 <div id="selectedRace">
+                    
                     <div class="row">
                         <div class="col-sm-12">
                             <h2 id="raceName">Varsity II</h2>
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col">
+                        <div class="col-sm-12 col-md-8 col-lg-3 col-xl-2">
                             <h4>Dividend formula</h4>
                         </div>
-                        <div class="col-sm-4" id="raceDividend">formula</div>
-                        <div class="col-sm-5" style="min-width:300px" >
+                        <div class="col-sm-4 col-md-6 col-lg-5 col-xl-5" id="raceDividend">formula</div>
+                        <div class="col-sm-12 col-md-12 col-lg-8 col-xl-5 graph">
                             <canvas id="dividendGraph"></canvas>
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-sm-3">
+                        <div class="col-sm-6 col-md-8 col-xl-3">
                             <h4>External links</h4>
                         </div>
-                        <div class="col-sm-9" id="raceLink">link</div>
+                        <div class="col-sm-9 col-xl-9" id="raceLink">link</div>
                     </div>
                     <hr>
                     <div class="row">
@@ -154,7 +157,7 @@
                 var primCol = style.getPropertyValue('--fg-1');
 
                 var ctx = document.getElementById("dividendGraph");
-                ctx.height = 250;
+                // ctx.height = 250;
 
                 new Chart(ctx, {
                     type: 'line',
@@ -253,19 +256,28 @@
                     });
                 } else {
                     $("#raceResultsTable").html(resultsTitle + '<p>No results yet</p>');
-
-
                 }
 
                 $('#raceResults').DataTable({
                     paging: false,
+                    scrollx: true,
 
                 });
 
                 $("#selectedRace").show();
                 $("#noRaceSelected").hide();
                 MathJax.typeset();
-            });
+
+                if(window.location.hash) {
+                    // console.log(window.location.hash);
+                    // console.log($(window.location.hash));
+                        $('html, body').animate({
+                            
+                            scrollTop: $(window.location.hash).offset().top - 20
+                        }, 500);
+    }
+
+            }); // done callback
     }
 
     function hideEventRace() {
@@ -301,6 +313,12 @@
 
             window.history.pushState("object or string", "Title", "/races/" + race);
         })
+
+        if(window.location.hash) {
+        $('html, body').animate({
+            scrollTop: $(window.location.hash).offset().top - 20
+        }, 500);
+    }
 
 
     });

@@ -14,7 +14,6 @@ from import_export.results import RowResult
 
 
 admin.site.register(Event)
-admin.site.register(Team)
 admin.site.register(Season)
 
 
@@ -208,10 +207,6 @@ Tom Wood,OUCCC
         attribute='club',
         widget=ForeignKeyWidget(Club, 'name'))
 
-    team_last_year = Field(
-        column_name='team_last_year',
-        attribute='team_last_year',
-        widget=ForeignKeyWidget(Team, 'name'))
 
     # Fill id column
     def before_import(self, dataset, using_transactions, dry_run, **kwargs):
@@ -240,7 +235,7 @@ Tom Wood,OUCCC
     class Meta:
         # fields
         model=Athlete
-        fields = ('name', 'power_of_10', 'club', 'team_last_year', )
+        fields = ('name', 'power_of_10', 'club', )
         # import_id_fields = ('name',)
 
 class AthleteAdmin(ImportExportModelAdmin):

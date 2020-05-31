@@ -245,6 +245,10 @@ body.fixed-nav.sidebar-toggled #content-wrapper {
   }
 }
 
+.sidebar .nav-item.dropdown .dropdown-toggle::after {
+  display: block;
+}
+
 .sidebar.fixed-top {
   top: 56px;
   height: calc(100vh - 56px);
