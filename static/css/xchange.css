@@ -217,11 +217,13 @@ li.selected a {
 }
 
 .statContainer {
-    width:100%;
+    /* width:100%; */
     border: 2px solid var(--stat);
     border-radius: 10px;
+    margin:5px;
     margin-bottom:10px;
     padding:2px;
+    
 }
 
 .card {
@@ -346,4 +348,20 @@ div.dataTables_wrapper div.row div.dataTables_filter {
 
 #buyTable, #sellTable {
     overflow-x:auto;
+}
+
+input[data-asset="share"]:disabled {
+    background-color: var(--accept);
+}
+
+input[data-asset="option"]:disabled, input[data-asset="future"]:disabled {
+    background-color: var(--action-in-progres);
+}
+
+input[data-asset="swap"]:disabled {
+    background-color: var(--stat);
+}
+
+.calendar-addon {
+    font-size:1.5em; padding-left:2px;
 }

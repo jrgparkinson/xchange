@@ -49,8 +49,8 @@ class TradeNotPending(XChangeException):
         super().__init__(desc)
 
 
-class InvalidCommodity(XChangeException):
-    title = "Invalid commodity"
+class InvalidAsset(XChangeException):
+    title = "Invalid asset"
     desc = ""
 
     def __init__(self, desc=None):

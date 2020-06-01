@@ -25,7 +25,7 @@ function populateTradeWithSelect() {
         });
 }
 
-function populateAthletes() {
+function populateAthletes(athleteSelectId) {
     $.ajax({
         type: "GET",
         url: '/get_athletes/',  // URL to your view that serves new info
@@ -37,23 +37,28 @@ function populateAthletes() {
                 display_error(response.error);
             }
 
-            $("#athlete option").each(function () {
+            $("#" + athleteSelectId +" option").each(function () {
                 $(this).remove();
             });
 
             $.each(response.athletes, function (i, athlete) {
 
-                $('#athlete').append($('<option>', {
-                    value: athlete.name,
-                    text: athlete.name
+                $('#'+athleteSelectId).append($('<option>', {
+                    value: athlete.id,
+                    text: athlete.name + " (owned: " + athlete.vol_owned + ")"
                 }));
             });
         });
 }
 
 function createShareFromModal() {
-    var shareText = $("#athlete option:selected").val() + "/" + $("#volume").val();
+    var shareText = "Share: " + $("#athletesShare option:selected").text() + ", volume=" + $("#volume").val();
     $("#commodityEntry").val(shareText);
+
+    // $("#commodityEntry").addClass("asset-share");
+    $("#commodityEntry").attr("data-asset", "share");
+    $("#commodityEntry").attr("data-athlete", $("#athletesShare option:selected").val());
+    $("#commodityEntry").attr("data-volume", $("#volume").val());
 }
 
 function actionTrade(trade_id, change) {
@@ -69,7 +74,18 @@ function actionTrade(trade_id, change) {
             if (response.error) {
                 display_error(response.error);
                 $("tr[data-trade=" + trade_id + "]").removeClass("actionedTrade");
+                
+            } else {
+
+                if (change=="cancel") {
+                    successNotif("Trade cancelled/rejected.");
+                } else if (change == "accept") {
+                    successNotif("Trade accepted.");
+                } else {
+                    successNotif("Action performed successfully.");
+                }
             }
+            
 
             $("tr[data-trade=" + trade_id + "]").remove();
 

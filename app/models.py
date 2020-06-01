@@ -41,6 +41,7 @@ def current_time():
 
 
 def get_current_season():
+    """ Should only ever be one season that is 'open' """
     return Season.objects.get(status=Season.OPEN)
 
 
@@ -63,12 +64,6 @@ class Entity(models.Model):
     capital = models.FloatField(default=INITIAL_CAPITAL)
 
     def serialize(self):
-        # if self.is_bank():
-        #     s = self.bank.serialize()
-
-        # elif self.is_investor():
-        #     s = self.investor.serialize()
-        # else:
         s = {"capital": self.capital}
 
         s["share_value"] = self.share_value
@@ -81,7 +76,7 @@ class Entity(models.Model):
 
         # Transactions for this entity
         cash_transactions = TransactionHistory.objects.all().filter(
-            (Q(sender=self) | Q(recipient=self)) & Q(timestamp__gte=time)
+            (Q(sender=self) | Q(recipient=self)) & Q(timestamp__gte=time)& Q(season=get_current_season())
         )
 
         # Add/remove cash to get back to point in time we care about
@@ -97,7 +92,7 @@ class Entity(models.Model):
     def get_portfolio_values(self):
         cash_transactions = (
             TransactionHistory.objects.all()
-            .filter((Q(sender=self) | Q(recipient=self)))
+            .filter((Q(sender=self) | Q(recipient=self)) & Q(season=get_current_season()))
             .order_by("timestamp")
         )
         this_time = current_time()
@@ -251,6 +246,8 @@ class Entity(models.Model):
         for s in shares:
             wealth = wealth + s.volume * s.athlete.get_value()
 
+        # print("Wealth: " + str(wealth))
+
         return wealth
 
     @property
@@ -276,6 +273,7 @@ class Entity(models.Model):
             (Q(buyer=self) | Q(seller=self))
             & Q(status=Trade.ACCEPTED)
             & Q(updated_gte=time)
+            & Q(season=get_current_season())
         )
         trades = [t for t in trades if t.is_share()]
 
@@ -299,12 +297,13 @@ class Entity(models.Model):
             return False
 
     def get_shares_owned(self):
-        return Share.objects.filter(owner=self, is_virtual=False)
+        shares = Share.objects.filter(owner=self, is_virtual=False, season=get_current_season())
+        # print("shares owned: " + str(shares))
+        return shares
 
     def shares_in_athlete(self, athlete):
         try:
-            share = Share.objects.get(owner=self, is_virtual=False, athlete=athlete)
-            # print("Share for {}: {}".format(self, share))
+            share = Share.objects.get(owner=self, is_virtual=False, athlete=athlete, season=get_current_season())
             return share
         except Share.DoesNotExist:
             return None
@@ -323,7 +322,7 @@ class Entity(models.Model):
     def get_share(self, share):
         try:
             share = Share.objects.get(
-                owner=self, is_virtual=False, athlete=share.athlete
+                owner=self, is_virtual=False, athlete=share.athlete, season=get_current_season()
             )
             return share
         except Share.DoesNotExist:
@@ -503,13 +502,22 @@ class Athlete(models.Model):
         # return self.name
         return '<span class="badgeContainer"><a href="/athlete/' + str(self.id) + '" class="badge badge-danger">' + self.name + '</a></span>'
 
-    def serialize(self):
-        return {"id": self.pk, "name": self.name}
+    def serialize(self, investor: Investor =None):
+        s = {"id": self.pk, "name": self.name}
+
+        if investor:
+            shares = investor.saleable_shares_in_athlete(self)
+            vol = 0
+            if shares:
+                vol = shares.volume
+            s["vol_owned"] = vol
+
+        return s
 
     def get_all_trades(self):
         trades = (
             Trade.objects.all()
-            .filter(asset__share__athlete=self, status=Trade.ACCEPTED)
+            .filter(asset__share__athlete=self, status=Trade.ACCEPTED, season=get_current_season())
             .order_by("updated")
         )
         return trades
@@ -559,7 +567,7 @@ class Athlete(models.Model):
             time = current_time()
         # Get all trades for this athlete before this time which were accepted
         trades = Trade.objects.all().filter(
-            asset__share__athlete=self, status=Trade.ACCEPTED
+            asset__share__athlete=self, status=Trade.ACCEPTED, season=get_current_season()
         )  # .order_by('updated')
         # Also filter and sort by time
         trades = sorted(
@@ -586,7 +594,7 @@ class Athlete(models.Model):
         return value
 
     def get_total_volume_of_shares(self):
-        shares = Share.objects.filter(athlete=self)
+        shares = Share.objects.filter(athlete=self, season=get_current_season())
         volume = np.sum(np.array([float(s.volume) for s in shares]))
         return volume
 
@@ -595,6 +603,7 @@ class ShareIndexValue(models.Model):
     athletes = models.ManyToManyField(to=Athlete)
     value = models.FloatField()
     date = models.DateTimeField(auto_now_add=True)
+    season = models.ForeignKey(Season, on_delete=models.CASCADE)
 
     TOP10 = "T"
     TYPE_CHOICES = ((TOP10, "Top 10"),)
@@ -619,7 +628,7 @@ class ShareIndexValue(models.Model):
             value = np.mean(np.array([a.get_value() for a in athletes]))
 
             try:
-                t = ShareIndexValue(value=value)
+                t = ShareIndexValue(value=value, season=get_current_season())
                 t.save()
                 t.athletes.add(*athletes)
                 t.save()
@@ -634,7 +643,7 @@ class ShareIndexValue(models.Model):
         """ Get latest value of the index """
         values = (
             ShareIndexValue.objects.all()
-            .filter(index_type=index_type)
+            .filter(index_type=index_type,season=get_current_season())
             .order_by("-date")
         )
         if len(values) > 0:
@@ -650,7 +659,7 @@ class ShareIndexValue(models.Model):
         one_day_ago = current_time() - timedelta(days=1.0)
         previous_values = (
             ShareIndexValue.objects.all()
-            .filter(Q(index_type=index_type) & Q(date__lte=one_day_ago))
+            .filter(Q(index_type=index_type) & Q(date__lte=one_day_ago) & Q(season=get_current_season()))
             .order_by("-date")
         )
         if len(previous_values) > 0:
@@ -947,6 +956,18 @@ class Trade(models.Model):
         trade = Trade.make_trade(virtual_share, creator, price, seller, buyer)
         return trade
 
+    @staticmethod
+    def make_option_trade(athlete, volume, investor, price, seller, buyer, strike_date, holder):
+        pass
+
+    @staticmethod
+    def make_future_trade(athlete, volume, investor, price, seller, buyer, strike_date):
+        pass
+
+    @staticmethod
+    def make_swap_trade(investor, price, seller, buyer, swap_details):
+        pass
+
     def make_trade(asset, creator, price, seller=None, buyer=None):
         price = np.round(price, 2)  # ensure price is always to 2 DP
         trade = Trade(
@@ -1189,7 +1210,7 @@ class Loan(models.Model):
 def pay_all_loans():
     loans = (
         Loan.objects.all()
-        .filter(next_payment_due__lte=current_time())
+        .filter(next_payment_due__lte=current_time(),season=get_current_season())
         .exclude(balance=0)
     )
 
@@ -1254,6 +1275,7 @@ class TransactionHistory(models.Model):
         models.TextField()
     )  # e.g. buying volume of shares from X, repaying loan to X
     timestamp = models.DateTimeField(auto_now_add=True)
+    season = models.ForeignKey(Season, on_delete=models.CASCADE)
 
     def serialize(self):
         return {

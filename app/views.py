@@ -12,6 +12,7 @@ import re
 import json
 from django.core.serializers.json import DjangoJSONEncoder
 import time
+from datetime import datetime
 
 
 def handler404(request, exception):
@@ -36,6 +37,12 @@ def index(request):
         # inv = i.serialize()
         # inv["position"] = pos
         i.position = pos
+
+        # portfolio = i.get_portfolio_values(season=get_current_season())
+        # i.current_cash = portfolio["cash"]
+        # i.current_shares = portfolio["shares"]
+        # i.current_total = portfolio["combined"]
+
         investors_leaderboard.append(i)
         pos = pos + 1
 
@@ -53,7 +60,7 @@ def index(request):
 
     # Stats
     ind = ShareIndexValue.get_value(ShareIndexValue.TOP10)
-    print("{}, {}".format(ind.value, ind.daily_change))
+    # print("{}, {}".format(ind.value, ind.daily_change))
     stats = {"top10": ShareIndexValue.get_value(ShareIndexValue.TOP10)}
 
     context = {
@@ -165,7 +172,8 @@ def auction(request):
 def bank(request):
     investor = request.user.investor
 
-    transaction_history = TransactionHistory.objects.all().filter(Q(sender=investor) | Q(recipient=investor))
+    transaction_history = TransactionHistory.objects.all().filter((Q(sender=investor) | Q(recipient=investor)) 
+    & Q(season=get_current_season()))
     transaction_history = transaction_history.order_by('-timestamp')
     transactions = []
     for t in transaction_history:
@@ -183,7 +191,7 @@ def bank(request):
 
 
 def races(request, race_id=None):
-    events = Event.objects.all()
+    events = Event.objects.all().filter(season=get_current_season())
     events_and_races = []
     for e in events:
         e.races = Race.objects.all().filter(event=e)
@@ -283,12 +291,12 @@ def view_athlete(request, athlete_id):
 
     print(value_change)
 
-    active_trades = Trade.objects.all().filter(Q(status=Trade.PENDING))
+    active_trades = Trade.objects.all().filter(Q(status=Trade.PENDING) & Q(season=get_current_season()))
 
     # Only show trades which can actually be accepted
     possible_active_trades = [t for t in active_trades if t.is_possible()]
 
-    results = Result.objects.all().filter(athlete=athlete).order_by("time")
+    results = Result.objects.all().filter(athlete=athlete,race__event__season=get_current_season()).order_by("time")
 
     return render(
         request,
@@ -377,8 +385,8 @@ def dashboard(request):
     if request.user.is_authenticated:
         investor = request.user.investor
 
-        shares = Share.objects.filter(owner=investor)
-        loans = Loan.objects.filter(recipient=investor)
+        shares = Share.objects.filter(owner=investor, season=get_current_season())
+        loans = Loan.objects.filter(recipient=investor, season=get_current_season())
 
         # collated_shares = investor.get_shares()
         return render(request, "app/dashboard.html", {"shares": shares, "loans": loans})
@@ -386,15 +394,9 @@ def dashboard(request):
         return render(request, "app/index.html")
 
 
+@login_required(login_url='/login/')
 def marketplace(request):
     if request.user.is_authenticated:
-        # shares = Share.objects.filter(owner=request.user.investor)
-
-        # Remove testing:
-        # investor = request.user.investor
-        # open_trade = OpenTrade.objects.filter(buyer=investor).first()
-        # investor.can_fulfil_trade(open_trade)
-
         return render(request, "app/marketplace.html")
     else:
         return render(request, "app/index.html")
@@ -423,11 +425,11 @@ def retrieve_trades(request):
             athlete = Athlete.objects.get(pk=request.GET["athlete_id"])
             if "historical" in request.GET:
                 all_trades = Trade.objects.all().filter(
-                    Q(asset__share__athlete=athlete) & ~Q(status=Trade.PENDING)
+                    Q(asset__share__athlete=athlete) & ~Q(status=Trade.PENDING) & Q(season=get_current_season())
                 )
             else:
                 all_trades = Trade.objects.all().filter(
-                    Q(asset__share__athlete=athlete) & Q(status=Trade.PENDING)
+                    Q(asset__share__athlete=athlete) & Q(status=Trade.PENDING) & Q(season=get_current_season())
                 )
 
             all_trades = [t for t in all_trades if t.is_possible()]
@@ -435,13 +437,13 @@ def retrieve_trades(request):
         elif "historical" in request.GET:
             print("Retrieve historical trades ")
             all_trades = Trade.objects.all().filter(
-                (Q(buyer=investor) | Q(seller=investor)) & ~Q(status=Trade.PENDING)
+                (Q(buyer=investor) | Q(seller=investor)) & ~Q(status=Trade.PENDING) & Q(season=get_current_season())
             )
         elif "asset" in request.GET:
             asset = request.GET["asset"]
             print("Retrieve trades for asset {}".format(asset))
             all_trades = Trade.objects.all().filter(
-                Q(status=Trade.PENDING) & (Q(seller=None) | Q(buyer=None))
+                Q(status=Trade.PENDING) & (Q(seller=None) | Q(buyer=None)) & Q(season=get_current_season())
             )
 
             # Get open trades only - either no seller or no buyer
@@ -455,19 +457,6 @@ def retrieve_trades(request):
                 ]
 
                 # only retrieve shares where they can be actioned sensibly
-                actionable_trades = []
-                # for t in all_trades:
-                #     share = t.asset.share
-                #     if t.seller:
-                #         saleable_shares = t.seller.saleable_shares_in_athlete(
-                #             share.athlete
-                #         )
-                #         if saleable_shares and saleable_shares.volume >= share.volume:
-                #             actionable_trades.append(t)
-                #     elif t.buyer and t.buyer.capital >= t.price:
-                #         actionable_trades.append(t)
-
-                # all_trades = actionable_trades
                 all_trades = [t for t in all_trades if t.is_possible()]
             elif asset == "option":
                 all_trades = [t for t in all_trades if t.asset.is_option()]
@@ -480,7 +469,7 @@ def retrieve_trades(request):
             print("Retrieve  standard trades")
             print(request.GET)
             all_trades = Trade.objects.all().filter(
-                (Q(buyer=investor) | Q(seller=investor)) & Q(status=Trade.PENDING)
+                (Q(buyer=investor) | Q(seller=investor)) & Q(status=Trade.PENDING) & Q(season=get_current_season())
             )
 
         # now sort
@@ -630,6 +619,10 @@ def create_trade(request):
         tradeWith = request.GET["tradeWith"]
         price = float(request.GET["price"])
         is_sell = request.GET["buysell"] == "sell"
+        if "data-asset" not in request.GET:
+            raise InvalidAsset(desc="{} is not a valid asset".format(commodity))
+
+        asset_type = request.GET["data-asset"]
 
         seller = None
         buyer = None
@@ -646,29 +639,64 @@ def create_trade(request):
             seller = other
 
         share_match = re.match(r"([\w ]+)/([\.\d]+)", commodity)
-        if share_match:
-            ath = share_match.group(1)
-            volume = float(share_match.group(2))
-            athlete = Athlete.objects.get(name=ath)
-
-            # print(price)
+        if asset_type == 'share':
+            ath_id = request.GET["data-athlete"] # share_match.group(1)
+            volume = float(request.GET["data-volume"]) # float(share_match.group(2))
+            athlete = Athlete.objects.get(id=int(ath_id))
 
             trade = Trade.make_share_trade(
                 athlete, volume, investor, price, seller, buyer
             )
 
+        elif asset_type == "future" or asset_type == "option":
+            ath_id = request.GET["data-athlete"] 
+            volume = float(request.GET["data-volume"]) 
+            athlete = Athlete.objects.get(id=int(ath_id))
+            strike_date =  datetime.strptime(request.GET["data-date"], "%Y-%m-%dT%H:%M:%S.%fZ")
+
+            # print(strike_date)
+            
+            if asset_type == "option":
+                holder = request.GET["data-holder"]
+
+                trade = Trade.make_option_trade(athlete, volume, investor, price, seller, buyer, strike_date, holder)
+            
+            else:
+                trade = Trade.make_future_trade(athlete, volume, investor, price, seller, buyer, strike_date)
+
+
+            raise InvalidAsset(desc="{} is not a valid asset".format(commodity))
         else:
-            print("Invalid commodity")
-            raise InvalidCommodity(desc="{} is not a valid commodity".format(commodity))
+            print("Invalid asset")
+            raise InvalidAsset(desc="{} is not a valid asset".format(commodity))
 
     except Athlete.DoesNotExist:
         raise AthleteDoesNotExist(desc="{} does not exist".format(ath))
     except XChangeException as e:
         return JsonResponse(make_error(e))
+    
     except Exception as e:
         return JsonResponse(make_error(e))
 
     return JsonResponse({})
+
+
+def asset_price(request):
+
+    try:
+        print(request.GET)
+        if request.GET["data-asset"] == 'share':
+            athlete = Athlete.objects.get(pk=int(request.GET["data-athlete"]))
+            value = athlete.get_value()
+
+            total_val = float(request.GET["data-volume"]) * value
+
+            return JsonResponse({"value": "{} ({} per share)".format(total_val, value)})
+        else:
+            return JsonResponse({"value": "Unknown"})
+    except Exception as e:
+        print(e)
+        return JsonResponse({"value": "Unknown"})
 
 
 def make_error(e):
@@ -694,7 +722,12 @@ def get_investors(request):
 
 
 def get_athletes(request):
-    athletes = [i.serialize() for i in Athlete.objects.all()]
+    if request.user.is_authenticated:
+        investor = request.user.investor
+    else:
+        investor = None
+
+    athletes = [i.serialize(investor) for i in Athlete.objects.all()]
     return JsonResponse({"athletes": athletes})
 
 
@@ -735,12 +768,11 @@ def get_event(request):
 def trades(request):
     if request.user.is_authenticated:
         investor = request.user.investor
-        # shares = Share.objects.filter(owner=investor)
-
+        
         return render(
             request,
             "app/trades.html",
-            {"trades": Trade.objects.filter(seller=investor).filter(buyer=investor)},
+            {"trades": Trade.objects.filter( (Q(seller=investor) | Q(buyer=investor)) & Q(season=get_current_season()))},
         )
     else:
         return render(request, "app/index.html")

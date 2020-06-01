@@ -138,7 +138,20 @@ function updateZoom() {
 
 $("input.zoom").change(updateZoom);
 
-
+function successNotif(message) {
+    $("#successNotifMsg").text(message);
+    $('#successNotif').toast('show');
+    // hide after 5 seconds
+    setTimeout(function() { $('#successNotif').toast('hide'); }, 5000);
+}
 $(document).ready(function() {
     $("#datatables_crazyfix").remove();
+
+    // console.log("Toast:");
+    // console.log($(".toast"));
+    $('.toast').toast('hide');
+
+    
+    // $.toaster({ settings : {'timeout': 500} });
+    // $('.toast').css('color', 'red');
 });

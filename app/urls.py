@@ -71,4 +71,7 @@ urlpatterns = [
     path("get_race/", views.get_race, name="get_race"),
     path("get_event/", views.get_event, name="get_event"),
     path("get_portfolio_value/", views.get_portfolio_value, name="get_portfolio_value"),
+    path("asset_price/", views.asset_price, name="asset_price"),
+
+    
 ]

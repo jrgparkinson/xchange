@@ -15,14 +15,20 @@
 </title>
 
     <!-- template from https://startbootstrap.com/template-overviews/sb-admin/ -->
+    <!-- icons for date time picker -->
+    <!-- <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"> -->
     <!-- Bootstrap core CSS-->
-    <link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+    
+    <!-- <link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet"> -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
 
     <!-- Custom fonts for this template-->
     <link href="{% static 'vendor/fontawesome-free/css/all.min.css' %}" rel="stylesheet" type="text/css">
 
     <!-- Page level plugin CSS-->
     <link href="{% static 'vendor/datatables/dataTables.bootstrap4.css' %}" rel="stylesheet">
+
+    <link rel="stylesheet" href="{% static 'css/bootstrap-datetimepicker.min.css' %}" />
 
     <!-- Custom styles for this template-->
     {% if user.is_authenticated %}
@@ -263,9 +269,43 @@
       </div>
     </div>
 
+
+    <!-- <div aria-live="polite" aria-atomic="true" style="position: relative; min-height: 200px;"> -->
+      <!-- Position it -->
+      <div style="position: fixed; top: 0; right: 0;">
+      <div class="toast ml-auto" id="successNotif" role="alert" data-delay="500" data-autohide="false">
+          <div class="toast-header">
+              <strong class="mr-auto text-primary">Success</strong>
+              <!-- <small class="text-muted">3 mins ago</small> -->
+              <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+                  <span aria-hidden="true">×</span>
+              </button>
+          </div>
+          <div class="toast-body" id="successNotifMsg">Trade created succesfully. </div>
+      </div>
+      <div class="toast ml-auto" role="alert" data-delay="700" data-autohide="false">
+          <div class="toast-header">
+              <strong class="mr-auto text-primary">Another Toast</strong>
+              <small class="text-muted">8 mins ago</small>
+              <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+                  <span aria-hidden="true">×</span>
+              </button>
+          </div>
+          <div class="toast-body"> Hey, there! This is a Bootstrap 4 toast. </div>
+      </div>
+      </div>
+  <!-- </div> -->
+
     <!-- Bootstrap core JavaScript-->
-    <script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
-    <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <!-- <script src="{% static 'vendor/jquery/jquery.min.js' %}"></script> -->
+
+    <script
+  src="https://code.jquery.com/jquery-3.5.1.min.js"
+  integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+  crossorigin="anonymous"></script>
+<!--  -->
+  <!-- <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script> -->
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.bundle.min.js" integrity="sha384-1CmrxMRARb6aLqgBO7yyAxTOQE2AKb9GfXnEo760AUcUmFx3ibVJJAzGytlQcNXd" crossorigin="anonymous"></script>
 
     <!-- Core plugin JavaScript-->
     <script src="{% static 'vendor/jquery-easing/jquery.easing.min.js' %}"></script>
@@ -286,8 +326,13 @@
     <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@0.7.7"></script>
 
+    <!-- <script type="text/javascript" src="{% static 'js/transition.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/collapse.min.js' %}"></script> -->
     
-<script>
+    <script type="text/javascript" src="{% static 'js/bootstrap-datetimepicker.min.js' %}"></script>
+
+    
+<script type="text/javascript">
 
   function display_error(error) {
     $("#errorTitle").html(error.title);
@@ -320,9 +365,16 @@
         });
     }
 
-    {% block js_footer %} {% endblock %}
+    $(document).ready(function() {
+      // Activate datetime pickers
+      $('.datetimePicker').datetimepicker({'fontAwesome': true});
+      // $('.toast').toast('show');
+            
+    });
   </script>
 
+    {% block js_footer %} {% endblock %}
+ 
   
  
     {% block footer %}{%endblock%}
