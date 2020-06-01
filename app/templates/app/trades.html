@@ -16,18 +16,7 @@
         <p class="card-text">
         <div id="make_trade">
           <form id="formCreateTrade">
-            <div class="form-group row">
-              <div class="col-sm-6">
-                <div class="custom-control custom-radio custom-control-inline">
-                  <input type="radio" id="buy" name="buysell" value="buy" class="custom-control-input">
-                  <label class="custom-control-label" for="buy">Buy</label>
-                </div>
-                <div class="custom-control custom-radio custom-control-inline">
-                  <input type="radio" id="sell" name="buysell" value="sell" class="custom-control-input" checked>
-                  <label class="custom-control-label" for="sell">Sell</label>
-                </div>
-              </div>
-            </div>
+
 
             <div class="form-group row">
               <label for="commodity" class="col-sm-4 col-form-label col-form-label">Asset:</label>
@@ -43,8 +32,8 @@
                   data-target="#createOptionFuture">Option/future</button>
 
                 <!-- <div id="commodityEntry"></div> -->
-                <input type="text" class="form-control form-control" id="commodityEntry" name="commodityEntry" disabled
-                  required>
+                <textarea rows="2" class="form-control form-control" data-asset="none" id="commodityEntry"
+                  name="commodityEntry" disabled required></textarea>
               </div>
             </div>
 
@@ -64,10 +53,26 @@
             </div>
 
 
-            <div class="form-group row">
+            <div class="form-group row" id="priceRow">
               <label for="price" class="col-sm-4 col-form-label col-form-label">Price</label>
               <div class="col-sm-8">
                 <input type="number" step="0.01" name="price" class="form-control form-control" id="price" required>
+              </div>
+            </div>
+
+            <div class="form-group row" id="buySellAssetRow">
+              <div class="col-sm-4">
+                Buy or sell asset?
+              </div>
+              <div class="col-sm-8">
+                <div class="custom-control custom-radio custom-control-inline">
+                  <input type="radio" id="buy" name="buysell" value="buy" class="custom-control-input">
+                  <label class="custom-control-label" for="buy">Buy</label>
+                </div>
+                <div class="custom-control custom-radio custom-control-inline">
+                  <input type="radio" id="sell" name="buysell" value="sell" class="custom-control-input" checked>
+                  <label class="custom-control-label" for="sell">Sell</label>
+                </div>
               </div>
             </div>
 
@@ -254,38 +259,50 @@
         success: function (data) {
           if (data.error) {
             display_error(data.error);
+          } else {
+            successNotif("Trade created succesfully.");
           }
-          // alert(data); // show response from the php script.
+
           reload_all();
 
 
           // $('#successCreateTrade').toast('show');
           // // hide after 5 seconds
           // setTimeout(function() { $('#successCreateTrade').toast('hide'); }, 5000);
-          successNotif("Trade created succesfully.");
+
         }
       });
 
 
     });
 
-    $(".modalDone").click(function() {
+    $(".modalDone").click(function () {
       submitModal($(this));
       return false;
     });
-    $("form.createAsset").submit(function() {
+    $("form.createAsset").submit(function () {
       submitModal($(this));
       return false;
     });
-      
+
     function submitModal(obj) {
       console.log("Handled form submit");
-           
+
+      // $("#buySellAssetRow").hide();
+      // $("#priceRow").hide();
+      $(".createAsset").modal('hide');
 
       if (obj.attr('id') == "createShare") {
         createShareFromModal();
+        $("#buySellAssetRow").show();
+        $("#priceRow").show();
       } else if (obj.attr('id') == "createOptionFuture") {
         console.log("Make option/future");
+
+        // validate first
+        if ($("#strikeDate").val() == "" || $("#strikePrice").val() == "" || $("#volumeFuture").val() == "") {
+          return;
+        }
 
         var comText = "";
         var option = false
@@ -298,17 +315,39 @@
           comText += "Future: ";
           $("#commodityEntry").attr("data-asset", "future");
         }
-        comText =  $("#athletesFuture option:selected").text() + ", volume=" + $("#volume").val();
+
+        if ($("input[name=buysellFuture]:checked").val() == "buy") {
+          comText += "Contract owner to buy ";
+        } else {
+          comText += "Contract owner to sell ";
+        }
+        comText += $("#athletesFuture option:selected").text() + ", volume=" + $("#volumeFuture").val();
         comText += ", strike date: " + $("#strikeDate").val();
+        comText += ", strike price: " + $("#strikePrice").val() + " (" + Number($("#strikePrice").val() / $("#volumeFuture").val()).toFixed(2) + " per share)";
+
+        // asset = {
+        //   owner_obligation: $("input[name=buysellFuture]:checked").val(),
+        //   strike_price: $("#strikePrice").val(),
+        //   strike_date: $("#strikeDate").val(),
+        //   underlying: { 
+        //     athlete: { id: $("#athletesFuture option:selected").val(), 
+        //     name: $("#athletesFuture option:selected").text()} , 
+        //     volume: $("#volumeFuture").val()}, 
+        // }
+        // comText = format_asset(asset);
         $("#commodityEntry").val(comText);
 
         // $("#commodityEntry").addClass("asset-share");
 
         var date = new Date($("#strikeDate").val());
-        
+
         $("#commodityEntry").attr("data-athlete", $("#athletesFuture option:selected").val());
         $("#commodityEntry").attr("data-volume", $("#volumeFuture").val());
         $("#commodityEntry").attr("data-date", date.toISOString());
+        $("#commodityEntry").attr("data-strike-price", $("#strikePrice").val());
+
+        $("#commodityEntry").attr("data-future-buy-sell", $("input[name=buysellFuture]:checked").val());
+
       } else {
         console.log("Don't know how to handle id: " + $(this).attr('id'));
       }
@@ -337,10 +376,10 @@
       $(".createAsset").modal('hide');
       return false;
     }
-    
+
   });
 
-  $("input[name=option]").change(function() {
+  $("input[name=option]").change(function () {
     console.log($("input[name=option]:checked").val());
     if ($("input[name=option]:checked").val() == "yes") {
       $("#optionHolder").fadeIn();

@@ -15,19 +15,46 @@ from import_export.results import RowResult
 
 admin.site.register(Event)
 admin.site.register(Season)
-
-
+admin.site.register(Future)
+admin.site.register(Option)
+admin.site.register(Swap)
+admin.site.register(ShareIndexValue)
+admin.site.register(TransactionHistory)
+admin.site.register(Notification)
+# admin.site.register(Trade)
+# admin.site.register(Asset)
 
 
 class ShareInline(admin.TabularInline):
     model = Share
 
+class FutureInline(admin.TabularInline):
+    model = Future
+
+class TradeInline(admin.TabularInline):
+    model = Trade
+
+class AssetInline(admin.TabularInline):
+    model = Asset
+
 class BankAdmin(admin.ModelAdmin):
     inlines = [ ShareInline,  ]
 admin.site.register(Bank, BankAdmin)
 
+# class TradeAdmin(admin.ModelAdmin):
+#     inlines = [ AssetInline,  ]
+admin.site.register(Trade)
+
+
+
+class AssetAdmin(admin.ModelAdmin):
+    inlines = [ FutureInline ]
+admin.site.register(Asset, AssetAdmin)
+
+
+
 class InvestorAdmin(admin.ModelAdmin):
-    inlines = [ ShareInline,  ]
+    inlines = [ ShareInline ]
 admin.site.register(Investor, InvestorAdmin)
 
 class AthleteNotFound(Exception):

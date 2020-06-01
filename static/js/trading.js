@@ -84,23 +84,30 @@ function actionTrade(trade_id, change) {
                 } else {
                     successNotif("Action performed successfully.");
                 }
+
+                var myTable = $("tr[data-trade=" + trade_id + "]").parent('tbody').parent('table').DataTable();
+                var tr = $("tr[data-trade=" + trade_id + "]");
+                var row = myTable.row(tr);
+                row.remove().draw();
             }
             
+            
+            
+            // $("tr[data-trade=" + trade_id + "]").remove();
+            
 
-            $("tr[data-trade=" + trade_id + "]").remove();
-
-            if (window.location.href.includes("trades")) {
-                console.log("Reload for trades");
-                reload_all();
-            } else if (window.location.href.includes("athlete")) {
-                console.log("Reload for athletes");
-                reload_all_athlete_trades();
-            } else if (window.location.href.includes("marketplace")) {
-                console.log("Reload for marketplace");
-                reload_marketplace_trades();
-            } else {
-                console.log("Unknown post actionTrade ");
-            }
+            // if (window.location.href.includes("trades")) {
+            //     console.log("Reload for trades");
+            //     reload_all();
+            // } else if (window.location.href.includes("athlete")) {
+            //     console.log("Reload for athletes");
+            //     reload_all_athlete_trades();
+            // } else if (window.location.href.includes("marketplace")) {
+            //     console.log("Reload for marketplace");
+            //     reload_marketplace_trades();
+            // } else {
+            //     console.log("Unknown post actionTrade ");
+            // }
 
             populate_top_bar_portfolio();
         });
@@ -160,7 +167,7 @@ function reload_trades(div, active, investor_id, other_opts) {
         response.trades.forEach(trade => {
             // console.log(trade);
 
-            var com_label = format_asset(trade.asset);
+            var com_label = format_asset(trade.asset, response.current_investor);
 
             var label;
             if (trade.type == "Sell") {
@@ -265,6 +272,7 @@ function reload_trades(div, active, investor_id, other_opts) {
                 tab.dataTable({
                     paging: false,
                     scrollx: true,
+                    order: [],
                     // "pageLength": 5,
                     // "scrollY": "300px",
                     // "scrollCollapse": true,
@@ -274,6 +282,7 @@ function reload_trades(div, active, investor_id, other_opts) {
                 tab.dataTable({
                     paging: false,
                     scrollx: true,
+                    order: [],
                 });
             }
         }

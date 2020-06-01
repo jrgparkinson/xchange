@@ -17,10 +17,27 @@ function format_investor_display(current_inv, inv) {
 function format_athlete(athlete) {
     return '<span class="badgeContainer"><a href="/athlete/' + athlete.id + '" class="badge badge-danger">' + athlete.name + '</a></span>';
 }
-function format_asset(asset) {
+function format_asset(asset, current_inv) {
     if (asset.athlete) {
         // this is a share
         return 'Share (' + format_athlete(asset.athlete) + ', ' + Number(asset.volume).toFixed(2) + ')';
+    } else if (asset.strike_price) {
+        
+        var x = "";
+        if (asset.current_option) {
+            // option
+            x = "Option:<br>";
+        } else {
+            x = "Future:<br>";
+        }
+        
+        var d = new Date(asset.strike_date);
+
+        var underlying = "(" + format_athlete(asset.underlying.athlete) +", "+ Number(asset.underlying.volume).toFixed(2) + ')';
+        
+        x += "Owner to " + asset.owner_obligation + ": " + underlying; 
+        x += "<br>Strike price: " + asset.strike_price+"<br>Strike date: " + d.toLocaleString();
+        return x;
     } else {
         return "Unknown asset";
     }

@@ -350,18 +350,58 @@ div.dataTables_wrapper div.row div.dataTables_filter {
     overflow-x:auto;
 }
 
-input[data-asset="share"]:disabled {
+textarea[data-asset="none"]:disabled {
+    display:none;
+}
+
+textarea[data-asset="share"]:disabled {
+    display:block;
     background-color: var(--accept);
 }
 
-input[data-asset="option"]:disabled, input[data-asset="future"]:disabled {
+textarea[data-asset="option"]:disabled, input[data-asset="future"]:disabled {
     background-color: var(--action-in-progres);
+    display:block;
 }
 
-input[data-asset="swap"]:disabled {
+textarea[data-asset="swap"]:disabled {
     background-color: var(--stat);
+    display:block;
 }
 
 .calendar-addon {
     font-size:1.5em; padding-left:2px;
 }
+
+li.notificationUnseen {
+    font-weight: bold;
+    background-color: var(--bg-3);
+}
+
+ul.notifications, ul.notifications li {
+    list-style: none;
+    padding-left:5px;
+    white-space:normal;
+    max-width: 500px;
+    min-width:400px;
+
+}
+ ul.notifications li {
+     padding-right:50px;
+ }
+
+li.notificationSeen {
+    font-weight: normal;
+    background-color: var(--bg-4);
+}
+
+i.seenNotification, i.dismissNotification {
+    position: absolute;
+}
+i.seenNotification {
+    right:22px;
+}
+i.dismissNotification {
+    right:2px;
+}
+

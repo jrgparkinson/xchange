@@ -13,7 +13,10 @@ import json
 from django.core.serializers.json import DjangoJSONEncoder
 import time
 from datetime import datetime
+import logging
 
+# Get an instance of a logger
+logger = logging.getLogger(__name__)
 
 def handler404(request, exception):
     return render(request, "app/404.html", status=404)
@@ -60,7 +63,7 @@ def index(request):
 
     # Stats
     ind = ShareIndexValue.get_value(ShareIndexValue.TOP10)
-    # print("{}, {}".format(ind.value, ind.daily_change))
+    # logger.info("{}, {}".format(ind.value, ind.daily_change))
     stats = {"top10": ShareIndexValue.get_value(ShareIndexValue.TOP10)}
 
     context = {
@@ -87,7 +90,7 @@ def auction(request):
 
         for field in list(dict(request.POST).keys()):
 
-            # print(field)
+            # logger.info(field)
             m = re.match(r"^lot_(\d+)_([a-zA-Z]+)$", field)
             if m:
                 
@@ -97,7 +100,7 @@ def auction(request):
                 # validate value
                 if not re.match(r"[0-9\.]+", value):
                     value = 0.0
-                    # print("Invalid value: {}".format(value))
+                    # logger.info("Invalid value: {}".format(value))
                     # continue
 
                 if lot_id not in list(lot_bids_form.keys()):
@@ -108,7 +111,7 @@ def auction(request):
 
         
         # Save:
-        print(lot_bids_form)
+        logger.info(lot_bids_form)
         
         for id, val in lot_bids_form.items():
             try:
@@ -133,7 +136,7 @@ def auction(request):
                 bid.save()
 
             except Exception as e:
-                print(e)
+                logger.info(e)
                 continue
 
 
@@ -154,7 +157,7 @@ def auction(request):
             bid = Bid.objects.all().filter(lot=lot,bidder=request.user.investor)
             lot.style = ""
             if bid:
-                print(bid)
+                logger.info(bid)
                 lot.current_bid = bid[0]
 
                 if lot.current_bid.status == Bid.ACCEPTED:
@@ -214,7 +217,7 @@ def profile(request):
             # process the data in form.cleaned_data as required
             # ...
             # redirect to a new URL:
-            print(form["uitheme"])
+            logger.info(form["uitheme"])
             inv.uitheme = form.cleaned_data["uitheme"]
             user.first_name = form.cleaned_data["first_name"]
             user.last_name = form.cleaned_data["last_name"]
@@ -278,7 +281,7 @@ def view_athlete(request, athlete_id):
     trades = athlete.get_all_trades()
 
     current_value = athlete.get_value(current_time())
-    print("Current value = {}".format(current_value))
+    logger.info("Current value = {}".format(current_value))
     value_one_day_ago = athlete.get_value(current_time() - timedelta(days=1.0))
     if value_one_day_ago == 0:
         value_change = np.nan
@@ -289,7 +292,7 @@ def view_athlete(request, athlete_id):
     else:
         value_change = np.round(value_change, 2)
 
-    print(value_change)
+    logger.info(value_change)
 
     active_trades = Trade.objects.all().filter(Q(status=Trade.PENDING) & Q(season=get_current_season()))
 
@@ -326,7 +329,7 @@ def retrieve_athlete_value(request):
     trades = athlete.get_all_trades()
 
     for t in trades:
-        print(
+        logger.info(
             "Trade price: {}, volume: {}, price/volume: {}".format(
                 t.price, t.asset.share.volume, t.price / t.asset.share.volume
             )
@@ -405,8 +408,6 @@ def marketplace(request):
 # @login_required(login_url='/login/')
 def retrieve_trades(request):
 
-    init_time = time.time()
-
     response = {}
     try:
 
@@ -421,7 +422,7 @@ def retrieve_trades(request):
             investor = current_investor
 
         if "athlete_id" in request.GET:
-            print("Retrieve trades for athlete id {}".format(request.GET["athlete_id"]))
+            logger.info("Retrieve trades for athlete id {}".format(request.GET["athlete_id"]))
             athlete = Athlete.objects.get(pk=request.GET["athlete_id"])
             if "historical" in request.GET:
                 all_trades = Trade.objects.all().filter(
@@ -435,19 +436,20 @@ def retrieve_trades(request):
             all_trades = [t for t in all_trades if t.is_possible()]
             # all_trades = [t for t in all_trades if t.asset.is_share() and t.asset.share.athlete==athlete]
         elif "historical" in request.GET:
-            print("Retrieve historical trades ")
+            logger.info("Retrieve historical trades ")
             all_trades = Trade.objects.all().filter(
                 (Q(buyer=investor) | Q(seller=investor)) & ~Q(status=Trade.PENDING) & Q(season=get_current_season())
             )
         elif "asset" in request.GET:
             asset = request.GET["asset"]
-            print("Retrieve trades for asset {}".format(asset))
+            logger.info("Retrieve trades for asset {}".format(asset))
             all_trades = Trade.objects.all().filter(
                 Q(status=Trade.PENDING) & (Q(seller=None) | Q(buyer=None)) & Q(season=get_current_season())
             )
 
             # Get open trades only - either no seller or no buyer
             # all_trades = [t for t in all_trades if (t.seller is None) or (t.buyer is None)]
+            print("Retrieved {} trades".format(len(all_trades)))
 
             if asset == "share":
                 all_trades = [
@@ -465,15 +467,17 @@ def retrieve_trades(request):
             elif asset == "swap":
                 all_trades = [t for t in all_trades if t.asset.is_swap()]
 
+            print("Retrieved {} trades after filtering by asset: {}".format(len(all_trades), asset))
+
         else:
-            print("Retrieve  standard trades")
-            print(request.GET)
+            logger.info("Retrieve  standard trades")
+            logger.info(request.GET)
             all_trades = Trade.objects.all().filter(
                 (Q(buyer=investor) | Q(seller=investor)) & Q(status=Trade.PENDING) & Q(season=get_current_season())
             )
 
         # now sort
-        # print("Sort")
+        # logger.info("Sort")
         # if "asset" in request.GET:
         if isinstance(all_trades, list):
             all_trades = sorted(all_trades, key=lambda t: t.updated, reverse=True)
@@ -485,6 +489,7 @@ def retrieve_trades(request):
         # trades = [t.serialize() for t in all_trades]
         for t in all_trades:
 
+            # logger.info(t)
             trade = t.serialize()
 
             if t.seller == investor:
@@ -526,7 +531,7 @@ def retrieve_trades(request):
 
             trades.append(trade)
 
-        # print("Trades: " +str(trades))
+        # logger.info("Trades: " +str(trades))
         if "athlete_id" in request.GET:
             trades = sorted(trades, key=lambda t: t["price"] / t["asset"]["volume"])
 
@@ -543,11 +548,11 @@ def retrieve_trades(request):
             response["current_investor"] = None
 
     except Exception as e:
-        print("Caught: " + str(e))
+        logger.info("Caught: " + str(e))
         return JsonResponse({"error": str(e)})
 
-    # print("Execution time: {} seconds".format(time.time() - init_time))
-    # print("Serialize time: {} seconds".format(serialize_time))
+    # logger.info("Execution time: {} seconds".format(time.time() - init_time))
+    # logger.info("Serialize time: {} seconds".format(serialize_time))
 
     return JsonResponse(response, safe=False)
 
@@ -556,7 +561,7 @@ def retrieve_trades(request):
 def action_trade(request):
     investor = request.user.investor
 
-    print(request.GET)
+    logger.info(request.GET)
 
     trade_id = request.GET["id"]
     change = request.GET["change"]
@@ -566,7 +571,7 @@ def action_trade(request):
     try:
         trade = Trade.objects.get(pk=trade_id)
 
-        print("Trade to modify: {}".format(trade))
+        logger.info("Trade to modify: {}".format(trade))
 
         if change == "accept":
             if not trade.seller and trade.buyer != investor:
@@ -609,7 +614,7 @@ def get_portfolio_value(request):
 def create_trade(request):
     investor = request.user.investor
 
-    print(request.GET)
+    logger.info(request.GET)
 
     # TODO: validation
 
@@ -620,6 +625,7 @@ def create_trade(request):
         price = float(request.GET["price"])
         is_sell = request.GET["buysell"] == "sell"
         if "data-asset" not in request.GET:
+            logger.info("data-asset not in request.GET")
             raise InvalidAsset(desc="{} is not a valid asset".format(commodity))
 
         asset_type = request.GET["data-asset"]
@@ -638,7 +644,7 @@ def create_trade(request):
             buyer = investor
             seller = other
 
-        share_match = re.match(r"([\w ]+)/([\.\d]+)", commodity)
+        # share_match = re.match(r"([\w ]+)/([\.\d]+)", commodity)
         if asset_type == 'share':
             ath_id = request.GET["data-athlete"] # share_match.group(1)
             volume = float(request.GET["data-volume"]) # float(share_match.group(2))
@@ -651,23 +657,29 @@ def create_trade(request):
         elif asset_type == "future" or asset_type == "option":
             ath_id = request.GET["data-athlete"] 
             volume = float(request.GET["data-volume"]) 
+            strike_price = float(request.GET["data-strike-price"]) 
+            owner_obligation = request.GET["data-future-buy-sell"]
             athlete = Athlete.objects.get(id=int(ath_id))
             strike_date =  datetime.strptime(request.GET["data-date"], "%Y-%m-%dT%H:%M:%S.%fZ")
 
-            # print(strike_date)
+            # owner_obligation
+            # if is_sell:
+            #     owner = other
+            #     seller = investor
+
+            # logger.info(strike_date)
             
             if asset_type == "option":
-                holder = request.GET["data-holder"]
-
-                trade = Trade.make_option_trade(athlete, volume, investor, price, seller, buyer, strike_date, holder)
-            
+                # holder = request.GET["data-holder"]
+                # trade = Trade.make_option_trade(athlete, volume, investor, price, seller, buyer, strike_date, strike_price, holder)
+                raise InvalidAsset(desc="Options not supported yet, sorry".format(commodity))
             else:
-                trade = Trade.make_future_trade(athlete, volume, investor, price, seller, buyer, strike_date)
-
-
-            raise InvalidAsset(desc="{} is not a valid asset".format(commodity))
+                
+                trade = Trade.make_future_trade(athlete, volume, investor, price, seller, buyer, 
+                strike_date, strike_price, owner_obligation)
+            
         else:
-            print("Invalid asset")
+            logger.info("Invalid asset type: {}".format(asset_type))
             raise InvalidAsset(desc="{} is not a valid asset".format(commodity))
 
     except Athlete.DoesNotExist:
@@ -684,23 +696,23 @@ def create_trade(request):
 def asset_price(request):
 
     try:
-        print(request.GET)
-        if request.GET["data-asset"] == 'share':
+        logger.info(request.GET)
+        if request.GET["data-asset"] in ['share', 'future', 'option']:
             athlete = Athlete.objects.get(pk=int(request.GET["data-athlete"]))
             value = athlete.get_value()
 
             total_val = float(request.GET["data-volume"]) * value
 
-            return JsonResponse({"value": "{} ({} per share)".format(total_val, value)})
+            return JsonResponse({"value": "{}: {} per share".format(athlete.name, value)})
         else:
             return JsonResponse({"value": "Unknown"})
     except Exception as e:
-        print(e)
+        logger.info(e)
         return JsonResponse({"value": "Unknown"})
 
 
 def make_error(e):
-    print("Caught error " + str(e))
+    logger.info("Caught error " + str(e))
     if isinstance(e, XChangeException):
         return {"error": {"title": e.title, "desc": e.desc}}
     else:
@@ -776,3 +788,48 @@ def trades(request):
         )
     else:
         return render(request, "app/index.html")
+
+@login_required(login_url='/login/')
+def notifications_exist(request):
+    n = Notification.objects.all().filter(Q(investor=request.user.investor) & Q(status=Notification.UNSEEN))
+    return JsonResponse({"num_notifications": len(n)})
+
+@login_required(login_url='/login/')
+def get_notifications(request):
+    # Get all non-dismissed for displaying
+    notifications = Notification.objects.all().filter(Q(investor=request.user.investor) & ~Q(status=Notification.DISMISSED)).order_by('-datetime')
+    nots = [n.serialize() for n in notifications]
+    return JsonResponse({"notifications": nots})
+
+@login_required(login_url='/login/')
+def set_notification_status(request):
+    logger.info(request.GET)
+
+    if 'all_seen' in request.GET and request.GET['all_seen']:
+        notifications = Notification.objects.all().filter(Q(investor=request.user.investor)& Q(status=Notification.UNSEEN))
+        for n in notifications:
+            n.status = Notification.SEEN
+            n.save()
+
+    if 'dismissed' in request.GET:
+        try:
+            notif = Notification.objects.get(id=request.GET['dismissed'])
+            notif.status = Notification.DISMISSED
+            notif.save()
+
+        except Notification.DoesNotExist:
+            print("Notification does not exist")
+            return JsonResponse({"error": "Notification does not exist"})
+
+    if 'seen' in request.GET:
+        try:
+            notif = Notification.objects.get(id=request.GET['seen'])
+            notif.status = Notification.SEEN
+            notif.save()
+
+        except Notification.DoesNotExist:
+            print("Notification does not exist")
+            return JsonResponse({"error": "Notification does not exist"})
+            
+
+    return JsonResponse({})

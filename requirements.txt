@@ -9,6 +9,8 @@ click==7.1.2
 defusedxml==0.6.0
 diff-match-patch==20181111
 Django==3.0.6
+django-background-tasks==1.2.5
+django-compat==1.0.15
 django-import-export==2.1.0
 et-xmlfile==1.0.1
 isort==4.3.21

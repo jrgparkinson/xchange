@@ -73,5 +73,8 @@ urlpatterns = [
     path("get_portfolio_value/", views.get_portfolio_value, name="get_portfolio_value"),
     path("asset_price/", views.asset_price, name="asset_price"),
 
+    path("get_notifications/", views.get_notifications, name="get_notifications"),
+    path("notifications_exist/", views.notifications_exist, name="notifications_exist"),
+    path("set_notification_status/", views.set_notification_status, name="set_notification_status"),
     
 ]

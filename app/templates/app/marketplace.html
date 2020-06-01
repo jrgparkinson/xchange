@@ -11,174 +11,184 @@
     <div class="col-sm-12">
         <h2>
             <button type="button" class="btn btn-outline-success btn-lg asset-choice" data-asset="share">Shares</button>
-            <button type="button" class="btn btn-outline-success btn-lg asset-choice" data-asset="future">Futures</button>
-            <button type="button" class="btn btn-outline-success btn-lg asset-choice" data-asset="option">Options</button>
+            <button type="button" class="btn btn-outline-success btn-lg asset-choice"
+                data-asset="future">Futures</button>
+            <button type="button" class="btn btn-outline-success btn-lg asset-choice"
+                data-asset="option">Options</button>
             <button type="button" class="btn btn-outline-success btn-lg asset-choice" data-asset="swap">Swaps</button>
         </h2>
     </div>
 </div>
 
 <div class="row">
-    <div class="col-sm-12 col-lg-6 order-1">
+    <div class="col-sm-12 col-lg-6 order-1" id="buyContainer">
         <div class="card">
             <div class="card-body">
-        <h2>Buy</h2>
+                <h2>Buy</h2>
 
-        <div id="buyTable">
-            <table class="table buy" id="buy_share" data-asset="share">
-                <thead>
-                    <tr>
-                        <th scope="col">Athlete</th>
-                        <th scope="col">Volume</th>
-                        <th scope="col">Price/volume</th>
-                        <th scope="col">Seller</th>
-                        <th scope="col"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td colspan=5>No trades found</td>
-                    </tr>
-                </tbody>
-            </table>
+                <div id="buyTable">
+                    <table class="table buy" id="buy_share" data-asset="share">
+                        <thead>
+                            <tr>
+                                <th scope="col">Athlete</th>
+                                <th scope="col">Volume</th>
+                                <th scope="col">Price/volume</th>
+                                <th scope="col">Seller</th>
+                                <th scope="col"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan=5>No trades found</td>
+                            </tr>
+                        </tbody>
+                    </table>
 
-            <table class="table buy" data-asset="option">
-                <thead>
-                    <tr>
-                        <th scope="col">Athlete</th>
-                        <th scope="col">Volume</th>
-                        <th scope="col">Price/volume</th>
-                        <th scope="col">Strike time</th>
-                        <th scope="col">Option holder</th>
-                        <th scope="col">Seller</th>
-                        <th scope="col"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td colspan=5>No trades found</td>
-                    </tr>
-                </tbody>
-            </table>
-    
-            <table class="table buy" data-asset="future">
-                <thead>
-                    <tr>
-                        <th scope="col">Athlete</th>
-                        <th scope="col">Volume</th>
-                        <th scope="col">Price/volume</th>
-                        <th scope="col">Strike time</th>
-                        <th scope="col">Seller</th>
-                        <th scope="col"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td colspan=5>No trades found</td>
-                    </tr>
-                </tbody>
-            </table>
+                    <table class="table buy" data-asset="option">
+                        <thead>
+                            <tr>
+                                <th scope="col">Your obligation</th>
+                                <th scope="col">Athlete</th>
+                                <th scope="col">Volume</th>
+                                <th scope="col">Strike price/volume</th>
+                                <th scope="col">Strike time</th>
+                                <th scope="col">Trade price</th>
+                                <th scope="col">Option holder</th>
+                                <th scope="col">Seller</th>
+                                <th scope="col"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan=5>No trades found</td>
+                            </tr>
+                        </tbody>
+                    </table>
 
-            <table class="table buy" data-asset="swap">
-                <thead>
-                    <tr>
-                        <th scope="col">Description</th>
-                        <th scope="col">Price</th>
-                        <th scope="col">Seller</th>
-                        <th scope="col"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td colspan=5>No trades found</td>
-                    </tr>
-                </tbody>
-            </table>
+                    <table class="table buy" data-asset="future">
+                        <thead>
+                            <tr>
+                                <th scope="col">Your obligation</th>
+                                <th scope="col">Athlete</th>
+                                <th scope="col">Volume</th>
+                                <th scope="col">Strike Price/volume</th>
+                                <th scope="col">Strike time</th>
+                                <th scope="col">Trade price</th>
+                                <th scope="col">Seller</th>
+                                <th scope="col"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan=5>No trades found</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <table class="table buy" data-asset="swap">
+                        <thead>
+                            <tr>
+                                <th scope="col">Description</th>
+                                <th scope="col">Price</th>
+                                <th scope="col">Seller</th>
+                                <th scope="col"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan=5>No trades found</td>
+                            </tr>
+                        </tbody>
+                    </table>
 
 
+                </div>
+            </div>
         </div>
-    </div>
-    </div>
 
     </div>
-    <div class="col-sm-12 col-lg-6 order-2" >
+    <div class="col-sm-12 col-lg-6 order-2" id="sellContainer">
         <div class="card">
             <div class="card-body">
-        <h2>Sell</h2>
+                <h2>Sell</h2>
 
-        <div id="sellTable">
-            <table class="table sell" id="sell_shares" data-asset="share">
-                <thead>
-                    <tr>
-                        <th scope="col">Athlete</th>
-                        <th scope="col">Volume</th>
-                        <th scope="col">Price/volume</th>
-                        <th scope="col">Buyer</th>
-                        <th scope="col"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td colspan=5>No trades found</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+                <div id="sellTable">
+                    <table class="table sell" id="sell_shares" data-asset="share">
+                        <thead>
+                            <tr>
+                                <th scope="col">Athlete</th>
+                                <th scope="col">Volume</th>
+                                <th scope="col">Price/volume</th>
+                                <th scope="col">Buyer</th>
+                                <th scope="col"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan=5>No trades found</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
-        <table class="table sell" data-asset="option">
-            <thead>
-                <tr>
-                    <th scope="col">Athlete</th>
-                    <th scope="col">Volume</th>
-                    <th scope="col">Price/volume</th>
-                    <th scope="col">Strike time</th>
-                    <th scope="col">Option holder</th>
-                    <th scope="col">Buyer</th>
-                    <th scope="col"></th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td colspan=5>No trades found</td>
-                </tr>
-            </tbody>
-        </table>
+                <table class="table sell" data-asset="option">
+                    <thead>
+                        <tr>
+                            <th scope="col">Your obligation</th>
+                            <th scope="col">Athlete</th>
+                            <th scope="col">Volume</th>
+                            <th scope="col">Strike Price/volume</th>
+                            <th scope="col">Strike time</th>
+                            <th scope="col">Option holder</th>
+                            <th scope="col">Trade price</th>
+                            <th scope="col">Buyer</th>
+                            <th scope="col"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan=5>No trades found</td>
+                        </tr>
+                    </tbody>
+                </table>
 
-        <table class="table sell" data-asset="future">
-            <thead>
-                <tr>
-                    <th scope="col">Athlete</th>
-                    <th scope="col">Volume</th>
-                    <th scope="col">Price/volume</th>
-                    <th scope="col">Strike time</th>
-                    <th scope="col">Buyer</th>
-                    <th scope="col"></th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td colspan=5>No trades found</td>
-                </tr>
-            </tbody>
-        </table>
+                <table class="table sell" data-asset="future">
+                    <thead>
+                        <tr>
+                            <th scope="col">Your obligation</th>
+                            <th scope="col">Athlete</th>
+                            <th scope="col">Volume</th>
+                            <th scope="col">Strike Price/volume</th>
+                            <th scope="col">Strike time</th>
+                            <th scope="col">Trade price</th>
+                            <th scope="col">Buyer</th>
+                            <th scope="col"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan=5>No trades found</td>
+                        </tr>
+                    </tbody>
+                </table>
 
-        <table class="table sell" data-asset="swap">
-            <thead>
-                <tr>
-                    <th scope="col">Description</th>
-                    <th scope="col">Price</th>
-                    <th scope="col">Buyer</th>
-                    <th scope="col"></th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td colspan=5>No trades found</td>
-                </tr>
-            </tbody>
-        </table>
+                <table class="table sell" data-asset="swap">
+                    <thead>
+                        <tr>
+                            <th scope="col">Description</th>
+                            <th scope="col">Price</th>
+                            <th scope="col">Buyer</th>
+                            <th scope="col"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan=5>No trades found</td>
+                        </tr>
+                    </tbody>
+                </table>
 
-        </div>
+            </div>
         </div>
     </div>
 </div>
@@ -201,13 +211,13 @@
 <script type="text/javascript">
     var selected_asset; // selected asset
 
-     function reload_marketplace_trades() {
+    function reload_marketplace_trades() {
         console.log("Reload " + selected_asset);
 
         // Remove datatable
-        $("table").each(function() {
+        $("table").each(function () {
             if ($.fn.DataTable.isDataTable($(this))) {
-                    $(this).DataTable().destroy();
+                $(this).DataTable().destroy();
             }
         });
 
@@ -220,15 +230,14 @@
         $("table.buy").hide();
         populate_table("share");
 
-        $("button.asset-choice[data-asset="+selected_asset+"]").removeClass("btn-outline-success");
-        $("button.asset-choice[data-asset="+selected_asset+"]").addClass("btn-success");
-        
+        $("button.asset-choice[data-asset=" + selected_asset + "]").removeClass("btn-outline-success");
+        $("button.asset-choice[data-asset=" + selected_asset + "]").addClass("btn-success");
+
 
         $("button.asset-choice").click(function () {
-            // alert($(this).attr("data-asset"));
             selected_asset = $(this).attr("data-asset");
 
-            $("button.asset-choice").each(function() {
+            $("button.asset-choice").each(function () {
                 $(this).removeClass("btn-success");
                 $(this).addClass("btn-outline-success");
             });
@@ -239,11 +248,25 @@
             $("table.sell").hide();
             $("table.buy").hide();
 
-            $("table").each(function(index) {
-                console.log($(this));
+           
+
+            if (selected_asset == 'share') {
+                $("#buyContainer").removeClass("col-lg-12");
+                $("#sellContainer").removeClass("col-lg-12");
+                $("#buyContainer").addClass("col-lg-6");
+                $("#sellContainer").addClass("col-lg-6");
+            } else {
+                $("#buyContainer").removeClass("col-lg-6");
+                $("#sellContainer").removeClass("col-lg-6");
+                $("#buyContainer").addClass("col-lg-12");
+                $("#sellContainer").addClass("col-lg-12");
+            }
+
+            $("table").each(function (index) {
+                // console.log($(this));
                 if ($.fn.DataTable.isDataTable($(this))) {
                     $(this).DataTable().destroy();
-                    console.log("Destroy");
+                    // console.log("Destroy");
                 }
 
             });
@@ -269,9 +292,10 @@
             .done(function (response) {
                 console.log(response);
                 if (response.error) {
-                    
                     return;
                 }
+
+                console.log("Retrieved " + response.trades.length + " trades");
 
                 $("table[data-asset=" + asset + "] tbody tr").remove();
 
@@ -279,17 +303,9 @@
                 var sell_exists = false;
 
                 response.trades.forEach(trade => {
-                    // console.log(trade);
-                    var row = '<tr data-trade="'+ trade.id +'">';
-
-                    var is_share = (trade.asset.athlete != undefined);
-                    if (is_share) {
-                        var share = trade.asset;
-                        row += '<td>' + format_athlete(share.athlete) + '</td>';
-                        row += '<td>' + Number(share.volume).toFixed(2) + '</td>';
-                        row += '<td>' + Number(trade.price/share.volume ).toFixed(2) + '</td>';
-                    }
-
+                    
+                    var row = '';
+                    var tooltip = '';
 
                     var other_party;
                     var buy_sell;
@@ -303,12 +319,75 @@
                         sell_exists = true;
                     }
 
+                    var is_share = (trade.asset.athlete != undefined);
+                    var is_future = (trade.asset.underlying != undefined && trade.asset.current_option == undefined);
+                    var is_option = (trade.asset.underlying != undefined && trade.asset.current_option != undefined);
+
+
+                    if (is_share) {
+                        var share = trade.asset;
+                        row += '<td>' + format_athlete(share.athlete) + '</td>';
+                        row += '<td>' + Number(share.volume).toFixed(2) + '</td>';
+                        row += '<td>' + Number(trade.price / share.volume).toFixed(2) + '</td>';
+                    } 
+
+                   
+                    if (is_future) {
+                        var future = trade.asset
+                        var share = future.underlying
+                        var d = new Date(future.strike_date);
+                        // if we're not the seller, we would be acquiring shares
+
+                        var trader_obligation = ""; // what will the buyer or seller be taking on? The obligation to buy or to sell?
+                        
+                        
+                        var other_ob; // what is the obligation of the other party? our obligation will then be the opposite
+                        if (future.owner && other_party.id == future.owner.id) {
+                            other_ob = future.owner_obligation;
+                        } else {
+                            other_ob = (future.owner_obligation == 'Sell') ? 'buy' : 'sell';
+                        }
+                        
+                        trader_obligation = (other_ob == 'sell') ? 'Buy' : 'Sell';
+
+                        row += '<td>' + trader_obligation + '</td>';
+                        row += '<td>' + format_athlete(share.athlete) + '</td>';
+
+                        var future_asset_plus_minus = "";
+                        // var tooltip = "";
+                        if (future.seller && future.seller.id != response.investor.id) {
+                            future_asset_plus_minus = "+";
+                            tooltip = "You will purchase shares in this futures contract";
+                        } else if (future.buyer && future.buyer.id != response.investor.id) {
+                            future_asset_plus_minus = "-";
+                            tooltip = "You will sell shares in this futures contract";
+                        // } else if (future.seller && )
+                        }
+                        
+                        tooltip =  "If you " + buy_sell + " this future contract, you commit to " + trader_obligation.toLowerCase() + "ing ";
+                        tooltip += Number(share.volume).toFixed(2) + " shares in " + share.athlete.name + " for ";
+                        tooltip += Number(future.strike_price / share.volume).toFixed(2) + " per share at " + d.toLocaleString();
+                        
+                        
+                        
+                        row += '<td>' + Number(share.volume).toFixed(2) + '</td>';
+                        row += '<td>' + Number(future.strike_price / share.volume).toFixed(2) + '</td>';
+                        row += '<td>' + d.toLocaleString() + '</td>';
+                        row += '<td>' + Number(trade.price).toFixed(2) + '</td>';
+                    }
+
+                    
+                    // seller
                     row += '<td>' + format_investor_display(response.investor, other_party) + '</td>';
 
                     var actions = get_actions(trade);
                     row += '<td>' + actions + '</td>';
-                    row += '</tr>';
+                    row = '<tr data-trade="' + trade.id + '" data-toggle="tooltip" data-placement="left" title="' + tooltip + '">' + row + '</tr>';
+                    
+                    
                     $("table[data-asset=" + asset + "]." + buy_sell + " tbody").append(row);
+                    // $("table[data-asset=" + asset + "]." + buy_sell + " tbody").append('<tr><td colspan=9>' + JSON.stringify(trade) + '</td></tr>');
+                    
                 });
 
                 var none_exist = `<tr><td colspan=5>No trades found</td></tr>`;
@@ -316,13 +395,12 @@
                 $("table[data-asset=" + asset + "]").each(function (index) {
                     var rowCount = $(this).find('tbody').find('tr').length;
                     // console.log("Row count: "+String(rowCount));
-                    if (rowCount > 0)
-                    {
+                    if (rowCount > 0) {
                         if (!$.fn.DataTable.isDataTable($(this))) {
                             var order = [];
-                            if ($(this).attr('id')  == "buy_share") {
+                            if ($(this).attr('id') == "buy_share") {
                                 order = [2, 'asc'];
-                            } else if ($(this).attr('id')  == "sell_shares") {
+                            } else if ($(this).attr('id') == "sell_shares") {
                                 order = [2, 'desc'];
                             }
 
@@ -331,14 +409,14 @@
                                 order: order,
                                 scrollx: true,
                             });
+                        }
                     }
-                }
-                else{
-                    $(this).find('tbody').append(none_exist);
-                }
+                    else {
+                        $(this).find('tbody').append(none_exist);
+                    }
                 });
 
-                
+
 
 
 

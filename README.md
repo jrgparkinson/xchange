@@ -5,7 +5,14 @@ To kill other webservers:
   sudo fuser -k 8000/tcp
 
 To start webserver: 
+```
   python manage.py runserver
+```
+
+To start processing tasks:
+```
+python manage.py process_tasks
+```
 
 Save requirements:
   pip freeze > requirements.tx
