@@ -264,6 +264,8 @@ class Entity(models.Model):
 
         return return_vals # cash_positions
 
+    
+
     def get_contracts_held(self, timestamp=None):
         """ Get all contracts held by this entity at some date/time """
         if not timestamp:
@@ -914,9 +916,29 @@ class Contract(Asset):
         null=True,
     )
 
+    def serialize(self):
+        return {"id": self.id,
+        "owner": serialize_entity(self.owner),
+        "other_party": serialize_entity(self.other_party),
+        "pretty_print": str(self),
+        "pretty_print_long": self.long_pretty_print}
+
     def __str__(self):
         return "{} contract between {} and {}".format(self.contract_type, self.owner.print_name, self.other_party.print_name)
     
+    @property
+    def long_pretty_print(self):
+        asset = "unknown asset"
+        if self.is_future():
+            fut = self.future
+        asset = "{} to {} {} shares of {} for {} at {}".format(fut.owner.print_name, fut.obligation.lower(), 
+                                                        fut.underlying_asset.volume, 
+                                                        fut.underlying_asset.athlete.name, fut.strike_price, fut.action_date)
+        text = "{} contract between {} and {}".format(self.contract_type, self.owner.print_name, self.other_party.print_name)
+        text = text + ":" + asset
+        text = text + " (current value: {})".format(np.round(self.value,2))
+        return text
+
     @property
     def value(self):
         """ This should be overriden """
@@ -947,6 +969,7 @@ class Contract(Asset):
 class Future(Contract):
     """ An agreement to buy/sell in the future at a fixed price """
 
+    # Total price of future
     strike_price = models.FloatField()
     action_date = models.DateTimeField()
 
@@ -979,6 +1002,10 @@ class Future(Contract):
         }
 
         return s
+
+    @property
+    def strike_price_per_volume(self):
+        return self.strike_price/self.underlying_asset.volume
 
     @property
     def value(self):
@@ -1099,11 +1126,11 @@ def settle_future(future_id):
     if seller_has_shares and buyer_has_cash:
         
         # Do the transfer by creating and immediately accepting a share trade
+        vol = future.underlying_asset.volume
         t = Trade.make_share_trade(future.underlying_asset.athlete, vol, seller, future.strike_price, seller, buyer)
         t.accept_trade(action_by=buyer, skip_notif=True)
 
         # share = seller.get_share(future.underlying_asset)
-        # vol = future.underlying_asset.volume
         # share.transfer(to=buyer, vol=vol)
         # buyer.transfer_cash_to(ammount=future.strike_price, to=seller, reason="Future trade: " + str(future))
 
@@ -1296,6 +1323,10 @@ class Trade(models.Model):
     @staticmethod
     def make_swap_trade(investor, price, seller, buyer, swap_details):
         pass
+
+    @staticmethod
+    def sell_existing_contract(contract, seller, buyer, price):
+        return Trade.make_trade(contract, seller, price, seller, buyer)
 
     def make_trade(asset, creator, price, seller=None, buyer=None):
         price = np.round(price, 2)  # ensure price is always to 2 DP

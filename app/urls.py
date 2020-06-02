@@ -76,5 +76,9 @@ urlpatterns = [
     path("get_notifications/", views.get_notifications, name="get_notifications"),
     path("notifications_exist/", views.notifications_exist, name="notifications_exist"),
     path("set_notification_status/", views.set_notification_status, name="set_notification_status"),
+
+    path("get_investor_contracts/", views.get_investor_contracts, name="get_investor_contracts"),
+
+    
     
 ]

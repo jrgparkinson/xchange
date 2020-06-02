@@ -701,6 +701,11 @@ def create_trade(request):
                 trade = Trade.make_future_trade(athlete, volume, investor, price, seller, buyer, 
                 strike_date, strike_price, owner_obligation)
             
+        elif asset_type == "contract":
+            # must be a contract we own
+            contract = Contract.objects.get(id=request.GET["data-contract"])
+
+            trade = Trade.sell_existing_contract(contract, seller, buyer, price)
         else:
             logger.info("Invalid asset type: {}".format(asset_type))
             raise InvalidAsset(desc="{} is not a valid asset".format(commodity))
@@ -858,3 +863,9 @@ def set_notification_status(request):
             
 
     return JsonResponse({})
+
+@login_required(login_url='/login/')
+def get_investor_contracts(request):
+    contracts = request.user.investor.get_contracts_held()
+
+    return JsonResponse({'contracts': [c.serialize() for c in contracts]})

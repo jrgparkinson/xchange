@@ -26,13 +26,16 @@
                   data-target="#createShare">Share</button>
 
                 <button type="button" class="btn btn-primary mb-2" data-toggle="modal"
-                  data-target="#createSwap">Swap</button>
+                  data-target="#createSwap" disabled>Swap</button>
 
                 <button type="button" class="btn btn-primary mb-2" data-toggle="modal"
                   data-target="#createOptionFuture">Option/future</button>
 
+                <button type="button" class="btn btn-primary mb-2" data-toggle="modal"
+                data-target="#chooseCurrentContract">Currently owned contract</button>
+
                 <!-- <div id="commodityEntry"></div> -->
-                <textarea rows="2" class="form-control form-control" data-asset="none" id="commodityEntry"
+                <textarea rows="3" class="form-control form-control" data-asset="none" id="commodityEntry"
                   name="commodityEntry" disabled required></textarea>
               </div>
             </div>
@@ -182,6 +185,7 @@
 {% include 'app/create-share.html' %}
 {% include 'app/create-option-future.html' %}
 {% include 'app/create-swap.html' %}
+{% include 'app/choose-existing-contract.html' %}
 
 
 {%endblock%}
@@ -193,6 +197,11 @@
 <script type="text/javascript" src="{% static 'js/trading.js' %}"></script>
 
 <script type="text/javascript">
+
+function setExistingContractDesc() {
+    
+    $("#existingDesc").text($("#existingContract option:selected").text());
+}
   function getAttributes($node, name_contains) {
     var attrs = {};
     $.each($node[0].attributes, function (index, attribute) {
@@ -234,6 +243,13 @@
     $("#createSwap").on('show.bs.modal', function () {
       populateAthletes('athletesSwap');
     });
+
+    $("#chooseCurrentContract").on('show.bs.modal', function () {
+      // populate existing held contracts
+      populateExistingContracts('existingContract');
+      
+    });
+
 
 
     $("#formCreateTrade").submit(function (e) {
@@ -285,13 +301,21 @@
       return false;
     });
 
+    $("#existingContract").change(setExistingContractDesc);
+
     function submitModal(obj) {
       console.log("Handled form submit");
 
+
+      
       // $("#buySellAssetRow").hide();
       // $("#priceRow").hide();
       $(".createAsset").modal('hide');
 
+      // In general, enable the option (then later disable if we've chosen a contract we own)
+      $("input#buy").attr("disabled", false);
+
+        
       if (obj.attr('id') == "createShare") {
         createShareFromModal();
         $("#buySellAssetRow").show();
@@ -348,7 +372,13 @@
 
         $("#commodityEntry").attr("data-future-buy-sell", $("input[name=buysellFuture]:checked").val());
 
-      } else {
+      } else if (obj.attr('id') == 'chooseCurrentContract') {
+        $("#commodityEntry").attr("data-contract", $("input[name=existingContract] option:selected").val());
+        $("#commodityEntry").val($("#existingDesc").text());
+        $("#commodityEntry").attr("data-asset", "contract");
+        $("#commodityEntry").attr("data-contract", $("#existingContract option:selected").val());
+        $("input#buy").attr("disabled", true);
+      } else {  
         console.log("Don't know how to handle id: " + $(this).attr('id'));
       }
 

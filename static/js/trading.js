@@ -51,6 +51,38 @@ function populateAthletes(athleteSelectId) {
         });
 }
 
+function populateExistingContracts(selectId) {
+    $.ajax({
+        type: "GET",
+        url: '/get_investor_contracts/',  // URL to your view that serves new info
+        data: {}
+    })
+        .done(function (response) {
+            // console.log(response);
+            if (response.error) {
+                display_error(response.error);
+            }
+
+            $("#" + selectId +" option").each(function () {
+                $(this).remove();
+            });
+
+            // $('#'+selectId).append($('<option>', {
+            //     value: "",
+            //     text: "Select a contract",
+            // }));
+            $.each(response.contracts, function (i, contract) {
+
+                $('#'+selectId).append($('<option>', {
+                    value: contract.id,
+                    text: contract.pretty_print_long
+                }));
+            });
+            setExistingContractDesc();
+        });
+}
+
+
 function createShareFromModal() {
     var shareText = "Share: " + $("#athletesShare option:selected").text() + ", volume=" + $("#volume").val();
     $("#commodityEntry").val(shareText);

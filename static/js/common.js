@@ -45,8 +45,8 @@ function format_asset(asset, current_inv) {
 }
 
 function get_actions(trade) {
-    var closeAction = '<span data-toggle="tooltip" data-placement="left" title="Cancel/reject trade"><i class="fas fa-window-close fa-fw" onclick="actionTrade(' + trade.id + ', \'cancel\')"></i></span>';
-    var acceptAction = '<span data-toggle="tooltip" data-placement="left" title="Accept trade"><i class="fas fa-check-circle fa-fw" onclick="actionTrade(' + trade.id + ', \'accept\')"></i></span>';
+    var closeAction = '<span data-toggle="tooltip" data-placement="left" title="Cancel/reject trade"><i class="fas fa-window-close fa-fw fa-lg" onclick="actionTrade(' + trade.id + ', \'cancel\')"></i></span>';
+    var acceptAction = '<span data-toggle="tooltip" data-placement="left" title="Accept trade"><i class="fas fa-check-circle fa-fw fa-lg" onclick="actionTrade(' + trade.id + ', \'accept\')"></i></span>';
 
     var actions = "";
     if (trade.can_close) {

@@ -369,6 +369,11 @@ textarea[data-asset="swap"]:disabled {
     display:block;
 }
 
+textarea[data-asset="contract"]:disabled {
+    background-color: var(--bg-2);
+    display:block;
+}
+
 .calendar-addon {
     font-size:1.5em; padding-left:2px;
 }
