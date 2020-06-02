@@ -6,7 +6,7 @@
 
 {% block page_title %}{{investor.display_name}}{% endblock %}
 {% block search_area %}
-<div class="col-sm-3 order-1">
+<div class="col-sm-3 order-2">
 
     <div class="input-group mb-3" id="investor-search">
         <div class="row">
@@ -86,6 +86,47 @@
         <div class="card">
             <div class="card-body">
 
+                <h2>Future contracts held</h2>
+                <div id="contracts">
+                    <table class="table" id="contracts">
+                        <thead>
+                            <tr>
+                                <th scope="col">Obligation</th>
+                                <th scope="col">Asset</th>
+                                <th scope="col">Strike price</th>
+                                <th scope="col">Strike date</th>
+                                <th scope="col">Other party</th>
+                                <th scope="col">Current value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in contracts %}
+                            <tr>
+                                    <!-- currently only works for futures -->
+                                <td>{{ c.investor_obligation }}</td>
+                                <td>{{ c.future.underlying_asset.athlete.name }} ({{ c.future.underlying_asset.volume }} shares)</td>
+                                <td>{{ c.future.strike_price }}</td>
+                                <td>{{ c.future.action_date }}</td>
+                                <td>{{ c.other_party_to_investor }}</td>
+                                <td>{{ c.value }}</td>
+                            </tr>
+
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<div class="row">
+    <div class="col-sm">
+        <div class="card">
+            <div class="card-body">
+
                 <h2>Trading history</h2>
                 <div id="past_trades">
                     <table class="table" id="past_trades">
@@ -143,6 +184,7 @@
                 var portfolio_vals = [];
                 var portfolio_cash_vals = [];
                 var portfolio_share_vals = [];
+                var portfolio_deriv_vals = [];
                 response.combined.forEach(v => {
                     portfolio_vals.push({ x: new Date(v.time), y: Number(v.value).toFixed(2) });
                 });
@@ -155,7 +197,9 @@
                     portfolio_cash_vals.push({ x: new Date(v.time), y: Number(v.value).toFixed(2) });
                 });
 
-
+                response.derivatives.forEach(v => {
+                    portfolio_deriv_vals.push({ x: new Date(v.time), y: Number(v.value).toFixed(2) });
+                });
 
                 var dataset_total = {
                     label: "Total portfolio value",
@@ -181,7 +225,15 @@
                     lineTension: 0,
                 };
 
-                var data = { datasets: [dataset_total, dataset_cash, dataset_shares] };
+                var dataset_derivs = {
+                    label: "Derivatives",
+                    borderColor: "purple",
+                    data: portfolio_deriv_vals,
+                    fill: false,
+                    lineTension: 0,
+                };
+
+                var data = { datasets: [dataset_total, dataset_cash, dataset_shares, dataset_derivs] };
 
                 chart = new Chart(ctx, {
                     type: 'line',

@@ -259,6 +259,19 @@ def view_investor(request, investor_id):
     shares_owned = investor.get_shares_owned()
     shares_owned = sorted(shares_owned, key=lambda share: share.volume, reverse=True)
 
+    contracts_held = investor.get_contracts_held()
+    for c in contracts_held:
+        """
+
+                                <td>{{ c.investor_obligation }}</td>
+                                <td>{{ c.underlying_asset.athlete.name }}</td>
+                                <td>{{ c.strike_price }}</td>
+                                <td>{{ c.action_date }}</td>
+                                <td>{{ c.other_party_to_investor }}</td>
+                                <td>{{ c.value }}</td>"""
+        c.investor_obligation = c.get_obligation(investor)
+        c.other_party_to_investor = c.get_other_party_to(investor)
+
     return render(
         request,
         "app/investor.html",
@@ -270,6 +283,7 @@ def view_investor(request, investor_id):
                 "cash": investor.capital,
             },
             "shares": shares_owned,
+            "contracts": contracts_held,
         },
     )
 

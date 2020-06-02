@@ -201,28 +201,24 @@ class Entity(models.Model):
         )
 
         
-        # Now do derivatives
-        derivative_transactions = [t for t in asset_transactions if t.asset.is_derivative()]
+        
+        # Now do derivatives. Recalculate this after every trade
+        # As share trades affect derivative pricing
         # again, assume everyone starts with 0 derivatives
+        derivative_transactions = [t for t in asset_transactions] #  if t.asset.is_derivative()
         derivatives = [{"time": round_time(get_current_season().start_time), "value": 0.0, "type": "derivative"}]
-
-        derivatives_value = 0
-        # derivatives_owned = []
+    
         for t in derivative_transactions:
-
             derivatives_owned = self.get_contracts_held(t.updated)
-
             derivatives_value = np.sum(np.array([d.value for d in derivatives_owned]))
+            derivatives.append({"time": round_time(t.updated), "value": derivatives_value, "type": "derivative"})
 
-
-
-
+        derivatives.append({"time": round_time(this_time), "value": derivatives_value, "type": "derivative"})
 
         # Now the trick is to combine them
-
-        all_positions = share_positions + cash_positions
+        # all_positions = share_positions + cash_positions + derivatives
         all_positions = sorted(
-            share_positions + cash_positions, key=lambda t: t["time"]
+            share_positions + cash_positions + derivatives, key=lambda t: t["time"]
         )
         # logger.info(all_positions)
 
@@ -238,11 +234,14 @@ class Entity(models.Model):
         combined_total = []
         running_cash = 0
         running_shares = 0
+        running_derivs = 0
         for t in all_positions:
             if t["type"] == "cash":
                 running_cash = t["value"]
             elif t["type"] == "share":
                 running_shares = t["value"]
+            elif t["type"] == "derivative":
+                running_derivs = t["value"]
 
             records_processed_per_time[t["time"].timestamp()] = (
                 records_processed_per_time[t["time"].timestamp()] + 1
@@ -252,21 +251,28 @@ class Entity(models.Model):
                 == records_expected_per_time[t["time"].timestamp()]
             ):
                 combined_total.append(
-                    {"time": t["time"], "value": running_cash + running_shares}
+                    {"time": t["time"], "value": running_cash + running_shares + running_derivs}
                 )
 
-        return {
+        return_vals = {
             "combined": combined_total,
             "cash": cash_positions,
             "shares": share_positions,
-        }  # cash_positions
+            "derivatives": derivatives,
+        } 
+        # logger.info(return_vals)
 
-    def get_contracts_held(self, timestamp):
+        return return_vals # cash_positions
+
+    def get_contracts_held(self, timestamp=None):
         """ Get all contracts held by this entity at some date/time """
+        if not timestamp:
+            timestamp = current_time()
+
         contracts = Contract.objects.all()
         owned_contracts = []
         for c in contracts:
-            relevant_history = ContractHistory.objects.all().filter(Q(contract=c) & Q(timestamp__lte=timetamp))
+            relevant_history = ContractHistory.objects.all().filter(Q(contract=c) & Q(timestamp__lte=timestamp))
             relevant_history = relevant_history.order_by('-timestamp')
 
             if len(relevant_history) > 0:
@@ -914,11 +920,28 @@ class Contract(Asset):
     @property
     def value(self):
         """ This should be overriden """
+        if self.is_future():
+            return self.future.value
         return np.nan
 
     @property
     def contract_type(self):
         return self.asset_type
+
+
+    def get_obligation(self, investor):
+        if self.owner == investor:
+            return self.future.owner_obligation
+        else:
+            if self.future.owner_obligation == Future.BUY:
+                return Future.SELL
+            return Future.BUY
+
+
+    def get_other_party_to(self, investor):
+        if self.owner == investor:
+            return self.other_party
+        return owner
 
 
 class Future(Contract):
@@ -962,8 +985,11 @@ class Future(Contract):
         """ value of futures contract is strike_price - current_price 
         TODO 
         """
-        current_price = self.underlying_asset.athlete.get_value()
-        return np.nan
+        current_price_per_share = self.underlying_asset.athlete.get_value()
+        current_price = current_price_per_share*self.underlying_asset.volume
+
+        logging.info("Current price: {} ({} per share, vol={}) for future id: {}".format(current_price, current_price_per_share, self.underlying_asset.volume, self.id))
+        return current_price - self.strike_price
 
     @property
     def obligation(self):
