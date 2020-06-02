@@ -1434,10 +1434,18 @@ class Trade(models.Model):
             # This is already done.
             
             # 1) Confirm contract
-            # The future owner is the buyer of the contract
-            self.asset.owner = self.buyer
-            self.asset.contract.future.other_party = self.seller
-            self.asset.contract.future.save()
+            # The buyer replaces the seller's position
+            if self.seller == self.asset.owner:
+                # If the owner was the seller, the buyer becomes the owner
+                self.asset.owner = self.buyer
+            
+            elif self.seller == self.asset.other_party:
+                self.asset.contract.other_party = self.buyer
+
+
+            # self.asset.owner = self.buyer
+            # self.asset.contract.future.other_party = self.seller
+            self.asset.contract.save()
             self.asset.save()
 
             # 2) Schedule settlement action
