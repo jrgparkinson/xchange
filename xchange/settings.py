@@ -146,3 +146,9 @@ LOGGING = {
         'level': 'INFO',
     },
 }
+
+
+
+# Set > 0 to determine number of seconds after a future trade is done that the
+# future is settled (for testing purposes)
+TESTING_FUTURES_TIMING = 0

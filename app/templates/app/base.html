@@ -398,7 +398,8 @@
       $('.datetimePicker').datetimepicker({ 'fontAwesome': true });
       // $('.toast').toast('show');
       updateNotifications();
-      setInterval(updateNotifications, 1000);
+      // setInterval(updateNotifications, 1000); // 1 second
+      setInterval(updateNotifications, 60000); // 1 minute
 
 
       $("#notifications").click(function () {

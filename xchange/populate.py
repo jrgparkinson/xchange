@@ -15,7 +15,7 @@ import numpy as np
 import random
 import pytz
 import math
-
+import traceback
 
 def random_vol_of(vol):
     if random.random() > 0.5:
@@ -185,7 +185,8 @@ def populate():
                 t.accept_trade(action_by=investors[i])
                 t.updated = current_time() - timedelta(days=1, hours=random.random())
                 t.save()
-            except Exception as e:
+            except XChangeException as e:
+                logger.info(traceback.print_tb(e.__traceback__))
                 print("Error: " + str(e))
             # share.transfer(to=investors[i], vol=r[i]*share.volume)
 

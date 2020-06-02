@@ -14,6 +14,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 import time
 from datetime import datetime
 import logging
+import traceback
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -137,6 +138,7 @@ def auction(request):
 
             except Exception as e:
                 logger.info(e)
+                logger.warning(traceback.print_tb(e.__traceback__))
                 continue
 
 
@@ -470,7 +472,7 @@ def retrieve_trades(request):
             print("Retrieved {} trades after filtering by asset: {}".format(len(all_trades), asset))
 
         else:
-            logger.info("Retrieve  standard trades")
+            logger.info("Retrieve standard trades")
             logger.info(request.GET)
             all_trades = Trade.objects.all().filter(
                 (Q(buyer=investor) | Q(seller=investor)) & Q(status=Trade.PENDING) & Q(season=get_current_season())
@@ -483,6 +485,10 @@ def retrieve_trades(request):
             all_trades = sorted(all_trades, key=lambda t: t.updated, reverse=True)
         else:
             all_trades = all_trades.order_by("-updated")
+
+        # remove trades with a strike date in the past
+        all_trades = [t for t in all_trades if not (t.asset.is_future() and t.asset.contract.future.action_date < current_time())]
+        # all_trades = [t for t in all_trades if not (t.asset.is_option() and t.asset.option.action_date < current_time())]
 
         trades = []
 
@@ -549,6 +555,7 @@ def retrieve_trades(request):
 
     except Exception as e:
         logger.info("Caught: " + str(e))
+        logger.info(traceback.print_tb(e.__traceback__))
         return JsonResponse({"error": str(e)})
 
     # logger.info("Execution time: {} seconds".format(time.time() - init_time))
@@ -594,6 +601,8 @@ def action_trade(request):
             "desc": "This really shouldn't have happened",
         }
     except Exception as e:
+        
+        traceback.print_tb(e.__traceback__)
         error = {"title": "Internal error", "desc": "The gory details: <br>" + str(e)}
 
     return JsonResponse({"error": error})
@@ -688,6 +697,7 @@ def create_trade(request):
         return JsonResponse(make_error(e))
     
     except Exception as e:
+        logger.warning(traceback.print_tb(e.__traceback__))
         return JsonResponse(make_error(e))
 
     return JsonResponse({})
@@ -708,6 +718,7 @@ def asset_price(request):
             return JsonResponse({"value": "Unknown"})
     except Exception as e:
         logger.info(e)
+        logger.warning(traceback.print_tb(e.__traceback__))
         return JsonResponse({"value": "Unknown"})
 
 

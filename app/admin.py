@@ -21,6 +21,7 @@ admin.site.register(Swap)
 admin.site.register(ShareIndexValue)
 admin.site.register(TransactionHistory)
 admin.site.register(Notification)
+admin.site.register(ContractHistory)
 # admin.site.register(Trade)
 # admin.site.register(Asset)
 
