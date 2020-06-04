@@ -17,6 +17,7 @@ import socket
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
@@ -26,8 +27,10 @@ SECRET_KEY = "ucolgyxgu7!gp-@9ya575-+(shy^qqhsqb2no-c8$d0-=vq0x7"
 # SECURITY WARNING: don't run with debug turned on in production!
 if "a2hosting.com" in socket.gethostname():
     DEBUG=False
+    DEPLOY_URL = '/xchange/'
 else:
     DEBUG = True
+    DEPLOY_URL = '/'
 
 DEBUG=False
 
@@ -124,7 +127,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
-STATIC_URL = "/static/"
+STATIC_URL = DEPLOY_URL + "static/"
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
@@ -132,7 +135,7 @@ STATICFILES_DIRS = [
 
 STATIC_ROOT = "staticfiles"
 
-LOGIN_REDIRECT_URL = "/profile/"
+LOGIN_REDIRECT_URL = DEPLOY_URL + "profile/"
 
 EMAIL_BACKEND = (
     "django.core.mail.backends.console.EmailBackend"  # During development only
