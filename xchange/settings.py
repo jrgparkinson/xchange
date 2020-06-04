@@ -29,6 +29,8 @@ if "a2hosting.com" in socket.gethostname():
 else:
     DEBUG = True
 
+DEBUG=False
+
 ALLOWED_HOSTS = ["http://127.0.0.1/", "jrgparkinson.com"]
 
 
@@ -128,7 +130,7 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]
 
-STATIC_ROOT = "static"
+STATIC_ROOT = "staticfiles"
 
 LOGIN_REDIRECT_URL = "/profile/"
 
