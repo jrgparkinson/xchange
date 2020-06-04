@@ -5,6 +5,8 @@ from django.dispatch import receiver
 from django.conf import settings
 from datetime import timedelta, datetime
 import pytz
+import os
+os.environ['OPENBLAS_NUM_THREADS'] = '1' # fix for server
 import numpy as np
 from app.errors import *
 from django.db.models import Q
