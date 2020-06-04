@@ -79,6 +79,10 @@ urlpatterns = [
 
     path("get_investor_contracts/", views.get_investor_contracts, name="get_investor_contracts"),
 
-    
+    path("make_loan/", views.make_loan, name="make_loan"),
+    path("get_loans/", views.get_loans, name="get_loans"),
+    path("repay_loan/", views.repay_loan, name="repay_loan"),
+    # make_loan
+    # get_loans
     
 ]

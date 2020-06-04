@@ -221,8 +221,8 @@ function reload_trades(div, active, investor_id, other_opts) {
 
             actions = get_actions(trade);
 
-            var buyIcon = '<i class="fas fa-arrow-down fa-fw"></i>';
-            var sellIcon = '<i class="fas fa-arrow-up fa-fw"></i>';
+            var buyIcon = ''; //'<i class="fas fa-arrow-down fa-fw"></i>';
+            var sellIcon = ''; //'<i class="fas fa-arrow-up fa-fw"></i>';
 
             // $("#active_trades").append("<li data-type='" + trade.type +"' data-id='"+trade.id+"'><div class='tradeLabel'>" + label +"</div><div class='tradeActions'>" + actions + "</div></li>")
             // if (trade.seller) { seller = format_investor_display(response.investor,trade.seller); } else { seller = 'Open'; }

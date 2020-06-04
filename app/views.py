@@ -179,7 +179,7 @@ def bank(request):
 
     transaction_history = TransactionHistory.objects.all().filter((Q(sender=investor) | Q(recipient=investor)) 
     & Q(season=get_current_season()))
-    transaction_history = transaction_history.order_by('-timestamp')
+    transaction_history = transaction_history.order_by('-timestamp')[:20]
     transactions = []
     for t in transaction_history:
         t.description = t.description(investor)
@@ -190,9 +190,62 @@ def bank(request):
 
         transactions.append(t)
 
+    loans = Loan.objects.all().filter(Q(recipient=investor) & Q(balance__gt=0))
+    loan_offers = LoanOffer.objects.all().filter(Q(bank=get_bank()))
+    for l in loan_offers:
+        l.investor_interest_rate = l.compute_interest_rate(investor)*100.0
+
     context = {"loans": [], "shares_to_sell": [],
-    "transactions": transactions}
+    "transactions": transactions,
+    "loans": loans,
+    "loan_offers": loan_offers}
     return render(request, "app/bank.html", context)
+
+@login_required(login_url="/login/")
+def get_loans(request):
+    loans = Loan.objects.all().filter(Q(recipient=request.user.investor) & Q(balance__gt=0))
+    return JsonResponse({"loans": [l.serialize() for l in loans]})
+
+@login_required(login_url="/login/")
+def make_loan(request):
+    try:
+        principal = float(request.GET["principal"])
+        loan_plan = int(request.GET["loan"])
+        investor = request.user.investor
+
+        plan = LoanOffer.objects.get(pk=loan_plan) # type: LoanOffer
+
+        loan = Loan.create_loan(lender=get_bank(), recipient=investor, interest=plan.compute_interest_rate(investor),
+        balance=principal, interval=plan.repayment_interval)
+        # loan.save()
+
+    except XChangeException as e:
+        return make_error(e)
+    except KeyError:
+        return JsonResponse({"error": "Something is wrong with the form"})
+
+    return get_loans(request)
+
+@login_required(login_url="/login/")
+def repay_loan(request):
+    try:
+        ammount = float(request.GET["ammount"])
+        loan_id = int(request.GET["loan"])
+        investor = request.user.investor
+
+
+        loan = Loan.objects.get(id=loan_id) # type: Loan
+        logger.info("Loan balance before repayment: " + str(loan.balance))
+        loan.repay_loan(ammount)
+        logger.info("Loan balance after repayment: " + str(loan.balance))
+        loan.save()
+
+    except XChangeException as e:
+        return make_error(e)
+    except KeyError:
+        return JsonResponse({"error": "Something is wrong with the form"})
+
+    return get_loans(request)
 
 
 def races(request, race_id=None):
@@ -261,16 +314,14 @@ def view_investor(request, investor_id):
 
     contracts_held = investor.get_contracts_held()
     for c in contracts_held:
-        """
 
-                                <td>{{ c.investor_obligation }}</td>
-                                <td>{{ c.underlying_asset.athlete.name }}</td>
-                                <td>{{ c.strike_price }}</td>
-                                <td>{{ c.action_date }}</td>
-                                <td>{{ c.other_party_to_investor }}</td>
-                                <td>{{ c.value }}</td>"""
-        c.investor_obligation = c.get_obligation(investor)
+        if c.is_future() or c.is_option():
+            c.investor_obligation = dict(Future.OBLIGATIONS)[c.get_obligation(investor)]
         c.other_party_to_investor = c.get_other_party_to(investor)
+
+
+    debts = Debt.objects.all().filter(Q(owed_by=investor) & Q(ammount__gt=0))
+    loans = Loan.objects.all().filter(Q(recipient=investor) & Q(balance__gt=0))
 
     return render(
         request,
@@ -284,6 +335,8 @@ def view_investor(request, investor_id):
             },
             "shares": shares_owned,
             "contracts": contracts_held,
+            "debts": debts,
+            "loans": loans,
         },
     )
 

@@ -11,8 +11,8 @@
     <div class="input-group mb-3" id="investor-search">
         <div class="row">
             <div class="col-sm-3">
-            <div id="investorNameError" class="searchError col-sm-4"></div>
-        </div>
+                <div id="investorNameError" class="searchError col-sm-4"></div>
+            </div>
         </div>
         <div class="row">
             <input type="text" class="form-control typeahead" id="investorNameInput" placeholder="Investor search"
@@ -31,126 +31,226 @@
 {% block content %}
 
 
+<ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+    <li class="nav-item">
+        <a class="nav-link active" id="pills-summary-tab" data-toggle="pill" href="#pills-summary" role="tab"
+            aria-controls="pills-summary" aria-selected="true">
+            Summary</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="pills-contracts-tab" data-toggle="pill" href="#pills-contracts" role="tab"
+            aria-controls="pills-contracts" aria-selected="false">
+            Contracts</a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link" id="pills-debt-tab" data-toggle="pill" href="#pills-debt" role="tab"
+            aria-controls="pills-debt" aria-selected="false">
+            Debts/Loans</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="pills-history-tab" data-toggle="pill" href="#pills-history" role="tab"
+            aria-controls="pills-history" aria-selected="false">
+            History</a>
+    </li>
+
+</ul>
+<div class="tab-content" id="pills-tabContent">
+    <div class="tab-pane fade show active" id="pills-summary" role="tabpanel" aria-labelledby="pills-summary-tab">
 
 
+        <div class="row">
+            <div class="col-sm-8">
 
-<div class="row">
-    <div class="col-sm-8">
-
-        <div class="card">
-            <div class="card-body">
-                <h4> Current worth: {{worth.total|floatformat:2}} (shares: {{worth.shares|floatformat:2}}, cash:
-                    {{worth.cash|floatformat:2}})</h4>
+                <div class="card">
+                    <div class="card-body">
+                        <h4> Current worth: {{worth.total|floatformat:2}} (shares: {{worth.shares|floatformat:2}}, cash:
+                            {{worth.cash|floatformat:2}})</h4>
 
 
-                {% include 'app/zoom.html' %}
-                <div class="graph">
-                    <canvas id="investorValue"></canvas>
+                        {% include 'app/zoom.html' %}
+                        <div class="graph">
+                            <canvas id="investorValue"></canvas>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
-    <div class="col-sm-4">
-        <div class="card">
-            <div class="card-body">
-                <h2>Shares owned</h2>
-                <table class="table" id="shares_owned">
-                    <thead>
-                        <tr>
-                            <th scope="col">Athlete</th>
-                            <th scope="col">Volume</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for share in shares %}
-                        <tr>
-                            <td><span class="badgeContainer">
-                                    <a href="/athlete/{{share.athlete.id}}" class="badge badge-danger">
-                                        {{share.athlete.name}}</a>
-                                </span>
-                            </td>
-                            <td>{{share.volume|floatformat:2}}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="col-sm-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h2>Shares owned</h2>
+                        <table class="table" id="shares_owned">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Athlete</th>
+                                    <th scope="col">Volume</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for share in shares %}
+                                <tr>
+                                    <td><span class="badgeContainer">
+                                            <a href="/athlete/{{share.athlete.id}}" class="badge badge-danger">
+                                                {{share.athlete.name}}</a>
+                                        </span>
+                                    </td>
+                                    <td>{{share.volume|floatformat:2}}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
+
+        </div>
+
+    </div>
+
+    <div class="tab-pane fade show" id="pills-contracts" role="tabpanel" aria-labelledby="pills-contracts-tab">
+
+
+        <div class="row">
+            <div class="col-sm">
+                <div class="card">
+                    <div class="card-body">
+
+                        <h2>Future contracts held</h2>
+                        <div id="contracts">
+                            <table class="table" id="contracts">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Obligation</th>
+                                        <th scope="col">Asset</th>
+                                        <th scope="col">Strike price</th>
+                                        <th scope="col">Strike date</th>
+                                        <th scope="col">Other party</th>
+                                        <th scope="col">Current value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for c in contracts %}
+                                    <tr>
+                                        <!-- currently only works for futures -->
+                                        <td>{{ c.investor_obligation }}</td>
+                                        <td>{{ c.future.underlying_asset.athlete.name }}
+                                            ({{ c.future.underlying_asset.volume }} shares)</td>
+                                        <td>{{ c.future.strike_price }}</td>
+                                        <td>{{ c.future.action_date }}</td>
+                                        <td>{{ c.other_party_to_investor }}</td>
+                                        <td>{{ c.value }}</td>
+                                    </tr>
+
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
+    <div class="tab-pane fade show" id="pills-history" role="tabpanel" aria-labelledby="pills-history-tab">
+
+
+        <div class="row">
+            <div class="col-sm">
+                <div class="card">
+                    <div class="card-body">
+
+                        <h2>Trading history</h2>
+                        <div id="past_trades">
+                            <table class="table" id="past_trades">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Status</th>
+                                        <th scope="col">Asset</th>
+                                        <th scope="col">Price</th>
+                                        <th scope="col">Seller</th>
+                                        <th scope="col">Buyer</th>
+                                        <th scope="col">Initiated by</th>
+                                        <th scope="col">Last updated</th>
+
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="tab-pane fade show" id="pills-debt" role="tabpanel" aria-labelledby="pills-debt-tab">
+        <div class="row">
+            <div class="col-sm-12 col-lg-6">
+                <div class="card">
+                    <div class="card-body">
+
+                        <!-- <h2>Future contracts held</h2> -->
+                        <div id="contracts">
+                            <table class="table" id="contracts">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Owed to</th>
+                                        <th scope="col">Ammount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for d in debts %}
+                                    <tr>
+                                        <!-- currently only works for futures -->
+                                        <td>{{ d.owed_to.print_name }}</td>
+                                        <td>{{ d.ammount|floatformat:2 }}</td>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-12 col-lg-6">
+                <div class="card">
+                    <div class="card-body">
+
+                        <!-- <h2>Future contracts held</h2> -->
+                        <div id="contracts">
+                            <table class="table" id="contracts">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Loan from</th>
+                                        <th scope="col">Current balance</th>
+                                        <th scope="col">Interest rate</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for l in loans %}
+                                    <tr>
+                                        <!-- currently only works for futures -->
+                                        <td>{{ l.lender }}</td>
+                                        <td>{{ l.balance|floatformat:2 }}</td>
+                                        <td>{{ l.interest_rate|floatformat:2 }}</td>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
 </div>
 
 
-<div class="row">
-    <div class="col-sm">
-        <div class="card">
-            <div class="card-body">
-
-                <h2>Future contracts held</h2>
-                <div id="contracts">
-                    <table class="table" id="contracts">
-                        <thead>
-                            <tr>
-                                <th scope="col">Obligation</th>
-                                <th scope="col">Asset</th>
-                                <th scope="col">Strike price</th>
-                                <th scope="col">Strike date</th>
-                                <th scope="col">Other party</th>
-                                <th scope="col">Current value</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for c in contracts %}
-                            <tr>
-                                    <!-- currently only works for futures -->
-                                <td>{{ c.investor_obligation }}</td>
-                                <td>{{ c.future.underlying_asset.athlete.name }} ({{ c.future.underlying_asset.volume }} shares)</td>
-                                <td>{{ c.future.strike_price }}</td>
-                                <td>{{ c.future.action_date }}</td>
-                                <td>{{ c.other_party_to_investor }}</td>
-                                <td>{{ c.value }}</td>
-                            </tr>
-
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-</div>
 
 
-<div class="row">
-    <div class="col-sm">
-        <div class="card">
-            <div class="card-body">
-
-                <h2>Trading history</h2>
-                <div id="past_trades">
-                    <table class="table" id="past_trades">
-                        <thead>
-                            <tr>
-                                <th scope="col">Status</th>
-                                <th scope="col">Asset</th>
-                                <th scope="col">Price</th>
-                                <th scope="col">Seller</th>
-                                <th scope="col">Buyer</th>
-                                <th scope="col">Initiated by</th>
-                                <th scope="col">Last updated</th>
-
-                            </tr>
-                        </thead>
-                        <tbody>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-</div>
 
 
 

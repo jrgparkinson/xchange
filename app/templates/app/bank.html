@@ -16,7 +16,7 @@
         visibility: hidden;
         display: block;
     }
-    </style>
+</style>
 
 <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
     <li class="nav-item">
@@ -90,7 +90,59 @@
 
                 <h2>Loans</h2>
 
-                <p>Coming soon.</p>
+                <form action="#" method="GET">
+                    <div class="form-group row">
+                        <label for="principal" class="col-sm-2 col-form-label">New loan</label>
+                        <div class="col-sm-8 col-md-2">
+                            <input type="number" step="0.01" class="form-control" id="principal">
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+
+                        <label class="col-sm-2 col-form-label" for="loan">Loan details</label>
+                        <div class="col-sm-12 col-md-10">
+                            <select class="custom-select mr-sm-2" id="loan">
+                                {% for l in loan_offers %}
+                                <option value="{{l.id}}">Interest rate: {{l.investor_interest_rate}}%,
+                                    repayment interval [(days) hh:mm:ss]: {{l.repayment_interval}}</option>
+
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                    </div>
+
+                    <div class="form-group row">
+                        <div class="col-sm-2">
+                            <button type="submit" class="btn btn-primary" id="createLoan">Take out loan</button>
+                        </div>
+                    </div>
+
+                </form>
+
+                <h2>Your current loans</h2>
+                <table class="table" id="loans">
+                    <thead>
+                        <tr>
+                            <th scope="col">Lender</th>
+                            <th scope="col">Balance</th>
+                            <th scope="col">Interest rate (%)</th>
+                            <th scope="col">Repayment interval</th>
+                            <th scope="col">Repayment ammount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- {% for l in loans %}
+            <tr>
+                <td>{{l.lender}}</td>
+                <td>{{l.balance}}</td>
+                <td>{{l.interest_rate}}</td>
+                <td>{{l.repayment_interval}}</td>
+            </tr>
+            {% endfor %} -->
+                    </tbody>
+                </table>
 
             </div>
         </div>
@@ -115,7 +167,101 @@
             scrollx: true,
             order: [],
         });
+
+        $("button#createLoan").click(create_loan);
+        get_loans();
+
+        //$("button.repay").click(function() {
+        $(document).on("click", "button.repay", function () {
+            var loan_id = $(this).attr("data-loan");
+            var ammount = $("input.repay[data-loan=" + loan_id + "]").val();
+            repay_loan(loan_id, ammount);
+        });
     });
+
+
+    function reload_loans(loans) {
+        $("table#loans tbody tr").remove();
+
+        loans.forEach(loan => {
+            var interval = moment.duration(loan.repayment_interval);
+            var s = String(interval.get('seconds')).padStart(2, '0');
+            var days = String(interval.get('days'));
+            var hours = String(interval.get('hours')).padStart(2, '0');
+            var mins = String(interval.get('minutes')).padStart(2, '0');
+
+            var formatted_time = days + " days, " + hours + ":" + mins + ":" + s;
+
+            var row = "<tr>";
+            row += "<td>" + loan.lender.name + "</td>";
+            row += "<td>" + Number(loan.balance).toFixed(2) + "</td>";
+            row += "<td>" + loan.interest_rate + "</td>";
+            row += "<td>" + formatted_time + "</td>";
+            row += "<td> ";
+            row += "<div class='row'><input type='number' step='0.01' class='col-sm-8 form-control repay' data-loan='" + loan.id + "' placeholder='Repayment ammount' >";
+            row += "<button class='btn btn-primary repay col-sm-auto' data-loan='" + loan.id + "'>Repay</button>";
+            row += "</div></td>";
+
+            row += "</tr>";
+            $("table#loans tbody").append(row);
+        });
+    }
+
+    function get_loans() {
+        $.ajax({
+            type: "GET",
+            url: {% url 'get_loans' %},  // URL to your view that serves new info
+            data: {}
+            })
+            .done(function (response) {
+                console.log(response);
+                if (response.error) {
+                    // display_error(response.error);
+                } else {
+                    reload_loans(response.loans);
+                }
+            });
+    }
+
+    function create_loan() {
+        var data = { "principal": $("input#principal").val(), "loan": $("select#loan option:selected").val() };
+        console.log(data);
+        $.ajax({
+            type: "GET",
+            url: {% url 'make_loan' %},  // URL to your view that serves new info
+            data: data
+            })
+            .done(function (response) {
+                console.log(response);
+                if (response.error) {
+                    display_error(response.error);
+                } else {
+                    reload_loans(response.loans);
+                }
+            });
+    }
+
+    function repay_loan(loan_id, ammount) {
+
+        var data = {
+            "ammount": ammount,
+            "loan": loan_id
+        };
+        console.log(data);
+        $.ajax({
+            type: "GET",
+            url: {% url 'repay_loan' %},  // URL to your view that serves new info
+            data: data
+            })
+            .done(function (response) {
+                console.log(response);
+                if (response.error) {
+                    display_error(response.error);
+                } else {
+                    reload_loans(response.loans);
+                }
+            });
+    }
 </script>
 
 {% endblock %}

@@ -11,8 +11,10 @@ from django.db.models import Q
 from django.contrib import admin  # .admin.ModelAdmin import message_user
 import re
 from background_task import background
+# from background_task.models import BackgroundTask
 from django.db.models.signals import pre_save
 import logging
+
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -89,10 +91,10 @@ class Entity(models.Model):
         # Add/remove cash to get back to point in time we care about
         for t in cash_transactions:
             if t.sender == self:
-                current_capital = current_capital - t.ammount
+                current_capital = current_capital + t.ammount
 
             else:
-                current_capital = current_capital + t.ammount
+                current_capital = current_capital - t.ammount
 
         return current_capital
 
@@ -264,16 +266,16 @@ class Entity(models.Model):
 
         return return_vals # cash_positions
 
-    
-
     def get_contracts_held(self, timestamp=None):
         """ Get all contracts held by this entity at some date/time """
         if not timestamp:
             timestamp = current_time()
 
-        contracts = Contract.objects.all()
+        # Get active contracts
+        contracts = Contract.objects.all().filter(Q(status=Contract.ACTIVE))
         owned_contracts = []
         for c in contracts:
+                
             relevant_history = ContractHistory.objects.all().filter(Q(contract=c) & Q(timestamp__lte=timestamp))
             relevant_history = relevant_history.order_by('-timestamp')
 
@@ -456,6 +458,8 @@ class Bank(Entity):
     def serialize(self):
         return {"name": self.name, "capital": self.capital}
 
+def get_bank() -> Bank:
+    return Bank.objects.get(name='The Cowley Club Bank')
 
 class Investor(Entity):
     """
@@ -477,7 +481,7 @@ class Investor(Entity):
     uitheme = models.CharField(max_length=1, choices=THEMES, default=LIGHT)
 
     def __str__(self):
-        return "{} ({})".format(self.display_name, self.capital)
+        return "{}".format(self.display_name)
 
     def __repr__(self):
         return self.display_name
@@ -916,6 +920,19 @@ class Contract(Asset):
         null=True,
     )
 
+    UNSOLD = "U"
+    ACTIVE = "A"
+    SETTLED = "S"
+    VOID = "V"
+    STATUSES = (
+        (UNSOLD, "Unsold"),
+        (ACTIVE, "Active"),
+        (SETTLED, "Settled"),
+        (VOID, "Void")
+    )
+
+    status = models.CharField(max_length=1, choices=STATUSES, default=UNSOLD)
+
     def serialize(self):
         return {"id": self.id,
         "owner": serialize_entity(self.owner),
@@ -963,7 +980,7 @@ class Contract(Asset):
     def get_other_party_to(self, investor):
         if self.owner == investor:
             return self.other_party
-        return owner
+        return self.owner
 
 
 class Future(Contract):
@@ -985,7 +1002,7 @@ class Future(Contract):
 
     owner_obligation = models.CharField(max_length=1, choices=OBLIGATIONS, default=BUY)
 
-    settled = models.BooleanField(default=False)
+    # settled = models.BooleanField(default=False)
 
     def __str__(self):
         return "Future: Owner({}) to {} ({}, {}) from/to {} for {} at {}".format(self.owner,self.obligation, self.underlying_asset.athlete.name,
@@ -998,6 +1015,7 @@ class Future(Contract):
         "strike_date": self.action_date,
         "owner_obligation": self.obligation,
         "owner": serialize_entity(self.owner),
+        "status": self.status,
         "other_party": serialize_entity(self.other_party),
         }
 
@@ -1103,10 +1121,10 @@ def settle_future(future_id):
     """
 
     logging.info("Settle future with id: {}".format(future_id))
-    future = Future.objects.get(pk=future_id)
+    future = Future.objects.get(pk=future_id) # type: Future
 
-    if future.settled:
-        logging.info("Already settled")
+    if not future.status == Contract.ACTIVE:
+        logging.info("Future not active, cannot be settled")
         return
 
     # Now we try and transfer the underlying asset
@@ -1134,7 +1152,7 @@ def settle_future(future_id):
         # share.transfer(to=buyer, vol=vol)
         # buyer.transfer_cash_to(ammount=future.strike_price, to=seller, reason="Future trade: " + str(future))
 
-        future.settled = True
+        future.status = Contract.SETTLED
         future.save()
 
         # Send notifications
@@ -1144,12 +1162,75 @@ def settle_future(future_id):
         Notification.send_notification(title="Future contract settled", description="You sold" + common, entity=seller)
         
     else:
-        print("Unable to settle futures contract")
 
-        # # format(seller.saleable_shares_in_athlete())
-        # raise InsufficientShares(
-        #     "Seller ({}) does not have sufficient shares to fulfill trade.".format(seller.print_name)
-        # )
+        # if neither party can fulfill obligation, contract is void
+        if not seller_has_shares and not buyer_has_cash:
+            future.status = Contract.VOID
+            future.save()
+
+            desc = "Future contract between {} and {} for {} void as neither party can fulfill obligation".format(buyer, seller, common)
+            Notification.send_notification(title="Future contract void", description=desc, entity=buyer)
+            Notification.send_notification(title="Future contract void", description=desc, entity=seller)
+        
+        else:
+            # Work out value of contract,
+            # defaulter owes this x 1.5
+            # pays what they can, the bank pays the rest, then they owe the bank a debt
+            val = future.value
+            
+            defaulter = None # type: Entity
+            non_defaulter = None # type: Entity
+            if seller_has_shares and not buyer_has_cash:
+                defaulter = buyer
+                non_defaulter = seller
+            else:
+                defaulter = seller
+                non_defaulter = buyer
+
+            # contract value is athlete value - strike price
+            # so if the value of the contract is positive, the buyer is getting a good deal
+            # and if it is negative, the seller is getting a good deal
+            if (val > 0 and defaulter == buyer) or (val < 0 and defaulter==seller):
+                # here, the defaulter was due to benefit so we should do nothing
+                future.status = Contract.VOID
+
+                if defaulter == buyer:
+                    desc = "Future contract between {} and {} for {} void as buyer cannot fulfill obligation but was due to benefit".format(buyer, seller, common)
+                else:
+                    desc = "Future contract between {} and {} for {} void as seller cannot fulfill obligation but was due to benefit".format(buyer, seller, common)
+                
+                Notification.send_notification(title="Future contract void", description=desc, entity=buyer)
+                Notification.send_notification(title="Future contract void", description=desc, entity=seller)
+
+            else:
+                val_owed = np.round(val*1.5, 2)
+
+                val_payable = defaulter.Capital
+                debt = val_owed - val_payable
+
+                defaulter.transfer_cash_to(val_payable, non_defaulter)
+
+                debt_desc = ""
+                if debt > 0:
+                    bank = get_bank()
+                    bank.transfer_cash_to(debt, non_defaulter)
+
+                    debt = Debt(ammount=debt, owed_by=defaulter, owed_to=bank)
+                    debt.save()
+
+                    debt_desc = " You now owe a debt of {} to the bank".format(debt)
+
+                Notification.send_notification(title="Future contract settled", 
+                description="The other party defaulted, so you were awarded 1.5x the value of the contract", 
+                entity=non_defaulter)
+
+
+                Notification.send_notification(title="Future contract settled", 
+                description="You could not meet your obligation and hence defaulted." + debt_desc, 
+                entity=defaulter)
+
+                future.status = Contract.SETTLED
+                future.save()
     
 
 class Swap(Asset):
@@ -1442,6 +1523,10 @@ class Trade(models.Model):
             elif self.seller == self.asset.other_party:
                 self.asset.contract.other_party = self.buyer
 
+            else:
+                # This should never happen!
+                raise Exception("Contract seller was not involved in the contract!")
+
 
             # self.asset.owner = self.buyer
             # self.asset.contract.future.other_party = self.seller
@@ -1507,6 +1592,23 @@ def schedule_share_calculation():
     """ Compute shares indexes in 5 seconds time """
     ShareIndexValue.compute_value(ShareIndexValue.TOP10)
 
+class LoanOffer(models.Model):
+    """ Determine what loans are on offer from a bank
+    Can be overriden by new models which provide more complex options if required """
+    bank = models.ForeignKey(Bank, on_delete=models.CASCADE)
+    interest_rate = models.FloatField(help_text="Fractional interest rate")
+    repayment_interval = models.DurationField(default=timedelta(days=7))
+
+    def __str__(self):
+        return "{}/{}/{}".format(self.bank, self.interest_rate, self.repayment_interval)
+
+    def compute_interest_rate(self, recipient=None):
+        """ This can be overriden by child classes to provide more complicated
+        interest rates e.g. based on the investors likelihood of repaying the load
+        """
+        return self.interest_rate
+
+    
 
 class Loan(models.Model):
     """ One entity may loan another entity some capital, which is repayed at some interest rate
@@ -1533,7 +1635,7 @@ class Loan(models.Model):
     next_payment_due = models.DateTimeField()
 
     # Interest rate as a fraction e.g. 0.01 = 1% on the repayment interval
-    interest_rate = models.FloatField()
+    interest_rate = models.FloatField(help_text="Fractional interest rate")
 
     # How much needs to be repayed
     balance = models.FloatField()
@@ -1545,8 +1647,9 @@ class Loan(models.Model):
 
     def serialize(self):
         return {
-            "lender": self.lender.serialize(),
-            "recipient": self.recipient.serialize(),
+            "id": self.id,
+            "lender": serialize_entity(self.lender),
+            "recipient": serialize_entity(self.recipient),
             "created": self.created,
             "last_processed": self.last_processed,
             "next_payment_due": self.next_payment_due,
@@ -1556,11 +1659,11 @@ class Loan(models.Model):
         }
 
     def __str__(self):
-        return "Loan of {} from {} to {}".format(
-            self.balance, self.lender, self.recipient
+        return "Loan of {} from {} to {} ({}% interest)".format(
+            self.balance, self.lender, self.recipient, self.interest_rate
         )
 
-    def create_loan(lender, recipient, interest, balance, interval):
+    def create_loan(lender, recipient, interest, balance, interval :timedelta):
 
         # Perform checks
         # Can't lend money you don't have
@@ -1579,76 +1682,111 @@ class Loan(models.Model):
             balance=balance,
             repayment_interval=interval,
             next_payment_due=next_payment_due,
+            season=get_current_season()
         )
+        logging.info("Recipient capital before loan received: {}".format(recipient.capital))
         lender.transfer_cash_to(balance, recipient, reason="Loan created: " + str(loan))
-
-        # Create recurring payment schedule here
-        # TODO
+        logging.info("Recipient capital after loan received: {}".format(recipient.capital))
 
         lender.save()
         recipient.save()
         loan.save()
 
-    def pay_interest(self):
+        logger.info("Interval: " + str(interval))
+        logger.info("Scheduling loan with repeat: {} seconds".format(interval.total_seconds()))
+        Loan.schedule_accrue_interest(loan.id, repeat=interval.total_seconds(), repeat_until=None)    
+
+    
+    @background(schedule=0)
+    def schedule_accrue_interest(loan_id):
+        loan = Loan.objects.get(id=loan_id)
+        loan.accrue_interest()
+
+
+    def accrue_interest(self):
 
         # Check if it is indeed time to repay - is this approximately the time that the next repayment is due?
-        diff = current_time() - self.next_payment_due
-        if not np.abs(diff.seconds) < np.abs(self.repayment_interval.seconds) / 10.0:
-            return
+        # diff = current_time() - self.next_payment_due
+        # if not np.abs(diff.seconds) < np.abs(self.repayment_interval.seconds) / 10.0:
+        #     return
 
         if self.balance == 0:
-            return
+            # Delete this task
+            # task = BackgroundTask.objects.all().filter(task_params="[[{}], \{\}]".format(self.id), task_name="app.models.loan.pay_interest")
+            # task.delete()
+            raise Exception("Loan balance = 0, manually delete task")
+            
 
         interest_ammount = np.round(self.interest_rate * self.balance, 2)
         logger.info(
-            "Pay interest {} from {} to {}".format(
+            "Accrue interest {} from {} to {}".format(
                 interest_ammount, self.recipient, self.lender
             )
         )
 
-        if self.recipient.capital > interest_ammount:
-
-            self.recipient.transfer_cash_to(
-                interest_ammount, self.lender, reason="Loan interest payment: " + str(self)
-            )
-
-        else:
-            ammount_payable = self.recipient.capital
-
-            # self.lender.capital = self.lender.capital + ammount_payable
-            # self.recipient.capital = 0
-            self.recipient.transfer_cash_to(
-                ammount_payable, self.lender, reason="Loan interest payment: " + str(self)
-            )
-
-            # Create new debt
-            debt = Debt(
-                owed_by=self.recipient,
-                owed_to=self.lender,
-                ammount=interest_ammount - ammount_payable,
-            )
-            debt.save()
-
-        self.last_processed = current_time()
-        self.next_payment_due = self.last_processed + self.repayment_interval
-
-        self.lender.save()
-        self.recipient.save()
+        self.balance = self.balance + interest_ammount
         self.save()
 
+    # def pay_interest(self):
+
+    #     interest_ammount = np.round(self.interest_rate * self.balance, 2)
+
+    #     if self.balance == 0:
+    #         return
+
+    #     if self.recipient.capital > interest_ammount:
+
+    #         self.recipient.transfer_cash_to(
+    #             interest_ammount, self.lender, reason="Loan interest payment: " + str(self)
+    #         )
+
+    #     else:
+    #         ammount_payable = self.recipient.capital
+
+    #         # self.lender.capital = self.lender.capital + ammount_payable
+    #         # self.recipient.capital = 0
+    #         self.recipient.transfer_cash_to(
+    #             ammount_payable, self.lender, reason="Loan interest payment: " + str(self)
+    #         )
+
+    #         # Create new debt
+    #         debt = Debt(
+    #             owed_by=self.recipient,
+    #             owed_to=self.lender,
+    #             ammount=interest_ammount - ammount_payable,
+    #         )
+    #         debt.save()
+
+    #     self.last_processed = current_time()
+    #     self.next_payment_due = self.last_processed + self.repayment_interval
+
+    #     self.lender.save()
+    #     self.recipient.save()
+    #     self.save()
+
     def repay_loan(self, ammount):
-        self.recipient.transfer_cash_to(ammount, self.lender, reason="Loan repayment: "+ str(self))
+        try:
+            if ammount > self.balance:
+                ammount = self.balance
+            if ammount <= 0:
+                return
+            self.recipient.transfer_cash_to(ammount, self.lender, reason="Loan repayment: "+ str(self))
+        except XChangeException as e:
+            raise e
+
+        self.balance = self.balance - ammount
+        self.save()
 
 
-def pay_all_loans():
-    loans = (
-        Loan.objects.all()
-        .filter(next_payment_due__lte=current_time(),season=get_current_season())
-        .exclude(balance=0)
-    )
+# def pay_all_loans():
+#     loans = (
+#         Loan.objects.all()
+#         .filter(next_payment_due__lte=current_time(),season=get_current_season())
+#         .exclude(balance=0)
+#     )
 
-    for l in loans:
-        l.pay_interest()
+#     for l in loans:
+#         l.pay_interest()
 
 
 class Debt(models.Model):
@@ -1709,6 +1847,9 @@ class TransactionHistory(models.Model):
     )  # e.g. buying volume of shares from X, repaying loan to X
     timestamp = models.DateTimeField(auto_now_add=True)
     season = models.ForeignKey(Season, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return "{} from {} to {} at {}".format(self.ammount, self.sender, self.recipient, self.timestamp)
 
     def serialize(self):
         return {

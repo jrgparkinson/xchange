@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     'import_export',
     'background_task',
+    'admin_reorder',
     # 'django.contrib.sites',
 ]
 
@@ -52,6 +53,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    #  'admin_reorder.middleware.ModelAdminReorder',
 ]
 
 ROOT_URLCONF = "xchange.urls"
@@ -147,7 +149,63 @@ LOGGING = {
     },
 }
 
-
+ADMIN_REORDER = (
+    {'app': 'app', 'label': 'Users',
+        'models': (
+            'app.Investor',
+            'app.Bank',
+            'app.Notification',
+            'app.LoanOffer',
+            'app.Loan',
+            'app.Debt',
+        )
+   },
+      {'app': 'app', 'label': 'Trading',
+        'models': (
+            'app.Trade',
+        )
+   },
+   {'app': 'app', 'label': 'Assets',
+        'models': (
+            'app.Athlete',
+            'app.Asset',
+            'app.Share',
+            'app.Future',
+            'app.Option',
+            'app.Swap',
+            'app.Contract',
+        )
+   },
+      {'app': 'app', 'label': 'History',
+        'models': (
+            'app.ShareIndexValue',
+            'app.TransactionHistory',
+            'app.ContractHistory',
+            'app.Swap',
+        )
+   },
+   {'app': 'app', 'label': 'Events',
+        'models': (
+            'app.Season',
+            'app.Event',
+            'app.Race',
+            'app.Result',
+        )
+   },
+      {'app': 'app', 'label': 'Auctions',
+        'models': (
+            'app.Lot',
+            'app.Bid',
+            'app.Auction',
+        )
+   },
+    {'app': 'background', 'label': 'Tasks',
+        'models': (
+            'background.Task',
+            'background.CompletedTask',
+        )
+   },
+)
 
 # Set > 0 to determine number of seconds after a future trade is done that the
 # future is settled (for testing purposes)
