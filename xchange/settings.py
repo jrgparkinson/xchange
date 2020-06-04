@@ -34,7 +34,7 @@ else:
 
 DEBUG=False
 
-ALLOWED_HOSTS = ["http://127.0.0.1/", "jrgparkinson.com"]
+ALLOWED_HOSTS = ["127.0.0.1", "jrgparkinson.com"]
 
 
 # Application definition
@@ -78,7 +78,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                "app.context_processors.deploy_url",
+                "app.context_preprocessors.deploy_url",
             ],
         },
     },
