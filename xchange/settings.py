@@ -124,7 +124,7 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]
 
-STATIC_ROOT = "static_root"
+STATIC_ROOT = "static"
 
 LOGIN_REDIRECT_URL = "/profile/"
 
