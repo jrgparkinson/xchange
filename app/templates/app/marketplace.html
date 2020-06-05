@@ -206,7 +206,7 @@
 {% endblock %}
 
 {%block footer %}
-<script type="text/javascript" src="{% static 'js/trading.js' %}"></script>
+<script type="text/javascript" src="{{ DEPLOY_URL }}{% static 'js/trading.js' %}"></script>
 
 <script type="text/javascript">
     var selected_asset; // selected asset

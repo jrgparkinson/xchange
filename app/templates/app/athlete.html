@@ -7,7 +7,7 @@
 {% block page_title %}{{athlete.name}} ({{athlete.club.name}})
 
 {% if athlete.power_of_10 %}
-<a href="{{athlete.power_of_10}}" target="_blank"><img src="{% static "img/p10logo.jpg" %}"
+<a href="{{athlete.power_of_10}}" target="_blank"><img src="{{ DEPLOY_URL }}{% static "img/p10logo.jpg" %}"
         style="width:62px; height:57px" alt="Power of 10" /></a>
 {% endif %}
 {% endblock %}
@@ -223,9 +223,9 @@
 {%endblock%}
 
 {% block footer %}
-<script type="text/javascript" src="{% static 'js/common.js' %}"></script>
-<script type="text/javascript" src="{% static 'js/typeahead.js' %}"></script>
-<script type="text/javascript" src="{% static 'js/trading.js' %}"></script>
+<script type="text/javascript" src="{{ DEPLOY_URL }}{% static 'js/common.js' %}"></script>
+<script type="text/javascript" src="{{ DEPLOY_URL }}{% static 'js/typeahead.js' %}"></script>
+<script type="text/javascript" src="{{ DEPLOY_URL }}{% static 'js/trading.js' %}"></script>
 <script>
 
     var chart=undefined;

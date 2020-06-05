@@ -129,7 +129,7 @@ No auctions in progress
 {%endblock%}
 
 {% block footer %}
-<script type="text/javascript" src="{% static 'js/common.js' %}"></script>
+<script type="text/javascript" src="{{ DEPLOY_URL }}{% static 'js/common.js' %}"></script>
 
 <script>
     $(document).ready(function () {

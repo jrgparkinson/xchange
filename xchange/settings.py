@@ -27,7 +27,7 @@ SECRET_KEY = "ucolgyxgu7!gp-@9ya575-+(shy^qqhsqb2no-c8$d0-=vq0x7"
 # SECURITY WARNING: don't run with debug turned on in production!
 if "a2hosting.com" in socket.gethostname():
     DEBUG=False
-    DEPLOY_URL = '/xchange'
+    DEPLOY_URL = '/xchange/'
 else:
     DEBUG = True
     DEPLOY_URL = ''
