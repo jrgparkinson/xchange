@@ -1,5 +1,6 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
+from django.contrib import admin
 
 from . import views, requests
 from app.forms import UserLoginForm
@@ -9,6 +10,7 @@ handler500 = views.handler500
 handler403 = views.handler403
 
 urlpatterns = [
+    path('admin', admin.site.urls, name='admin'),
     path("", views.index, name="index"),
     path("register/", views.register, name="register"),
     path(
