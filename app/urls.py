@@ -10,7 +10,7 @@ handler403 = views.handler403
 
 urlpatterns = [
     path("", views.index, name="index"),
-    path("register/", views.register),
+    path("register/", views.register, name="register"),
     path(
         "login/",
         auth_views.LoginView.as_view(
@@ -18,7 +18,7 @@ urlpatterns = [
         ),
         name="login",
     ),
-    path("logout/", views.logout_view),
+    path("logout/", views.logout_view, name="logout"),
     path(
         "password_reset/", auth_views.PasswordResetView.as_view(), name="password_reset"
     ),
@@ -37,17 +37,17 @@ urlpatterns = [
         auth_views.PasswordResetCompleteView.as_view(),
         name="password_reset_complete",
     ),
-    path("profile/", views.profile),
-    path("portfolio/", views.portfolio),
-    path("trades/", views.trades),
-    path("about/", views.about),
-    path("races/<int:race_id>", views.races),
-    path("races/", views.races),
-    path("bank/", views.bank),
-    path("auction/", views.auction),
-    path("marketplace/", views.marketplace),
-    path("athlete/<int:athlete_id>/", views.view_athlete),
-    path("investor/<int:investor_id>/", views.view_investor),
+    path("profile/", views.profile, name="profile"),
+    path("portfolio/", views.portfolio, name="portfolio"),
+    path("trades/", views.trades, name="trades"),
+    path("about/", views.about, name="about"),
+    path("races/<int:race_id>", views.races, name="races_id"),
+    path("races/", views.races, name="races"),
+    path("bank/", views.bank, name="bank"),
+    path("auction/", views.auction, name="auction"),
+    path("marketplace/", views.marketplace, name="marketplace"),
+    path("athlete/<int:athlete_id>/", views.view_athlete, name="athlete"),
+    path("investor/<int:investor_id>/", views.view_investor, name="investor"),
     # JQuery
     path(
         "retrieve_trades/", views.retrieve_trades, name="retrieve_trades"

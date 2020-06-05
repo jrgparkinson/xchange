@@ -1,3 +1,11 @@
+// if (window.location.hostname.includes(".com")) {
+//     var DEPLOY_URL='/xchange/';
+// } else {
+//     const DEPLOY_URL = '/';
+// }
+
+const DEPLOY_URL = window.location.hostname.includes(".com") ? "/xchange/" : "/";
+
 function format_investor_display(current_inv, inv) {
     if (!inv) {
         return "Open";
@@ -10,12 +18,12 @@ function format_investor_display(current_inv, inv) {
     if (current_inv && inv && current_inv.name == inv.name) {
         return "You";
     } else {
-        return '<span class="badgeContainer"><a href="/investor/' + inv.id + '" class="badge badge-primary">' + inv.name + '</a></span>';
+        return '<span class="badgeContainer"><a href="' + DEPLOY_URL + 'investor/' + inv.id + '" class="badge badge-primary">' + inv.name + '</a></span>';
     }
 }
 
 function format_athlete(athlete) {
-    return '<span class="badgeContainer"><a href="/athlete/' + athlete.id + '" class="badge badge-danger">' + athlete.name + '</a></span>';
+    return '<span class="badgeContainer"><a href="' + DEPLOY_URL + 'athlete/' + athlete.id + '" class="badge badge-danger">' + athlete.name + '</a></span>';
 }
 function format_asset(asset, current_inv) {
     if (asset.athlete) {
@@ -63,7 +71,7 @@ function populate_top_bar_portfolio() {
 
     $.ajax({
         type: "GET",
-        url: '/get_portfolio_value/',  // URL to your view that serves new info
+        url: DEPLOY_URL + 'get_portfolio_value/',  // URL to your view that serves new info
         data: {}
     })
         .done(function (response) {

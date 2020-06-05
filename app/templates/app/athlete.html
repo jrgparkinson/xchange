@@ -144,7 +144,7 @@
                     <tbody>
                         {% for r in results %}
                         <tr>
-                            <td><a href="/races/{{r.race.id}}">{{r.race.event.name}} ({{r.race.event.date}})</a></td>
+                            <td><a href="{% url 'races' %}{{r.race.id}}">{{r.race.event.name}} ({{r.race.event.date}})</a></td>
                             <td>{{r.race.name}}</td>
                             <td>{{r.position}}</td>
                             <td>{{r.dividend}}</td>
@@ -223,7 +223,6 @@
 {%endblock%}
 
 {% block footer %}
-<script type="text/javascript" src="{{ DEPLOY_URL }}{% static 'js/common.js' %}"></script>
 <script type="text/javascript" src="{{ DEPLOY_URL }}{% static 'js/typeahead.js' %}"></script>
 <script type="text/javascript" src="{{ DEPLOY_URL }}{% static 'js/trading.js' %}"></script>
 <script>

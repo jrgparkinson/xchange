@@ -5,3 +5,4 @@ static/vendor/fontawesome-free/
 *.pyc
 static_root/
 *__pycache__*
+staticfiles/*

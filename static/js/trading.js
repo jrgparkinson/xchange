@@ -2,7 +2,7 @@
 function populateTradeWithSelect() {
     $.ajax({
         type: "GET",
-        url: '/get_investors/',  // URL to your view that serves new info
+        url: DEPLOY_URL + 'get_investors/',  // URL to your view that serves new info
         data: { "ignore_self": true }
     })
         .done(function (response) {
@@ -28,7 +28,7 @@ function populateTradeWithSelect() {
 function populateAthletes(athleteSelectId) {
     $.ajax({
         type: "GET",
-        url: '/get_athletes/',  // URL to your view that serves new info
+        url: DEPLOY_URL + 'get_athletes/',  // URL to your view that serves new info
         data: {}
     })
         .done(function (response) {
@@ -54,7 +54,7 @@ function populateAthletes(athleteSelectId) {
 function populateExistingContracts(selectId) {
     $.ajax({
         type: "GET",
-        url: '/get_investor_contracts/',  // URL to your view that serves new info
+        url: DEPLOY_URL + 'get_investor_contracts/',  // URL to your view that serves new info
         data: {}
     })
         .done(function (response) {
@@ -98,7 +98,7 @@ function actionTrade(trade_id, change) {
 
     $.ajax({
         type: "GET",
-        url: '/action_trade/',  // URL to your view that serves new info
+        url: DEPLOY_URL + 'action_trade/',  // URL to your view that serves new info
         data: { "id": trade_id, "change": change }
     })
         .done(function (response) {
@@ -174,7 +174,7 @@ function reload_trades(div, active, investor_id, other_opts) {
 
     return $.ajax({
         type: "GET",
-        url: '/retrieve_trades/',  // URL to your view that serves new info
+        url: DEPLOY_URL + 'retrieve_trades/',  // URL to your view that serves new info
         data: opts
     }).done(function (response) {
         console.log(response)

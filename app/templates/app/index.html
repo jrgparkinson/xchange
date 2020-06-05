@@ -38,7 +38,7 @@
               {% for investor in leaderboard %}
               <tr>
                 <td>{{investor.position}}</td>
-                <td><span class="badgeContainer"><a href="/investor/{{investor.id}}"
+                <td><span class="badgeContainer"><a href="{% url 'investor' investor_id=investor.id %}"
                       class="badge badge-danger">{{investor.print_name}}</a></span>
                 </td>
                 <td>
@@ -73,7 +73,7 @@
               {% for a in athletes %}
               <tr>
                 <td>{{a.position}}</td>
-                <td><span class="badgeContainer"><a href="/athlete/{{a.id}}"
+                <td><span class="badgeContainer"><a href="{% url 'athlete' athlete_id=a.id}}"
                       class="badge badge-danger">{{a.name}}</a></span>
                 </td>
                 <td>
@@ -137,7 +137,7 @@
         <ol>
           {% for a in top_athletes %}
           <li>
-            <span class="badgeContainer"><a href="/athlete/{{a.id}}" class="badge badge-primary">
+            <span class="badgeContainer"><a href="{% url 'athlete' athlete_id=a.id %}" class="badge badge-primary">
                 {{a.name}} ({{a.get_value|floatformat:2}})
               </a>
             </span>

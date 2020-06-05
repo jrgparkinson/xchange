@@ -414,8 +414,7 @@ class Entity(models.Model):
     @property
     def to_html(self):
         if self.is_investor():
-            # return self.investor.display_name
-            return '<span class="badgeContainer"><a href="/investor/' + str(self.id) + '" class="badge badge-primary">' + self.investor.display_name + '</a></span>'
+            return '<span class="badgeContainer"><a href="' + settings.DEPLOY_URL + 'investor/' + str(self.id) + '" class="badge badge-primary">' + self.investor.display_name + '</a></span>'
         else:
             return self.bank.name
 
@@ -557,7 +556,7 @@ class Athlete(models.Model):
     @property
     def to_html(self):
         # return self.name
-        return '<span class="badgeContainer"><a href="/athlete/' + str(self.id) + '" class="badge badge-danger">' + self.name + '</a></span>'
+        return '<span class="badgeContainer"><a href="' + settings.DEPLOY_URL + 'athlete/' + str(self.id) + '" class="badge badge-danger">' + self.name + '</a></span>'
 
     def serialize(self, investor: Investor =None):
         s = {"id": self.pk, "name": self.name}

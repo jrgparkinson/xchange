@@ -32,7 +32,7 @@ else:
     DEBUG = True
     DEPLOY_URL = ''
 
-DEBUG=False
+# DEBUG=False
 
 ALLOWED_HOSTS = ["127.0.0.1", "jrgparkinson.com"]
 
@@ -128,7 +128,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
-STATIC_URL = DEPLOY_URL + "static/"
+STATIC_URL = "/static/"
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
@@ -136,7 +136,7 @@ STATICFILES_DIRS = [
 
 STATIC_ROOT = "staticfiles"
 
-LOGIN_REDIRECT_URL = DEPLOY_URL + "profile/"
+LOGIN_REDIRECT_URL = "/profile/"
 
 EMAIL_BACKEND = (
     "django.core.mail.backends.console.EmailBackend"  # During development only

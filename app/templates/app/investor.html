@@ -90,7 +90,7 @@
                                 {% for share in shares %}
                                 <tr>
                                     <td><span class="badgeContainer">
-                                            <a href="/athlete/{{share.athlete.id}}" class="badge badge-danger">
+                                            <a href="{% url 'athlete' athlete_id=share.athlete.id %}" class="badge badge-danger">
                                                 {{share.athlete.name}}</a>
                                         </span>
                                     </td>
