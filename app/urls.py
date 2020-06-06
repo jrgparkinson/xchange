@@ -10,7 +10,7 @@ handler500 = views.handler500
 handler403 = views.handler403
 
 urlpatterns = [
-    path('admin', admin.site.urls, name='admin'),
+    # path('admin', admin.site.urls, name='admin'),
     path("", views.index, name="index"),
     path("register/", views.register, name="register"),
     path(

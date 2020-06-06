@@ -271,7 +271,7 @@
     function makeGraph(id) {
         $.ajax({
             type: "GET",
-            url: {% url 'retrieve_investor_portfolio' %},  // URL to your view that serves new info
+            url: "{% url 'retrieve_investor_portfolio' %}",  // URL to your view that serves new info
             data: { "id": id }
             })
             .done(function (response) {
