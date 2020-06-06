@@ -232,7 +232,7 @@
     function addAthleteToGraph(athlete_id) {
         $.ajax({
             type: "GET",
-            url: {% url 'retrieve_athlete_value' %},  // URL to your view that serves new info
+            url: "{% url 'retrieve_athlete_value' %}",  // URL to your view that serves new info
             data: { "id": athlete_id }
             })
             .done(function (response) {

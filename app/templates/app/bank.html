@@ -210,7 +210,7 @@
     function get_loans() {
         $.ajax({
             type: "GET",
-            url: {% url 'get_loans' %},  // URL to your view that serves new info
+            url: "{% url 'get_loans' %}",  // URL to your view that serves new info
             data: {}
             })
             .done(function (response) {
@@ -228,7 +228,7 @@
         console.log(data);
         $.ajax({
             type: "GET",
-            url: {% url 'make_loan' %},  // URL to your view that serves new info
+            url: "{% url 'make_loan' %}",  // URL to your view that serves new info
             data: data
             })
             .done(function (response) {
@@ -250,7 +250,7 @@
         console.log(data);
         $.ajax({
             type: "GET",
-            url: {% url 'repay_loan' %},  // URL to your view that serves new info
+            url: "{% url 'repay_loan' %}",  // URL to your view that serves new info
             data: data
             })
             .done(function (response) {
