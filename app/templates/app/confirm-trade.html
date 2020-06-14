@@ -1,0 +1,90 @@
+<div class="modal" tabindex="-1" role="dialog" id="confirmActionTrade">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmTitle">Confirm buy/sell</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+          <div class="confirm-share confirm-body row form-group ">
+
+            <div class="col-sm-6">Volume to trade: </div>
+
+            <div class="slidecontainer col-sm-6">
+
+                <input type="range" min="0" step="0.01" max="100" value="50" class="slider"
+                 id="confirmVolSlider" oninput="setTextBox(value)">
+                <input type="number" step="0.01" id="confirmVol" class="form-control">
+            </div>
+
+            <div class="row form-group">
+                <div class="col-sm-6">Price: </div>
+                <div class="col-sm-6" id="confirmPrice" data-price-per-vol="1.0"></div>
+              </div>
+            
+          </div>
+
+          
+
+          <div class="confirm-contract confirm-body ">
+
+            <div class="row">
+                <div class="col-sm-12" id="contractTitle" style="font-weight:bold">Future contract</div>
+            </div>
+
+            <div class="row form-group">
+                <div class="col-sm-5">
+                    Obligation: 
+                </div>
+                <div class="col-sm-7" id="contractObligation">
+                    
+                </div>
+            </div>
+
+            <div class="row form-group">
+                <div class="col-sm-5">Price to enter contract: </div>
+                <div class="col-sm-7" id="contractPrice"></div>
+              </div>
+          </div>
+        
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="confirmButton">Buy/sell</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+
+$("#confirmButton").click( function() {
+    actionTrade($(this).attr("data-trade-id"), "accept",  $("#confirmVolSlider").val());
+    $("#confirmActionTrade").modal('hide');
+});
+
+function updatePrice() {
+    var price = $("#confirmPrice");
+    var price_per_vol = price.attr("data-price-per-vol");
+    var vol =  $("#confirmVolSlider").val();
+    price.text(Number(price_per_vol * vol).toFixed(2));
+}
+
+function setTextBox(val) {
+ $("#confirmVol").val(val);
+ updatePrice();
+}
+
+
+
+$("#confirmVol").keyup(function() {
+    if ($(this).val() > Number($("#confirmValSlider").attr('max'))) {
+        $(this).val($("#confirmValSlider").attr('max'));
+    }
+ $("#confirmVolSlider").val($(this).val());
+ updatePrice();
+});
+
+</script>

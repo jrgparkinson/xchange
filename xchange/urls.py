@@ -19,6 +19,6 @@ from django.conf import settings
 
 
 urlpatterns = [
-    path(settings.DEPLOY_URL + "admin/", admin.site.urls, name="admin"),
-    path(settings.DEPLOY_URL, include("app.urls")),
+    path("admin/", admin.site.urls, name="admin"),
+    path("", include("app.urls")),
 ]

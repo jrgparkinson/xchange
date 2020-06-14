@@ -565,7 +565,7 @@ def retrieve_trades(request):
             # logger.info(t)
             trade = t.serialize()
 
-            if t.seller == investor:
+            if t.seller == investor or not t.buyer == investor:
                 trade["type"] = "Sell"
             else:
                 trade["type"] = "Buy"
@@ -592,7 +592,7 @@ def retrieve_trades(request):
                 if (
                     t.seller
                     and (t.buyer is None or t.buyer == current_investor)
-                    and current_investor.capital > t.price
+                    # and current_investor.capital > t.price # remove this requirement
                 ):
                     trade["can_accept"] = True
 
@@ -639,40 +639,79 @@ def action_trade(request):
 
     trade_id = request.GET["id"]
     change = request.GET["change"]
+    confirmation = request.GET["confirmation"]
 
     error = ""
 
     try:
-        trade = Trade.objects.get(pk=trade_id)
-
+        trade = Trade.objects.get(pk=trade_id) # type: Trade
+        
         logger.info("Trade to modify: {}".format(trade))
 
         if change == "accept":
-            if not trade.seller and trade.buyer != investor:
-                trade.seller = investor
-            if not trade.buyer and trade.seller != investor:
-                trade.buyer = investor
 
-            trade.accept_trade(action_by=investor)
+            seller = trade.seller
+            buyer = trade.buyer
+            if not trade.seller and trade.buyer != investor:
+                seller = investor
+            if not trade.buyer and trade.seller != investor:
+                buyer = investor
+
+            
+            volume = None
+            if trade.asset.is_share():
+                volume = float(confirmation)
+
+            if trade.asset.is_share() and volume and volume < trade.asset.share.volume:
+                # Partial trade, need to make a new trade identical trade with reduced volume
+                # and price, and accept that instead
+                trade_price = trade.price * volume / trade.asset.share.volume
+                partial_trade = Trade.make_share_trade(athlete=trade.asset.share.athlete, volume=volume, 
+                                        creator=trade.creator, 
+                                        price=trade_price, seller=seller, buyer=buyer)
+                partial_trade.accept_trade(action_by=investor)
+
+                trade.asset.share.volume = trade.asset.share.volume - volume
+                trade.asset.share.save()
+
+                trade.price = trade.price - trade_price
+                trade.save()
+
+                logger.info("original trade: {}".format(trade))
+                
+            
+            else:
+                # process this trade
+                trade.seller = seller
+                trade.buyer = buyer
+
+                if trade.asset.is_share():
+                    trade.accept_trade(action_by=investor)
+                else:
+                    trade.accept_trade(action_by=investor)
+
         elif investor == trade.creator:
             trade.cancel_trade()
         else:
             trade.reject_trade()
 
+
+        resp = {"trade": trade.serialize()}
+
     except XChangeException as e:
         return JsonResponse(make_error(e))
         # error = {"title": e.title, "description": e.desc}
     except Trade.DoesNotExist:
-        error = {
+        return JsonResponse({"error": {
             "title": "Trade no longer exists",
             "desc": "This really shouldn't have happened",
-        }
+        }})
     except Exception as e:
-        
         traceback.print_tb(e.__traceback__)
         error = {"title": "Internal error", "desc": "The gory details: <br>" + str(e)}
+        return JsonResponse({"error": error})
 
-    return JsonResponse({"error": error})
+    return JsonResponse(resp)
 
 
 def get_portfolio_value(request):
@@ -730,11 +769,17 @@ def create_trade(request):
                 athlete, volume, investor, price, seller, buyer
             )
 
+            # try:
+            match_partial_trades(schedule=timedelta(milliseconds=1))
+            # except Exception as e:
+            #     # Should not return exception to user - it's nothing to do with them
+            #     logger.warning(traceback.print_tb(e.__traceback__))
+
         elif asset_type == "future" or asset_type == "option":
             ath_id = request.GET["data-athlete"] 
             volume = float(request.GET["data-volume"]) 
             strike_price = float(request.GET["data-strike-price"]) 
-            owner_obligation = request.GET["data-future-buy-sell"]
+            investor_obligation = request.GET["data-future-buy-sell"]
             athlete = Athlete.objects.get(id=int(ath_id))
             strike_date =  datetime.strptime(request.GET["data-date"], "%Y-%m-%dT%H:%M:%S.%fZ")
 
@@ -742,6 +787,15 @@ def create_trade(request):
             # if is_sell:
             #     owner = other
             #     seller = investor
+
+            # Currently we know what the person creating the future/option wants to do
+            # need to convert to what the 'owner' - person who will buy - will do
+            if buyer == investor:
+                owner_obligation = investor_obligation
+            else:
+                # the opposite
+                owner_obligation = "buy" if investor_obligation == "sell" else "sell"
+            
 
             # logger.info(strike_date)
             
@@ -922,3 +976,76 @@ def get_investor_contracts(request):
     contracts = request.user.investor.get_contracts_held()
 
     return JsonResponse({'contracts': [c.serialize() for c in contracts]})
+
+
+def get_bank_offer(request):
+    try:
+        data = request.GET
+        response = {}
+
+        athlete_id = int(data["athlete_id"])
+        volume = float(data["volume"])
+
+        bank = get_bank()
+        offer = bank.get_sell_offer(athlete_id, volume)
+
+        athlete = Athlete.objects.get(pk=athlete_id)
+        response["trading_price_per_unit"] = float(athlete.get_value())
+
+        bank_shares = bank.shares_in_athlete(athlete)
+        bank_vol = bank_shares.volume if bank_shares else 0.0
+        response["bank_volume"] = float(bank_vol)
+
+        logger.info(offer)
+
+        if offer:
+            response["offer"] = offer.serialize()
+
+    except XChangeException as e:
+        return make_error(e)
+    except Exception as e:
+        logger.warning(traceback.print_tb(e.__traceback__))
+        return JsonResponse({"error": "Unknown error"})
+
+    return JsonResponse(response)
+
+@login_required(login_url='/login/')
+def trade_with_bank(request):
+    try:
+        data = request.GET
+
+        offer_id = int(data["offer"])
+        buy_or_sell = data["buy_or_sell"]
+        investor = request.user.investor
+        
+        offer = BankOffer.objects.get(pk=offer_id)
+
+        if not offer.is_valid():
+            raise OfferExpired("This offer has expired")
+
+        offer.accept(investor, buy_or_sell) 
+        response = {}
+        
+    except XChangeException as e:
+        return make_error(e)
+    except Exception as e:
+        logger.warning(traceback.print_tb(e.__traceback__))
+        return JsonResponse({"error": "Unknown error"})
+
+    return JsonResponse(response)
+
+
+def get_contract(request):
+    if 'trade_id' in request.GET:
+        trade = Trade.objects.get(id=int(request.GET["trade_id"]))
+        contract = trade.asset
+
+        resp = {"contract": contract.serialize(),
+        "trade": trade.serialize()}
+
+        if request.user.is_authenticated:
+            resp["investor"] = request.user.investor.serialize()
+
+        return JsonResponse(resp)
+
+    return JsonResponse({})

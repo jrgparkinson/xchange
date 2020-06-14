@@ -63,3 +63,12 @@ class AthleteDoesNotExist(XChangeException):
 
     def __init__(self, desc=None):
         super().__init__(desc)
+
+    
+class OfferExpired(XChangeException):
+    title = "Offer expired"
+    desc = ""
+
+    def __init__(self, desc=None):
+        super().__init__(desc)
+

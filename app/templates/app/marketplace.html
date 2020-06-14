@@ -251,6 +251,7 @@
            
 
             if (selected_asset == 'share') {
+                $("#sellContainer").show();
                 $("#buyContainer").removeClass("col-lg-12");
                 $("#sellContainer").removeClass("col-lg-12");
                 $("#buyContainer").addClass("col-lg-6");
@@ -260,6 +261,8 @@
                 $("#sellContainer").removeClass("col-lg-6");
                 $("#buyContainer").addClass("col-lg-12");
                 $("#sellContainer").addClass("col-lg-12");
+                $("#sellContainer").hide();
+
             }
 
             $("table").each(function (index) {
@@ -327,12 +330,13 @@
                     if (is_share) {
                         var share = trade.asset;
                         row += '<td>' + format_athlete(share.athlete) + '</td>';
-                        row += '<td>' + Number(share.volume).toFixed(2) + '</td>';
+                        row += '<td  class="volume">' + Number(share.volume).toFixed(2) + '</td>';
                         row += '<td>' + Number(trade.price / share.volume).toFixed(2) + '</td>';
-                    } 
+                    }
 
                    
                     if (is_future) {
+                        buy_sell = "Enter contract";
                         var future = trade.asset
                         var share = future.underlying
                         var d = new Date(future.strike_date);
@@ -380,12 +384,13 @@
                     // seller
                     row += '<td>' + format_investor_display(response.investor, other_party) + '</td>';
 
-                    var actions = get_actions(trade);
+                    var actions = get_actions(trade, buy_sell);
                     row += '<td>' + actions + '</td>';
-                    row = '<tr data-trade="' + trade.id + '" data-toggle="tooltip" data-placement="left" title="' + tooltip + '">' + row + '</tr>';
+                    // row = '<tr data-trade="' + trade.id + '" data-toggle="tooltip" data-placement="left" title="' + tooltip + '">' + row + '</tr>';
+                    row = '<tr ' + make_trade_row_attrs(trade) + 'data-toggle="tooltip" data-placement="left" title="' + tooltip + '">' + row + '</tr>';
                     
                     
-                    $("table[data-asset=" + asset + "]." + buy_sell + " tbody").append(row);
+                    $("table[data-asset=" + asset + "].buy tbody").append(row);
                     // $("table[data-asset=" + asset + "]." + buy_sell + " tbody").append('<tr><td colspan=9>' + JSON.stringify(trade) + '</td></tr>');
                     
                 });

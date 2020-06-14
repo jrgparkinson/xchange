@@ -133,8 +133,14 @@
                                     <tr>
                                         <!-- currently only works for futures -->
                                         <td>{{ c.investor_obligation }}</td>
-                                        <td>{{ c.future.underlying_asset.athlete.name }}
-                                            ({{ c.future.underlying_asset.volume }} shares)</td>
+                                        <td>
+                                            <!-- {{ c.future.underlying_asset.athlete.name }}
+                                            ({{ c.future.underlying_asset.volume }} shares) -->
+                                            <span class="badgeContainer">
+                                                <a href="athlete/{{c.future.underlying_asset.athlete.id}}" class="badge badge-danger">
+                                                    {{c.future.underlying_asset.athlete.name}}
+                                                </a></span>[{{ c.future.underlying_asset.volume }} share(s)]
+                                            </td>
                                         <td>{{ c.future.strike_price }}</td>
                                         <td>{{ c.future.action_date }}</td>
                                         <td>{{ c.other_party_to_investor }}</td>
@@ -269,12 +275,20 @@
     var chart = undefined;
 
     function makeGraph(id) {
+        var div = $("div.graph");
+        div.addClass("spinner-border");
+        div.removeClass("graph");
+        div.attr("role", "status");
+        div.attr("id", "graphSpinner");
         $.ajax({
             type: "GET",
             url: "{% url 'retrieve_investor_portfolio' %}",  // URL to your view that serves new info
             data: { "id": id }
             })
             .done(function (response) {
+                div.removeClass("spinner-border");
+                div.addClass("graph");
+                div.removeAttr("role");
                 // console.log(response);
                 if (response.error) {
                     display_error(response.error);

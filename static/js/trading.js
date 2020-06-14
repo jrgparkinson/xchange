@@ -25,7 +25,9 @@ function populateTradeWithSelect() {
         });
 }
 
-function populateAthletes(athleteSelectId) {
+function populateAthletes(athleteSelectId, includeOwned) {
+    if (includeOwned == undefined) { includeOwned = true; }
+    else { includeOwned = false; }
     $.ajax({
         type: "GET",
         url: DEPLOY_URL + 'get_athletes/',  // URL to your view that serves new info
@@ -37,17 +39,23 @@ function populateAthletes(athleteSelectId) {
                 display_error(response.error);
             }
 
-            $("#" + athleteSelectId +" option").each(function () {
+            $("#" + athleteSelectId + " option").each(function () {
                 $(this).remove();
             });
 
             $.each(response.athletes, function (i, athlete) {
-
-                $('#'+athleteSelectId).append($('<option>', {
+                $('#' + athleteSelectId).append($('<option>', {
                     value: athlete.id,
-                    text: athlete.name + " (owned: " + athlete.vol_owned + ")"
+                    text: athlete.name + (includeOwned ? " (owned: " + athlete.vol_owned + ")" : "")
                 }));
             });
+
+            // $()
+
+            console.log("Set selected athlete: ");
+            console.log($('#' + athleteSelectId + " option:first").val());
+            $('#' + athleteSelectId).val($('#' + athleteSelectId + " option:first").val()).change();
+
         });
 }
 
@@ -63,7 +71,7 @@ function populateExistingContracts(selectId) {
                 display_error(response.error);
             }
 
-            $("#" + selectId +" option").each(function () {
+            $("#" + selectId + " option").each(function () {
                 $(this).remove();
             });
 
@@ -73,7 +81,7 @@ function populateExistingContracts(selectId) {
             // }));
             $.each(response.contracts, function (i, contract) {
 
-                $('#'+selectId).append($('<option>', {
+                $('#' + selectId).append($('<option>', {
                     value: contract.id,
                     text: contract.pretty_print_long
                 }));
@@ -93,23 +101,88 @@ function createShareFromModal() {
     $("#commodityEntry").attr("data-volume", $("#volume").val());
 }
 
-function actionTrade(trade_id, change) {
-    $("tr[data-trade=" + trade_id + "]").addClass("actionedTrade");
+function actionTrade(trade_id, change, confirmation) {
+    var tr = $("tr[data-trade=" + trade_id + "]");
+
+    if (change == "accept" && confirmation === undefined) {
+        //display modal
+
+        // populate modal
+        var buy_sell = tr.attr("data-buy-sell");
+        var type = tr.attr("data-asset-type");
+        var max_shares = (type == "share") ? tr.attr("data-max-vol") : 0;
+
+        var price_per_vol = (type == "share") ? tr.attr("data-price-per-vol") : 0;
+
+        $("#confirmTitle").text("Confirm trade");
+        $("#confirmButton").text(capitalizeFirstLetter(buy_sell));
+        $("#confirmButton").attr("data-trade-id", trade_id);
+
+        $(".confirm-body").hide();
+
+        if (type == "share") {
+            $(".confirm-share").show();
+            // $(".confirm-share").text("max vol: " + max_shares);
+            $("#confirmVolSlider").attr("max", max_shares);
+            $("#confirmVolSlider").val(max_shares)
+            $("#confirmVol").val(max_shares);
+            $("#confirmPrice").attr("data-price-per-vol", price_per_vol);
+            updatePrice();
+        } else {
+            $(".confirm-contract").show();
+            $.ajax({
+                type: "GET",
+                url: DEPLOY_URL + 'get_contract/',
+                data: { "trade_id": trade_id }
+            })
+                .done(function (response) {
+                    console.log(response);
+                    // var trade = response.trade;
+                    var contract = response.contract;
+                    // $(".confirm-contract").text(contract);
+
+
+                    $("#contractTitle").text(capitalizeFirstLetter(contract.type) + " contract");
+
+                    var obligation = "Unknown";
+                    if (contract.type == "Future") {
+                        var d = new Date(contract.strike_date); 
+                        var asset = format_asset(contract.underlying);
+                        obligation = "";
+                        if (contract.seller) {
+                            obligation += format_investor_display("", contract.seller) + " will sell ";
+                        } else {
+                            obligation += format_investor_display("", contract.buyer) + " will buy ";
+                        }
+                        obligation += asset + " for " + contract.strike_price;
+                        obligation += " on " + d.toLocaleString();
+                    } 
+                    $("#contractObligation").html(obligation);
+                    $("#contractPrice").text(response.trade.price);
+                    $("#confirmButton").text("Enter contract");
+                });
+        }
+
+        $('#confirmActionTrade').modal('show');
+
+        return;
+    }
+
+    tr.addClass("actionedTrade");
 
     $.ajax({
         type: "GET",
-        url: DEPLOY_URL + 'action_trade/',  // URL to your view that serves new info
-        data: { "id": trade_id, "change": change }
+        url: DEPLOY_URL + 'action_trade/',
+        data: { "id": trade_id, "change": change, "confirmation": confirmation }
     })
         .done(function (response) {
-            // console.log(response);
+            console.log(response)
             if (response.error) {
                 display_error(response.error);
-                $("tr[data-trade=" + trade_id + "]").removeClass("actionedTrade");
-                
             } else {
+                var trade = response.trade;
 
-                if (change=="cancel") {
+                if (change == "cancel") {
                     successNotif("Trade cancelled/rejected.");
                 } else if (change == "accept") {
                     successNotif("Trade accepted.");
@@ -117,31 +190,35 @@ function actionTrade(trade_id, change) {
                     successNotif("Action performed successfully.");
                 }
 
-                var myTable = $("tr[data-trade=" + trade_id + "]").parent('tbody').parent('table').DataTable();
-                var tr = $("tr[data-trade=" + trade_id + "]");
-                var row = myTable.row(tr);
-                row.remove().draw();
-            }
-            
-            
-            
-            // $("tr[data-trade=" + trade_id + "]").remove();
-            
+                if (trade.status != "Pending") {
+                    console.log("Remove row");
 
-            // if (window.location.href.includes("trades")) {
-            //     console.log("Reload for trades");
-            //     reload_all();
-            // } else if (window.location.href.includes("athlete")) {
-            //     console.log("Reload for athletes");
-            //     reload_all_athlete_trades();
-            // } else if (window.location.href.includes("marketplace")) {
-            //     console.log("Reload for marketplace");
-            //     reload_marketplace_trades();
-            // } else {
-            //     console.log("Unknown post actionTrade ");
-            // }
+                    // var tr = $("tr[data-trade=" + trade_id + "]");
+                    var myTable = tr.parent('tbody').parent('table'); //.DataTable();
+                    if ($.fn.DataTable.isDataTable(myTable.attr('id'))) {
+                        console.log("Remove datatable row with trade id: " + trade_id);
+                        console.log(row);
+                        var row = myTable.row(tr);
+
+                        row.remove().draw();
+                    } else {
+                        console.log("Remove normal table row");
+                        tr.remove();
+                    }
+                } else {
+                    console.log("Update row, new volume=" + trade.asset.volume);
+                    // update row
+                    tr.find('td.volume').text(Number(trade.asset.volume).toFixed(2));
+                    tr.attr("data-max-vol", Number(trade.asset.volume).toFixed(2));
+                }
+
+            }
+
+
+
 
             populate_top_bar_portfolio();
+            tr.removeClass("actionedTrade");
         });
 }
 
@@ -152,6 +229,26 @@ function reload_past_trades(investor_id) {
 
 function reload_active_trades() {
     reload_trades("active_trades", true);
+}
+
+function make_trade_row_attrs(trade) {
+    var asset = trade.asset;
+
+    var trade_athlete_id = "";
+    var asset_type = "contract";
+    if (asset.athlete) {
+        asset_type = "share";
+        trade_athlete_id = 'data-athlete="' + asset.athlete.id + '"';
+    }
+    var newRow = ' data-trade="' + trade.id + '" ' + trade_athlete_id;
+
+    newRow += ' data-buy-sell="' + trade.type + '" ';
+    newRow += ' data-asset-type="' + asset_type + '" ';
+    newRow += ' data-max-vol="' + trade.asset.volume + '" ';
+    newRow += ' data-price-per-vol="' + trade.price / trade.asset.volume + '" ';
+
+
+    return newRow;
 }
 
 function reload_trades(div, active, investor_id, other_opts) {
@@ -191,10 +288,11 @@ function reload_trades(div, active, investor_id, other_opts) {
         // }
 
         // TODO: If historical, sort by last_updated
-        if (response.trades == undefined || response.trades.length==0) { 
-            console.log("No trades"); 
+        if (response.trades == undefined || response.trades.length == 0) {
+            console.log("No trades");
             $("tr.noTradesFound").show();
-            return; }
+            return;
+        }
 
         response.trades.forEach(trade => {
             // console.log(trade);
@@ -218,15 +316,11 @@ function reload_trades(div, active, investor_id, other_opts) {
             label = label + " for " + trade.price;
 
 
-
-            actions = get_actions(trade);
+            actions = get_actions(trade, trade.type);
 
             var buyIcon = ''; //'<i class="fas fa-arrow-down fa-fw"></i>';
             var sellIcon = ''; //'<i class="fas fa-arrow-up fa-fw"></i>';
 
-            // $("#active_trades").append("<li data-type='" + trade.type +"' data-id='"+trade.id+"'><div class='tradeLabel'>" + label +"</div><div class='tradeActions'>" + actions + "</div></li>")
-            // if (trade.seller) { seller = format_investor_display(response.investor,trade.seller); } else { seller = 'Open'; }
-            // if (trade.buyer) { buyer = format_investor_display(response.investor,trade.buyer); } else { buyer = 'Open'; }
             seller = format_investor_display(response.current_investor, trade.seller);
             buyer = format_investor_display(response.current_investor, trade.buyer);
 
@@ -236,10 +330,18 @@ function reload_trades(div, active, investor_id, other_opts) {
             }
 
             var trade_athlete_id = "";
+            var asset_type = "contract";
             if (trade.asset.athlete) {
+                asset_type = "share";
                 trade_athlete_id = 'data-athlete="' + trade.asset.athlete.id + '"';
             }
-            var newRow = '<tr class="trade ' + trclass + '" data-trade="' + trade.id + '" ' + trade_athlete_id + '>';
+            var newRow = '<tr class="trade ' + trclass + '"';
+
+            // newRow += ' data-buy-sell="' + trade.type + '" ';
+            // newRow += ' data-asset-type="' + asset_type + '" ';
+            // newRow += ' data-max-vol="' + trade.asset.volume + '" ';
+            newRow += make_trade_row_attrs(trade);
+            newRow += '>';
 
             var typeString = trade.type;
             if (trade.type == "Buy") { typeString = buyIcon + typeString; }
@@ -255,11 +357,11 @@ function reload_trades(div, active, investor_id, other_opts) {
                 price_per_unit = " (" + Number(trade.price / trade.asset.volume).toFixed(2) + " per unit)";
             }
             if (athlete_filter) {
-                newRow += '<td>' + Number(trade.asset.volume).toFixed(2) + '</td>';
+                newRow += '<td class="volume">' + Number(trade.asset.volume).toFixed(2) + '</td>';
             } else {
                 newRow += '<td>' + com_label + '</td>';
             }
-            newRow += '<td>' + trade.price + price_per_unit + '</td>';
+            newRow += '<td>' + Number(trade.price).toFixed(2) + price_per_unit + '</td>';
             newRow += '<td>' + seller + '</td>';
             newRow += '<td>' + buyer + '</td>';
             newRow += '<td>' + format_investor_display(response.investor, trade.creator) + '</td>';
@@ -273,7 +375,7 @@ function reload_trades(div, active, investor_id, other_opts) {
             }
 
             if (active && !athlete_filter) {
-                console.log("Append after");
+                console.log("Append after " + trade.type);
                 if (trade.type == "Buy") {
                     $("#" + div + " tbody tr.buyHeader").after(newRow);
                     $("tr.noTradesFound.buy").hide();

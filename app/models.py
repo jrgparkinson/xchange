@@ -16,7 +16,8 @@ from background_task import background
 # from background_task.models import BackgroundTask
 from django.db.models.signals import pre_save
 import logging
-
+from typing import List
+import json
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -42,6 +43,13 @@ class Season(models.Model):
         self.start_time.strftime("%m/%d/%Y, %H:%M:%S"), 
         self.end_time.strftime("%m/%d/%Y, %H:%M:%S"), 
         self.print_status)
+
+    def serialize(self):
+        return {"id": self.pk,
+        "name": self.name,
+        "start": self.start_time,
+        "end": self.end_time,
+        "status": self.print_status}
 
     @property
     def print_status(self):
@@ -150,11 +158,11 @@ class Entity(models.Model):
         asset_transactions = (
             Trade.objects.all().filter(status=Trade.ACCEPTED).order_by("updated")
         )
-        share_transactions = [t for t in asset_transactions if t.asset.is_share()]
+        # share_transactions = [t for t in asset_transactions if t.asset.is_share()]
 
-        investor_shares = {}
+        # investor_shares = {}
 
-        # Assume everyone starts with 0 shares
+        # # Assume everyone starts with 0 shares
         share_positions = [
             {
                 "time": round_time(get_current_season().start_time),
@@ -164,37 +172,79 @@ class Entity(models.Model):
         ]
 
         # Now for each share transaction, re compute
-        for t in share_transactions:
-            share = t.asset.share
-            athlete = share.athlete
+        # for t in share_transactions:
+        #     share = t.asset.share
+        #     athlete = share.athlete
 
-            # Track shares owner by investor
-            if not athlete.name in list(investor_shares.keys()):
-                investor_shares[athlete.name] = {"vol": 0}
+        #     # Track shares owner by investor
+        #     if not athlete.name in list(investor_shares.keys()):
+        #         investor_shares[athlete.name] = {"vol": 0, "id": athlete.id}
 
-            if share.volume == 0:
-                logger.info("Share has zero volume: {}".format(share))
-            else:
-                investor_shares[athlete.name]["val"] = t.price / share.volume
+        #     if share.volume == 0:
+        #         logger.info("Share has zero volume: {}".format(share))
+        #     else:
+        #         investor_shares[athlete.name]["val"] = t.price / share.volume
 
-            if t.buyer == self:
-                investor_shares[athlete.name]["vol"] = (
-                    investor_shares[athlete.name]["vol"] + share.volume
-                )
+        #     if t.buyer == self:
+        #         investor_shares[athlete.name]["vol"] = (
+        #             investor_shares[athlete.name]["vol"] + share.volume
+        #         )
 
-            # If the investor sold the share at this point, re add it to the
-            elif t.seller == self:
-                investor_shares[athlete.name]["vol"] = (
-                    investor_shares[athlete.name]["vol"] - share.volume
-                )
+        #     # If the investor sold the share at this point, re add it to the
+        #     elif t.seller == self:
+        #         investor_shares[athlete.name]["vol"] = (
+        #             investor_shares[athlete.name]["vol"] - share.volume
+        #         )
+
+
+        #     # Save a record, so we don't have to do this silly calculation in the future
+        #     record_exists = ShareOwnership.objects.all().filter(entity=self, timestamp=t.updated)
+        #     if not record_exists:
+        #         vols = {}
+        #         for name, vals in investor_shares.items():
+        #             vols[vals["id"]] = vals["vol"]
+
+        #         owner = ShareOwnership(entity=self, share_vol_owned=json.dumps(vols))
+        #         owner.save()
+
+        #         # overwrite the timestamp
+        #         owner.timestamp = t.updated 
+        #         owner.save()
+        #         logger.info("Created share ownership obj {}".format(owner))
+
+
+        #     total_share_val = 0
+        #     for athlete, share in investor_shares.items():
+        #         total_share_val = total_share_val + share["vol"] * share["val"]
+
+        #     # share_positions.append(
+        #     #     {
+        #     #         "time": round_time(t.updated),
+        #     #         "value": total_share_val,
+        #     #         "type": "share",
+        #     #     }
+        #     # )
+
+        # share_positions.append(
+        #     {"time": round_time(this_time), "value": total_share_val, "type": "share"}
+        # )
+
+        # Now redo with share ownership
+        shares_owned = ShareOwnership.objects.all().filter(entity=self).order_by('timestamp')
+        # share_positions = []
+        for share in shares_owned:
+            athletes = json.loads(share.share_vol_owned)
 
             total_share_val = 0
-            for athlete, share in investor_shares.items():
-                total_share_val = total_share_val + share["vol"] * share["val"]
+            for athlete_id, vol in athletes.items():
+                athlete = Athlete.objects.get(id=int(athlete_id)) # type: Athlete
+                val = athlete.get_value(time=share.timestamp)
+
+                total_share_val = total_share_val + val*float(vol)
 
             share_positions.append(
                 {
-                    "time": round_time(t.updated),
+                    "time": round_time(share.timestamp),
                     "value": total_share_val,
                     "type": "share",
                 }
@@ -211,7 +261,7 @@ class Entity(models.Model):
         # again, assume everyone starts with 0 derivatives
         derivative_transactions = [t for t in asset_transactions] #  if t.asset.is_derivative()
         derivatives = [{"time": round_time(get_current_season().start_time), "value": 0.0, "type": "derivative"}]
-    
+    # 
         for t in derivative_transactions:
             derivatives_owned = self.get_contracts_held(t.updated)
             derivatives_value = np.sum(np.array([d.value for d in derivatives_owned]))
@@ -345,9 +395,8 @@ class Entity(models.Model):
         else:
             return False
 
-    def get_shares_owned(self):
+    def get_shares_owned(self) -> List['Share']:
         shares = Share.objects.filter(owner=self, is_virtual=False, season=get_current_season())
-        # logger.info("shares owned: " + str(shares))
         return shares
 
     def shares_in_athlete(self, athlete):
@@ -459,8 +508,57 @@ class Bank(Entity):
     def serialize(self):
         return {"name": self.name, "capital": self.capital}
 
+    def get_sell_offer(self, athlete_id, volume):
+        """ What will bank sell for """
+        athlete = Athlete.objects.get(pk=athlete_id)
+        current_price = athlete.get_value()
+        all_shares = Share.objects.all().filter(athlete=athlete, is_virtual=False)
+        total_vol = np.sum([s.volume for s in all_shares])
+
+        bank_shares = self.shares_in_athlete(athlete)
+
+        # if not bank_shares:
+        #     return None
+
+        bank_vol = bank_shares.volume if bank_shares else 0      
+
+        # Price increases by 1% for each 1% of total share vol
+        sell_price_per_unit = current_price*1.05
+        buy_price_per_unit = current_price*0.95
+
+        total_sell_price = 0
+        total_buy_price = 0
+
+        remaining_vol = volume
+        share_division =  0.01*total_vol
+        while remaining_vol > 0.0:
+            this_vol = min(share_division, remaining_vol)
+            total_sell_price = total_sell_price + (sell_price_per_unit * this_vol)
+            total_buy_price = total_buy_price + (buy_price_per_unit * this_vol)
+
+            remaining_vol = remaining_vol - this_vol
+            sell_price_per_unit = sell_price_per_unit * 1.01
+            buy_price_per_unit = buy_price_per_unit * 0.99
+
+        total_sell_price = np.round(total_sell_price, 2)
+        total_buy_price = np.round(total_buy_price, 2)
+
+        if volume > bank_vol:
+            total_sell_price = -1
+
+        if total_buy_price > self.capital:
+            total_buy_price = -1
+
+        logger.info("Season: {}".format(get_current_season()))
+        offer = BankOffer(athlete=athlete, volume=volume, total_sell_price=total_sell_price, 
+                            total_buy_price=total_buy_price, 
+                            bank=self, season=get_current_season())
+        offer.save()
+        return offer
+
 def get_bank() -> Bank:
     return Bank.objects.get(name='The Cowley Club Bank')
+
 
 class Investor(Entity):
     """
@@ -635,8 +733,8 @@ class Athlete(models.Model):
         # logger.info("Average of {} trades = {}".format(len(trades), av))
         vol = latest_trade.asset.share.volume
         if vol == 0:
-            if latest_trade.price != 0.0:
-                logger.info("Warning! Trade with 0 volume: {}".format(latest_trade))
+            # if latest_trade.price != 0.0:
+            #     logger.info("Warning! Trade with 0 volume: {}".format(latest_trade))
             value = 0
         else:
             value = latest_trade.price / vol
@@ -681,7 +779,7 @@ class ShareIndexValue(models.Model):
                 t.save()
                 t.athletes.add(*athletes)
                 t.save()
-            except Exception:
+            except Exception as e:
                 logger.warning(traceback.print_tb(e.__traceback__))
                 logger.info("Unable to make shareIndexValue for value: {}".format(value))
 
@@ -953,7 +1051,7 @@ class Contract(Asset):
                                                         fut.underlying_asset.volume, 
                                                         fut.underlying_asset.athlete.name, fut.strike_price, fut.action_date)
         text = "{} contract between {} and {}".format(self.contract_type, self.owner.print_name, self.other_party.print_name)
-        text = text + ":" + asset
+        text = text + ": " + asset
         text = text + " (current value: {})".format(np.round(self.value,2))
         return text
 
@@ -968,7 +1066,6 @@ class Contract(Asset):
     def contract_type(self):
         return self.asset_type
 
-
     def get_obligation(self, investor):
         if self.owner == investor:
             return self.future.owner_obligation
@@ -976,7 +1073,6 @@ class Contract(Asset):
             if self.future.owner_obligation == Future.BUY:
                 return Future.SELL
             return Future.BUY
-
 
     def get_other_party_to(self, investor):
         if self.owner == investor:
@@ -1012,12 +1108,15 @@ class Future(Contract):
     def serialize(self):
         s = {"id": self.pk,
             "underlying": self.underlying_asset.serialize(),
-        "strike_price": self.strike_price,
-        "strike_date": self.action_date,
-        "owner_obligation": self.obligation,
-        "owner": serialize_entity(self.owner),
-        "status": self.status,
-        "other_party": serialize_entity(self.other_party),
+            "strike_price": self.strike_price,
+            "strike_date": self.action_date,
+            "owner_obligation": self.obligation,
+            "owner": serialize_entity(self.owner),
+            "status": self.status,
+            "buyer": serialize_entity(self.buyer),
+            "seller": serialize_entity(self.seller),
+            "other_party": serialize_entity(self.other_party),
+            "type": "Future",
         }
 
         return s
@@ -1039,7 +1138,6 @@ class Future(Contract):
 
     @property
     def obligation(self):
-        # return self.owner_obligation
         dictionary = dict(self.OBLIGATIONS)
         try:
             v = dictionary[self.owner_obligation]
@@ -1049,6 +1147,20 @@ class Future(Contract):
 
         return v
         # return dict(self.OBLIGATIONS)[self.owner_obligation]
+
+    @property
+    def seller(self):
+        """ Who will sell the underlying asset """
+        if self.get_obligation(self.owner) == self.SELL:
+            return self.owner
+        else:
+            return self.other_party
+        
+
+    @property
+    def buyer(self):
+        """ Who will buy the underlying asset """
+        return self.get_other_party_to(self.seller)
 
     def execute(self):
         """ Called when the strike date is reached """
@@ -1108,7 +1220,9 @@ class Option(Future):
         "strike_date": self.action_date,
         "current_option": self.current_option,
          "buyer": serialize_entity(self.buyer),
-        "seller": serialize_entity(self.seller),}
+        "seller": serialize_entity(self.seller),
+        "type": "Option",
+        }
 
         # if self.owner:
         #     s["owner"] = serialize_entity(self.owner)
@@ -1261,7 +1375,78 @@ class Swap(Asset):
     b_to_a_payment = models.TextField()
 
     def serialize(self):
-        return {"id": self.pk}
+        return {"id": self.pk,
+        "type": "Swap",}
+
+
+class BankOffer(models.Model):
+
+    BUY = "B"
+    SELL = "S"
+    OPTIONS = (
+        (BUY, "Buy"),
+        (SELL, "Sell")
+    )
+
+    TIMEOUT = 10 # seconds
+
+    created = models.DateTimeField(auto_now_add=True)
+    athlete = models.ForeignKey(Athlete, on_delete=models.CASCADE)
+    volume = models.FloatField()
+    total_buy_price = models.FloatField(default=-1)
+    total_sell_price = models.FloatField(default=-1)
+    season = models.ForeignKey(Season, on_delete=models.CASCADE)
+    bank = models.ForeignKey(Bank, on_delete=models.CASCADE)
+
+    def is_valid(self):
+        age = current_time() - self.created # type: timedelta
+        logger.info("Offer age: {} (seconds)".format(age.total_seconds()))
+        return age.total_seconds() < BankOffer.TIMEOUT
+
+    def accept(self, investor: Investor, buy_or_sell: str):
+        # perform some checks
+        if not self.is_valid():
+            raise OfferExpired("This offer has expired")
+
+        seller = None
+        buyer = None
+        price = 0
+
+        if buy_or_sell == BankOffer.BUY:
+            # Investor wants to buy
+            buyer = investor
+            seller = self.bank
+            price = self.total_sell_price # bank sell price
+        else:
+            # Investor wants to sell
+            buyer = self.bank
+            seller = investor
+            price = self.total_buy_price # bank buy price
+
+
+        trade = Trade.make_share_trade(self.athlete, self.volume, self.bank, price,
+                seller, buyer)
+
+        trade.accept_trade(investor)
+
+
+    @property
+    def expires(self):
+        return self.created + timedelta(seconds=self.TIMEOUT)
+
+    def serialize(self):
+        return {"id": self.pk,
+        "created": self.created,
+        "athlete": self.athlete.serialize(),
+        "volume": float(self.volume),
+        "total_buy_price": float(self.total_buy_price),
+        "total_sell_price": float(self.total_sell_price),
+        "season": self.season.serialize(),
+        "bank": self.bank.serialize(),
+        "expires": self.expires,
+        }
+
+
 
 
 class Trade(models.Model):
@@ -1458,7 +1643,7 @@ class Trade(models.Model):
         self.status = self.CANCELLED
         self.save()
 
-    def accept_trade(self, action_by, skip_notif=False):
+    def accept_trade(self, action_by, skip_notif=False, notify_both=False):
         if not self.buyer or not self.seller:
             raise NoBuyerOrSeller(
                 "To complete this trade there must be a buyer (currently: {}) and a seller (currently: {})".format(
@@ -1476,6 +1661,7 @@ class Trade(models.Model):
             raise NoActionPermission("You cannot accept a trade which you initiated")
 
         # Check buyer has cash
+        trade_price = self.price
         if not self.buyer.capital >= self.price:
             raise InsufficientFunds(
                 "Buyer ({}) does not have enough funds ({} < {})".format(
@@ -1483,14 +1669,16 @@ class Trade(models.Model):
                 )
             )
 
+        
+
         other_party = self.seller
         if self.seller == action_by:
             other_party = self.buyer
 
         # Now do asset specfic checks and action the trade
         if self.asset.is_share():
+
             if not self.seller.can_sell_asset(self.asset):
-                # format(seller.saleable_shares_in_athlete())
                 raise InsufficientShares(
                     "Seller ({}) does not have sufficient shares to fulfill trade.".format(self.seller.print_name)
                 )
@@ -1501,36 +1689,56 @@ class Trade(models.Model):
             )  
             share = self.seller.get_share(self.asset.share)
             share.transfer(to=self.buyer, vol=self.asset.share.volume)
-            # self.status = self.ACCEPTED
-            # self.save()
 
             # Send notification to not actioner
-            
-
-            common = "Share: {} ({}) for {}".format(self.asset.share.athlete.name, self.asset.share.volume, self.price)
+            common = "Share: {} ({:.2f}) for {:.2f}".format(self.asset.share.athlete.name, self.asset.share.volume, self.price)
             Notification.send_notification(title="Trade accepted", description="{} accepted the trade for {}".format(action_by, common), entity=other_party)
-            
+            if notify_both:
+                Notification.send_notification(title="Trade accepted", description="{} accepted the trade for {}".format(other_party, common), entity=action_by)
 
         elif self.asset.is_future():
             # Only one check to perform - can purchaser of contract pay the trade price?
             # This is already done.
             
+            contract = self.asset.contract
+            future = self.asset.contract.future
+
             # 1) Confirm contract
             # The buyer replaces the seller's position
             if self.seller == self.asset.owner:
                 # If the owner was the seller, the buyer becomes the owner
                 self.asset.owner = self.buyer
+                contract.other_party = self.seller
+                future.owner = self.buyer
+                future.other_party = self.seller
             
-            elif self.seller == self.asset.other_party:
-                self.asset.contract.other_party = self.buyer
+            elif self.seller == self.asset.contract.other_party:
+                contract.other_party = self.buyer
+                self.asset.owner = self.seller  
+
+                future.owner = self.seller
+                future.other_party = self.buyer     
 
             else:
                 # This should never happen!
-                raise Exception("Contract seller was not involved in the contract!")
+                raise XChangeException(f"Contract seller ({self.seller}) was not involved in the contract (between {self.asset.owner} and {future.other_party})!")
 
+            
+            # logger.info("Future:")
+            # logger.info(future.serialize())
+            logger.info(f"Seller: {self.seller}, buyer: {self.buyer}")
+            logger.info(f"Asset owner: {self.asset.owner}, future owner: {self.asset.contract.owner}")
+            logger.info(f"Future buyer: {future.buyer}, seller: {future.seller}")
 
-            # self.asset.owner = self.buyer
-            # self.asset.contract.future.other_party = self.seller
+            if future.seller is None or future.buyer is None:
+                raise XChangeException(f"Future does not have buyer ({future.buyer}) and/or seller ({future.seller})")
+
+            if future.seller == future.buyer:
+                raise XChangeException(f"The future buyer ({future.buyer}) cannot be the same as the future seller ({future.seller})")
+
+            # future.status = Contract.ACTIVE
+            contract.status = Contract.ACTIVE
+            future.save()
             self.asset.contract.save()
             self.asset.save()
 
@@ -1545,7 +1753,12 @@ class Trade(models.Model):
 
 
             fut = self.asset.contract.future
-            common = "Future: (Owner to {} {} shares in {} for {}). Trade price: {}".format(fut.owner_obligation, fut.underlying_asset.volume, fut.underlying_asset.athlete.name, fut.strike_price, self.price)
+            sell_string = ""
+            if fut.seller:
+                sell_string = f"{fut.seller} to sell"
+            else:
+                sell_string = f"{fut.buyer} to buy"
+            common = "Future: ({} {} shares in {} for {}). Trade price: {}".format(sell_string, fut.underlying_asset.volume, fut.underlying_asset.athlete.name, fut.strike_price, self.price)
             Notification.send_notification(title="Trade accepted", description="{} accepted the trade for asset: {}".format(action_by, common), entity=other_party)
             
           
@@ -1561,6 +1774,153 @@ class Trade(models.Model):
 
         self.status = self.ACCEPTED
         self.save()
+
+
+
+
+    def partially_fill_with(self, other_trade: 'Trade') -> None:
+        """ 
+        Partially fill this trade by matching with another.
+        """
+
+        if not self.status == Trade.PENDING and other_trade.status == Trade.PENDING:
+            raise XChangeException("Both trades not pending")
+
+        # Some basic tests - should possibly raise exceptions here
+        if not self.asset.share.athlete == other_trade.asset.share.athlete:
+            # Trades not same athlete
+            raise XChangeException("Attempting to fill trade with different athletes")
+
+        if (self.buyer and other_trade.seller) and (self.seller and other_trade.buyer):
+            # Trades not compatible
+            raise XChangeException("Attempting to fill trades which aren't open to buy/sell")
+        
+        # Can't trade with ourself!
+        if self.creator == other_trade.creator:
+            raise XChangeException("Attempting to fill trade with one created by the same investor")
+        
+        if self.seller and self.seller == other_trade.buyer:
+            raise XChangeException("Attempting to fill trade by buying from the same investor")
+        
+        if self.buyer and self.buyer == other_trade.seller:
+            raise XChangeException("Attempting to fill trade by selling to the same investor")
+
+        # This trade must have greater volume
+        if not self.asset.share.volume >= other_trade.asset.share.volume:
+            raise XChangeException("Attempting to fill trade with another trade of greater volume")
+
+        
+
+        # Now do the work
+        volume_to_trade = other_trade.asset.share.volume
+        unfilled_volume = self.asset.share.volume - volume_to_trade
+
+        matched_price_per_vol = (self.price/self.asset.share.volume 
+                                + other_trade.price/other_trade.asset.share.volume)/2
+        matched_price = matched_price_per_vol * volume_to_trade
+
+        # Update smaller trade for the actual trade we're going to make
+        other_trade.price = matched_price
+
+        # other_trade.volume = volume_to_trade # not needed
+
+        if self.seller and not self.buyer:
+            # seller = self.seller
+            # buyer = other_trade.buyer
+
+            other_trade.seller = self.seller
+        elif self.buyer and not self.seller:
+            # seller = other_trade.seller
+            # buyer = self.buyer
+
+            other_trade.buyer = self.buyer
+
+        else:
+            # This also shouldn't happen
+            return
+
+        # New trade:
+        original_volume = self.asset.share.volume
+        # partial_trade = None
+        try:
+
+            # Accept the smaller trade at the matched price
+            other_trade.accept_trade(action_by=self.creator, notify_both=True)
+            
+            # Update this trade for the new volume
+            self.price = self.price * (unfilled_volume/self.asset.share.volume)
+            self.asset.share.volume = unfilled_volume
+            self.asset.share.save()
+            self.save()
+            logger.info("**Successfully filled trade, remaining volume = {:.2f}".format(unfilled_volume))
+        except XChangeException as e:
+            logger.info(e)
+        
+        
+    
+@background(schedule=0)
+def match_partial_trades():
+    """ Match partial trades. 
+    Prioritise by the best deal, 
+    then the earlier trade in case of a tie break"""
+    # Get all open and pending trades
+    active_trades = Trade.objects.all().filter(status=Trade.PENDING).order_by('created')
+
+    open_trades = [trade_to_fill for trade_to_fill in active_trades if 
+                (trade_to_fill.seller is None or trade_to_fill.buyer is None) 
+                and trade_to_fill.asset.is_share()]
+
+    trades_with_no_seller = [trade_to_fill for trade_to_fill in open_trades if trade_to_fill.seller==None]
+    trades_with_no_buyer = [trade_to_fill for trade_to_fill in open_trades if trade_to_fill.buyer==None]
+
+    # loop through from earliest to latest, trying to fulfil each order
+    for trade_to_fill in open_trades:
+        logger.info("Fill trade: {}".format(trade_to_fill))
+
+        trade_to_fill.refresh_from_db() # just in case this trade has already been modified earlier in the loop
+
+        if trade_to_fill.asset.share.volume <= 0 or not trade_to_fill.status == Trade.PENDING:
+            continue
+
+        matching_trades = Trade.objects.all().filter(Q(asset__share__athlete=trade_to_fill.asset.share.athlete)
+                                                        & ~Q(creator=trade_to_fill.creator) & 
+                                                        Q(status=Trade.PENDING)
+                                                        & Q(asset__share__volume__gt=0)).order_by('-price')
+
+        this_price_per_vol = trade_to_fill.price / trade_to_fill.asset.share.volume
+        if not trade_to_fill.seller:
+            # try to find a seller who wants to sell for <= buy price
+            # try to find the smallest price
+            matching_trades = matching_trades.filter(Q(buyer=None)
+            & ~Q(seller=trade_to_fill.buyer)
+            )
+            matching_trades = [t for t in matching_trades if t.price/t.asset.share.volume < this_price_per_vol]
+            # matching_trades = [t for t in matching_trades if not t.seller == trade_to_fill.buyer]
+        elif not trade_to_fill.buyer:
+            matching_trades = matching_trades.filter(Q(seller=None)
+                & ~Q(buyer=trade_to_fill.seller)
+                )
+            matching_trades = [t for t in matching_trades if t.price/t.asset.share.volume > this_price_per_vol]
+            # matching_trades = [t for t in matching_trades if not t.buyer == trade_to_fill.seller]
+        else:
+            # This should never happen, but just in case
+            continue
+        
+        logger.info("  Matching trades ({}):".format(len(matching_trades)))
+        for t in matching_trades:
+            logger.info(f"   {t}")
+
+            # how we match the trades depends on which has the largest volume
+
+            if trade_to_fill.asset.share.volume >= t.asset.share.volume:
+                trade_to_fill.partially_fill_with(t)
+            else:
+                t.partially_fill_with(trade_to_fill)
+
+            # If we've managed to completely fill this trade, move on
+            if trade_to_fill.asset.share.volume == 0:
+                break
+
 
 
 @receiver(pre_save, sender=Trade)
@@ -1587,6 +1947,12 @@ def update_on_trade_acceptance(sender, instance, **kwargs):
                 other_party=instance.asset.contract.other_party, contract=instance.asset.contract)
                 c.save()
             
+@receiver(post_save, sender=Trade)
+def compute_shares_owned(sender, instance, **kwargs):
+    if instance.status == Trade.ACCEPTED:
+        ShareOwnership.create_for_entity(entity=instance.buyer)
+        ShareOwnership.create_for_entity(entity=instance.seller)
+
 
 @background(schedule=5)
 def schedule_share_calculation():
@@ -2117,6 +2483,43 @@ class Bid(models.Model):
     class Meta:
         # Each bidder can only have one bid on a lot
         unique_together = ('bidder', 'lot',)
+
+
+class ShareOwnership(models.Model):
+    """
+    Store record of shares owned by entity at a specific time
+    stored as a dict:
+    { 
+        "athlete_id": vol_owned
+    }
+    """
+
+    entity = models.ForeignKey(Entity, on_delete=models.CASCADE)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    share_vol_owned = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.entity.print_name}, {self.timestamp}"
+
+    @staticmethod
+    def create_for_entity(entity: Entity, time: datetime=None) -> 'ShareOwnership':
+
+        vol = {}
+
+        shares_owned = entity.get_shares_owned()
+
+        for share in shares_owned:
+            vol[share.athlete.id] = share.volume
+
+        obj = ShareOwnership(entity=entity, share_vol_owned=json.dumps(vol))
+        if time:
+            obj.timestamp = time
+
+        obj.save()
+        return obj
+
+
+            
 
 class Notification(models.Model):
     UNSEEN = 'U'

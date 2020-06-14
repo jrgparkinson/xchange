@@ -84,6 +84,11 @@ urlpatterns = [
     path("make_loan/", views.make_loan, name="make_loan"),
     path("get_loans/", views.get_loans, name="get_loans"),
     path("repay_loan/", views.repay_loan, name="repay_loan"),
+
+    path("get_bank_offer/", views.get_bank_offer, name="get_bank_offer"),
+    path("trade_with_bank/", views.trade_with_bank, name="trade_with_bank"),
+    path("get_contract/", views.get_contract, name="get_contract"),
+    
     # make_loan
     # get_loans
     

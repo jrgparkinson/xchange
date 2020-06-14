@@ -27,7 +27,7 @@
     <li class="nav-item">
         <a class="nav-link" id="pills-buy-tab" data-toggle="pill" href="#pills-buy" role="tab" aria-controls="pills-buy"
             aria-selected="false">
-            Buy</a>
+            Trade</a>
     </li>
     <li class="nav-item">
         <a class="nav-link" id="pills-loans-tab" data-toggle="pill" href="#pills-loans" role="tab"
@@ -78,9 +78,54 @@
         <div class="card">
             <div class="card-body">
 
+                <h2>Buy/sell shares</h2>
+                <p>Trade directly with the bank, instantly.</p>
+                <form id="createShare" class="createAsset" action="#">
+                    <div class="form-group row">
+                      <label for="athlete" class="col-sm-4 col-lg-2 col-form-label col-form-label">Athlete:</label>
+                      <div class="col-sm-6 col-lg-4">
+                        <select class="custom-select" id="athletesShare">
+                          <!-- <option selected>...</option> -->
+                        </select>
+                      </div>
+                    </div>
 
-                <h2>Buy shares</h2>
-                <p>Coming soon. The bank will sell any shares it has for the current market price + 5%</p>
+                    <div class="form-group row">
+                        <div class="col-sm-4 col-lg-2">Bank can sell:</div>
+                        <div class="col-sm-8 col-lg-4" id="bankOwnedShares">
+                          X Shares
+                        </div>
+                      </div>
+          
+                    <div class="form-group row">
+                      <label for="volume" class="col-sm-4  col-lg-2 col-form-label col-form-label">Volume:</label>
+                      <div class="col-sm-8 col-lg-4">
+                        <input type="number" step="0.01" class="form-control" value="0.0" id="volume">
+                      </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <div class="col-5 col-lg-2">Current trading price:</div>
+                        <div class="col-7 col-lg-6" id="currentPrice"></div>
+                    </div>
+
+                    <div class="form-group  row">
+                        <div class="col-5 col-lg-2">Bank will sell for:</div>
+                        <div class="col-4 col-lg-4" id="bankSellPrice" data-offer-id=""></div>
+                        <div class="col-3 col-lg-2"><button class="btn btn-primary tradeWithBank" id="buyFromBank" type="button" disabled>Buy</button></div>
+                    </div>
+
+                    <div class="form-group row">
+                        <div class="col-5 col-lg-2">Bank will buy for:</div>
+                        <div class="col-4 col-lg-4" id="bankBuyPrice" data-offer-id=""></div>
+                        <div class="col-3 col-lg-2"><button class="btn btn-primary tradeWithBank" id="sellToBank" type="button" disabled>Sell</button></div>
+                    </div>
+
+                    <div class="form-group row">
+                        <div class="col-12" id="refresh" style="display:none">Offer(s) expired <button class="btn btn-warning" id="refreshOffers" type="button">Refresh</button></div>
+                    </div>
+          
+                  </form>
             </div>
         </div>
     </div>
@@ -159,8 +204,11 @@
 
 {% block footer %}
 
+<script type="text/javascript" src="{{ DEPLOY_URL }}{% static 'js/trading.js' %}"></script>
 
 <script>
+    var timeoutID;
+
     $(document).ready(function () {
         $('#transactions').DataTable({
             paging: false,
@@ -177,7 +225,125 @@
             var ammount = $("input.repay[data-loan=" + loan_id + "]").val();
             repay_loan(loan_id, ammount);
         });
+
+
+        populateAthletes('athletesShare', false);
+
+        $("button#buyFromBank").click(function() { accept_bank_offer('B'); });
+        $("button#sellToBank").click(function() { accept_bank_offer('S'); });
+
+        $("#athletesShare").change(get_offer);
+        $("#volume").keyup(get_offer);
+        $("button#refreshOffers").click(get_offer);
+
+        
+        // $("#athletesShare").val()
+        // $('#athletesShare').val($("#athletesShare option:first").val());
+        get_offer();
     });
+
+    function accept_bank_offer(buy_or_sell) {
+
+        var offer;
+        if (buy_or_sell == "B") {
+            offer = $("#bankSellPrice").attr("data-offer-id");
+            // console.log($("button#buyFromBank").attr("disabled"));
+            if ($("button#buyFromBank").attr("disabled")) { return; }
+        } else {
+            offer = $("#bankBuyPrice").attr("data-offer-id");
+            // console.log($("button#sellToBank").attr("disabled"));
+            if ($("button#sellToBank").attr("disabled")) { return; }
+        }
+        
+        // Submit request
+        data = {"offer": offer, "buy_or_sell": buy_or_sell};
+        console.log(data);
+        $.ajax({
+            type: "GET",
+            url: "{% url 'trade_with_bank' %}",  // URL to your view that serves new info
+            data: data
+            })
+            .done(function (response) {
+                console.log(response);
+                if (response.error) {
+                    display_error(response.error);
+                } else {
+                    successNotif("Trade with bank successful");
+                    populate_top_bar_portfolio();
+                }
+            });
+
+    }
+
+    function disableButtons() {
+        $("button.tradeWithBank").attr("disabled", true);
+        $("#refresh").show();
+    }
+
+    function get_offer() {
+        $("#refresh").hide();
+        data = {"athlete_id": $("#athletesShare option:selected").val(), "volume": $("#volume").val()};
+        // if data.athlete_id
+        console.log(data);
+        $.ajax({
+            type: "GET",
+            url: "{% url 'get_bank_offer' %}",  // URL to your view that serves new info
+            data: data
+            })
+            .done(function (response) {
+                console.log(response);
+                if (response.error) {
+                    // display_error(response.error);
+                } else {
+
+                    var vol = $("#volume").val();
+                    if (response.trading_price_per_unit) {
+                        var total = Number(response.trading_price_per_unit * vol).toFixed(2);
+                        $("#currentPrice").text(total + " (" + Number(response.trading_price_per_unit).toFixed(2) + " per share)");
+                    } else {
+                        $("#currentPrice").text("Unknown");
+                    }
+
+                    if (response.bank_volume == 0) {
+                        $("#bankOwnedShares").text("No shares owned by bank");
+                        $("#bankSellPrice").text("N/A");
+                        $("#bankBuyPrice").text("N/A");
+                        $("#buyFromBank").attr("disabled", true);
+                        // return;
+                    } else {
+                        $("#bankOwnedShares").text(response.bank_volume + " shares");
+                    }
+                    
+                    if (response.offer && response.offer.total_sell_price >= 0) {
+                        var per_unit = Number(response.offer.total_sell_price/response.offer.volume).toFixed(2);
+                        $("#bankSellPrice").text(Number(response.offer.total_sell_price).toFixed(2) + " (" + per_unit + " per share)");
+                        $("#bankSellPrice").attr("data-offer-id", response.offer.id);
+                        $("#buyFromBank").attr("disabled", false);
+                    } else {
+                        $("#bankSellPrice").text("No offer available");
+                        $("#bankSellPrice").attr("data-offer-id", "");
+                    }
+
+                    if (response.offer && response.offer.total_buy_price >= 0) {
+                        var per_unit = Number(response.offer.total_buy_price/response.offer.volume).toFixed(2);
+                        $("#bankBuyPrice").text(Number(response.offer.total_buy_price).toFixed(2) + " (" + per_unit + " per share)");
+                        $("#bankSellPrice").attr("data-offer-id", response.offer.id);
+                        $("#sellToBank").attr("disabled", false);
+                    } else {
+                        $("#bankBuyPrice").text("No offer available");
+                        $("#bankSellPrice").attr("data-offer-id", "");
+                    }
+
+                    var delay_ms = new Date(response.offer.expires) - Date.now();
+                    // delay_ms = delay_ms/5; //testing
+                    console.log("Expiry delay = " + delay_ms/1000 + " seconds");
+                    if (timeoutID) {   window.clearTimeout(timeoutID); }
+                    timeoutID = window.setTimeout(disableButtons, delay_ms);
+
+                    
+                }
+            });
+    }
 
 
     function reload_loans(loans) {

@@ -30,7 +30,7 @@ if "a2hosting.com" in socket.gethostname():
     DEPLOY_URL = 'xchange/'
 else:
     DEBUG = True
-    DEPLOY_URL = 'xchange/'
+    DEPLOY_URL = ''
 
 
 
@@ -136,7 +136,7 @@ STATICFILES_DIRS = [
 
 STATIC_ROOT = "staticfiles"
 
-LOGIN_REDIRECT_URL = DEPLOY_URL + "profile/"
+LOGIN_REDIRECT_URL = DEPLOY_URL + "/profile/"
 
 EMAIL_BACKEND = (
     "django.core.mail.backends.console.EmailBackend"  # During development only

@@ -287,6 +287,12 @@ body.fixed-nav.sidebar-toggled #content-wrapper {
   }
 }
 
+@media (max-width:576px) {
+  .navbar-brand {
+    display: none;
+  }
+}
+
 :root {
   --input-padding-x: 0.75rem;
   --input-padding-y: 0.75rem;

@@ -43,7 +43,13 @@ function format_asset(asset, current_inv) {
 
         var underlying = "(" + format_athlete(asset.underlying.athlete) +", "+ Number(asset.underlying.volume).toFixed(2) + ')';
         
-        x += "Owner to " + asset.owner_obligation + ": " + underlying; 
+        var obl = "";
+        if (asset.buyer) {
+            obl = format_investor_display("", asset.buyer) + " to buy";
+        } else {
+            obl = format_investor_display("", asset.seller) + " to sell";
+        }
+        x += obl + ": " + underlying; 
         x += "<br>Strike price: " + asset.strike_price+"<br>Strike date: " + d.toLocaleString();
         return x;
     } else {
@@ -52,10 +58,18 @@ function format_asset(asset, current_inv) {
 
 }
 
-function get_actions(trade) {
-    var closeAction = '<span data-toggle="tooltip" data-placement="left" title="Cancel/reject trade"><i class="fas fa-window-close fa-fw fa-lg" onclick="actionTrade(' + trade.id + ', \'cancel\')"></i></span>';
-    var acceptAction = '<span data-toggle="tooltip" data-placement="left" title="Accept trade"><i class="fas fa-check-circle fa-fw fa-lg" onclick="actionTrade(' + trade.id + ', \'accept\')"></i></span>';
+function capitalizeFirstLetter(string) {
+    // Thanks stackoverflow 
+    // https://stackoverflow.com/questions/1026069/how-do-i-make-the-first-letter-of-a-string-uppercase-in-javascript
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
 
+function get_actions(trade, trade_type) {
+    var closeAction = '<button type="button" class="btn btn-danger" onclick="actionTrade(' + trade.id + ', \'cancel\')">Cancel</button>';
+    // var clas = trade_type.includes("ell") ? "success" : "info";
+    var clas = "success";
+    var acceptAction = ' <button type="button" class="btn btn-' + clas + '" onclick="actionTrade(' + trade.id + ', \'accept\')">' + capitalizeFirstLetter(trade_type) +'</button>';
+  
     var actions = "";
     if (trade.can_close) {
         actions += closeAction;
