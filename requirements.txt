@@ -14,6 +14,7 @@ django-background-tasks==1.2.5
 django-compat==1.0.15
 django-import-export==2.1.0
 django-modeladmin-reorder==0.3.1
+djangorestframework
 et-xmlfile==1.0.1
 isort==4.3.21
 jdcal==1.4.1

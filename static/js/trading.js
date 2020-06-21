@@ -145,7 +145,7 @@ function actionTrade(trade_id, change, confirmation) {
                     $("#contractTitle").text(capitalizeFirstLetter(contract.type) + " contract");
 
                     var obligation = "Unknown";
-                    if (contract.type == "Future") {
+                    if (contract.type == "Future" || contract.type == "Option") {
                         var d = new Date(contract.strike_date); 
                         var asset = format_asset(contract.underlying);
                         obligation = "";
@@ -155,10 +155,20 @@ function actionTrade(trade_id, change, confirmation) {
                             obligation += format_investor_display("", contract.buyer) + " will buy ";
                         }
                         obligation += asset + " for " + contract.strike_price;
-                        obligation += " on " + d.toLocaleString();
+                        obligation += " on " + d.toLocaleString() + ".";
+
+                        if (contract.type == "Option") {
+                            let holder = format_investor_display("", contract.option_holder);
+                            if (holder == "Open") { holder = "You"; }
+                            obligation += " The option holder (" + holder + ") can trigger the obligation";
+                            obligation += " at any time up until the strike date (" + d.toLocaleString() + ")";
+                        }
                     } 
                     $("#contractObligation").html(obligation);
                     $("#contractPrice").text(response.trade.price);
+                    if (response.trade.price < 0) {
+                        $("#contractPrice").text(response.trade.price + " (you will receive " + Math.abs(response.trade.price) + ")");
+                    }
                     $("#confirmButton").text("Enter contract");
                 });
         }
@@ -194,17 +204,7 @@ function actionTrade(trade_id, change, confirmation) {
                     console.log("Remove row");
 
                     // var tr = $("tr[data-trade=" + trade_id + "]");
-                    var myTable = tr.parent('tbody').parent('table'); //.DataTable();
-                    if ($.fn.DataTable.isDataTable(myTable.attr('id'))) {
-                        console.log("Remove datatable row with trade id: " + trade_id);
-                        console.log(row);
-                        var row = myTable.row(tr);
-
-                        row.remove().draw();
-                    } else {
-                        console.log("Remove normal table row");
-                        tr.remove();
-                    }
+                    remove_row(tr);
                 } else {
                     console.log("Update row, new volume=" + trade.asset.volume);
                     // update row
@@ -221,6 +221,8 @@ function actionTrade(trade_id, change, confirmation) {
             tr.removeClass("actionedTrade");
         });
 }
+
+
 
 function reload_past_trades(investor_id) {
     //past_trades

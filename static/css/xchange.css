@@ -336,9 +336,9 @@ tr.rejected, input.rejected {
     color: var(--fg-nav);
 }
 
-.dataTables_wrapper {
+/* .dataTables_wrapper {
     overflow-x:auto;
-}
+} */
 
 /* 
 div.dataTables_wrapper div.row div.dataTables_filter {

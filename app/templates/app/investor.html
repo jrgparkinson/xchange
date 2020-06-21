@@ -115,7 +115,7 @@
                 <div class="card">
                     <div class="card-body">
 
-                        <h2>Future contracts held</h2>
+                        <h2>Contracts held</h2>
                         <div id="contracts">
                             <table class="table" id="contracts">
                                 <thead>
@@ -126,25 +126,55 @@
                                         <th scope="col">Strike date</th>
                                         <th scope="col">Other party</th>
                                         <th scope="col">Current value</th>
+                                        <th scope="col">Option holder</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for c in contracts %}
-                                    <tr>
+                                    <tr data-contract="{{c.id}}">
                                         <!-- currently only works for futures -->
                                         <td>{{ c.investor_obligation }}</td>
                                         <td>
-                                            <!-- {{ c.future.underlying_asset.athlete.name }}
-                                            ({{ c.future.underlying_asset.volume }} shares) -->
-                                            <span class="badgeContainer">
-                                                <a href="athlete/{{c.future.underlying_asset.athlete.id}}" class="badge badge-danger">
-                                                    {{c.future.underlying_asset.athlete.name}}
-                                                </a></span>[{{ c.future.underlying_asset.volume }} share(s)]
+                                            
+                                                    {{c.future.underlying_asset.athlete.to_html|safe}}
+                                                 [{{ c.future.underlying_asset.volume }} share(s)]
                                             </td>
                                         <td>{{ c.future.strike_price }}</td>
-                                        <td>{{ c.future.action_date }}</td>
-                                        <td>{{ c.other_party_to_investor }}</td>
-                                        <td>{{ c.value }}</td>
+                                        <td>{{ c.future.strike_time }}</td>
+                                        <td>{{ c.other_party_to_investor.to_html|safe }}</td>
+                                        <td>{{ c.value | floatformat:2 }}</td>
+                                        <td>{% if c.future.option %}
+
+                                            {% if c.future.option.option_holder.id == request.user.investor.id %}
+                                            You. <br>
+                                            Current option: 
+                                            <!-- <div class="col-sm-8"> -->
+                                                <div class="custom-control custom-radio custom-control-inline">
+                                                  <input type="radio" id="buy_{{c.id}}" name="current_option_{{c.id}}" value="Y" 
+                                                  class="custom-control-input changeCurrentOption" data-contract="{{c.id}}" 
+                                                  {% if c.future.option.current_option %}checked{% endif %}>
+                                                  <label class="custom-control-label" for="buy_{{c.id}}">Accept</label>
+                                                </div>
+                                                <div class="custom-control custom-radio custom-control-inline">
+                                                  <input type="radio" id="sell_{{c.id}}" name="current_option_{{c.id}}" value="N" 
+                                                  class="custom-control-input changeCurrentOption"  data-contract="{{c.id}}"
+                                                  {% if not c.future.option.current_option %}checked{% endif %}>
+                                                  <label class="custom-control-label" for="sell_{{c.id}}">Reject</label>
+                                                </div>
+                                              <!-- </div> -->
+                                              <!-- {{  c.future.option.current_option  }} -->
+                                            <!-- Need handlers for this checkbox -->
+                                                <br>
+                                            <button class="btn btn-danger actionOption" data-contract="{{c.id}}" data-action="N">Reject now</button>
+                                            <button class="btn btn-primary actionOption" data-contract="{{c.id}}" data-action="Y">Accept now</button>
+
+                                            {% else %}
+                                                {{c.future.option.option_holder.to_html}}
+                                            {% endif %}
+                                            {% else %}
+                                            N/A ({{c.contract_type}})
+                                            {% endif %}
+                                        </td>
                                     </tr>
 
                                     {% endfor %}
@@ -286,10 +316,12 @@
             data: { "id": id }
             })
             .done(function (response) {
+                console.log("Got portfolio");
+                console.log(response);
                 div.removeClass("spinner-border");
                 div.addClass("graph");
                 div.removeAttr("role");
-                // console.log(response);
+                
                 if (response.error) {
                     display_error(response.error);
                 }
@@ -416,6 +448,57 @@
         }
     });
 
+
+    $(".actionOption").click(function() {
+        console.log($(this).val());
+
+        const data = {"status": "S", "current_option": $(this).attr("data-action"),
+    "id": $(this).attr("data-contract") };
+
+    console.log(data);
+
+        $.ajax({
+        type: "GET",
+        url: '/option',  
+        data: data
+    })
+        .done(function (response) {
+            console.log(response);
+            if (response.error) {
+                display_error(response.error);
+            } else {
+                populate_top_bar_portfolio();
+
+                //remove row
+                if (response.option.status == "S") {
+                    let tr = $("tr[data-contract=" + response.option.id +"]");
+                    remove_row(tr);
+                    
+                }
+            }
+        });
+
+
+    });
+
+    $(".changeCurrentOption").change(function() {
+        // console.log($(this));
+        const data = {"current_option": $(this).val(),
+                      "id": $(this).attr("data-contract") };
+        console.log(data);
+
+        $.ajax({
+        type: "GET",
+        url: '/option',  
+        data: data
+    })
+        .done(function (response) {
+            console.log(response);
+            if (response.error) {
+                display_error(response.error);
+            }
+        });
+    })
 
 </script>
 

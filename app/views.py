@@ -308,15 +308,21 @@ def view_investor(request, investor_id):
 
     shares_total = investor.get_shares_wealth()
 
-    current_val = investor.capital + shares_total
+    current_val = float(investor.capital) + shares_total
     shares_owned = investor.get_shares_owned()
     shares_owned = sorted(shares_owned, key=lambda share: share.volume, reverse=True)
 
     contracts_held = investor.get_contracts_held()
-    for c in contracts_held:
+    for c in contracts_held: # type: Contract
 
         if c.is_future() or c.is_option():
-            c.investor_obligation = dict(Future.OBLIGATIONS)[c.get_obligation(investor)]
+            obl = c.get_obligation(investor) # . dict(Future.OBLIGATIONS)[c.get_obligation(investor)
+            if obl in dict(Future.OBLIGATIONS).keys():
+                obl = dict(Future.OBLIGATIONS)[obl]
+            else:
+                obl = obl.capitalize()
+
+            c.investor_obligation = obl
         c.other_party_to_investor = c.get_other_party_to(investor)
 
 
@@ -386,7 +392,12 @@ def retrieve_investor_portfolio(request):
     investor_id = request.GET["id"]
     investor = Investor.objects.get(pk=investor_id)
 
+    logger.info("Retrieving portfolio")
+
     portfolio = investor.get_portfolio_values()
+
+    logger.info("Got portfolio")
+    # logger.info(portfolio)
 
     return JsonResponse(portfolio)
 
@@ -554,8 +565,8 @@ def retrieve_trades(request):
             all_trades = all_trades.order_by("-updated")
 
         # remove trades with a strike date in the past
-        all_trades = [t for t in all_trades if not (t.asset.is_future() and t.asset.contract.future.action_date < current_time())]
-        # all_trades = [t for t in all_trades if not (t.asset.is_option() and t.asset.option.action_date < current_time())]
+        all_trades = [t for t in all_trades if not (t.asset.is_future() and t.asset.contract.future.strike_time < current_time())]
+        # all_trades = [t for t in all_trades if not (t.asset.is_option() and t.asset.option.strike_time < current_time())]
 
         trades = []
 
@@ -783,11 +794,6 @@ def create_trade(request):
             athlete = Athlete.objects.get(id=int(ath_id))
             strike_date =  datetime.strptime(request.GET["data-date"], "%Y-%m-%dT%H:%M:%S.%fZ")
 
-            # owner_obligation
-            # if is_sell:
-            #     owner = other
-            #     seller = investor
-
             # Currently we know what the person creating the future/option wants to do
             # need to convert to what the 'owner' - person who will buy - will do
             if buyer == investor:
@@ -796,17 +802,19 @@ def create_trade(request):
                 # the opposite
                 owner_obligation = "buy" if investor_obligation == "sell" else "sell"
             
-
-            # logger.info(strike_date)
             
             if asset_type == "option":
-                # holder = request.GET["data-holder"]
-                # trade = Trade.make_option_trade(athlete, volume, investor, price, seller, buyer, strike_date, strike_price, holder)
-                raise InvalidAsset(desc="Options not supported yet, sorry".format(commodity))
+                option_holder = investor if request.GET['data-holder'] == 'you' else other
+                
+                # raise InvalidAsset(desc="Options not supported yet, sorry".format(commodity))
+                trade = Trade.make_option_trade(athlete, volume, investor, price, seller, buyer, 
+                                                strike_date, strike_price, owner_obligation, option_holder)
+
+                
             else:
                 
                 trade = Trade.make_future_trade(athlete, volume, investor, price, seller, buyer, 
-                strike_date, strike_price, owner_obligation)
+                                                strike_date, strike_price, owner_obligation)
             
         elif asset_type == "contract":
             # must be a contract we own
@@ -1049,3 +1057,38 @@ def get_contract(request):
         return JsonResponse(resp)
 
     return JsonResponse({})
+
+
+@login_required(login_url='/login/')
+def option(request):
+    try:
+        option = Option.objects.get(id=int(request.GET["id"]))
+
+        logger.info(request.GET)
+
+        if "current_option" in request.GET:
+            opt = request.GET["current_option"].lower() in ('true', 'y', 'yes')
+            logger.info(f"{opt}, " + request.GET["current_option"].lower())
+            option.current_option = opt
+
+        if "status" in request.GET and option.status != request.GET["status"]:
+            new_status = request.GET["status"]
+
+            # only valid change is active->settled
+            if option.status == Contract.ACTIVE and new_status == Contract.SETTLED:
+                settle_future_now(option)
+                option.save()
+            else:
+                raise XChangeException(f"Invalid status update {option.status}->{new_status}")
+
+        option.save()
+
+        resp = {"option": option.serialize()}
+
+    except XChangeException as e:
+        return make_error(e)
+    except Exception as e:
+        logger.warning(traceback.print_tb(e.__traceback__))
+        return JsonResponse({"error": "Unknown error"})
+
+    return JsonResponse(resp)

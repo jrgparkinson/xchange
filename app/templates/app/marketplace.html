@@ -7,192 +7,164 @@
 
 {% block content %}
 
-<div class="row">
-    <div class="col-sm-12">
-        <h2>
-            <button type="button" class="btn btn-outline-success btn-lg asset-choice" data-asset="share">Shares</button>
-            <button type="button" class="btn btn-outline-success btn-lg asset-choice"
-                data-asset="future">Futures</button>
-            <button type="button" class="btn btn-outline-success btn-lg asset-choice"
-                data-asset="option">Options</button>
-            <button type="button" class="btn btn-outline-success btn-lg asset-choice" data-asset="swap">Swaps</button>
-        </h2>
-    </div>
-</div>
 
-<div class="row">
-    <div class="col-sm-12 col-lg-6 order-1" id="buyContainer">
-        <div class="card">
-            <div class="card-body">
-                <h2>Buy</h2>
+<ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+    <li class="nav-item">
+        <a class="nav-link active" id="pills-shares-tab" data-toggle="pill" href="#pills-shares" role="tab"
+            aria-controls="pills-shares" aria-selected="true">
+            Shares</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="pills-futures-tab" data-toggle="pill" href="#pills-futures" role="tab"
+            aria-controls="pills-futures" aria-selected="false">
+            Futures</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="pills-options-tab" data-toggle="pill" href="#pills-options" role="tab"
+            aria-controls="pills-options" aria-selected="false">
+            Options</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="pills-swaps-tab" data-toggle="pill" href="#pills-swaps" role="tab"
+            aria-controls="pills-swaps" aria-selected="false">
+            Swaps</a>
+    </li>
 
-                <div id="buyTable">
-                    <table class="table buy" id="buy_share" data-asset="share">
-                        <thead>
-                            <tr>
-                                <th scope="col">Athlete</th>
-                                <th scope="col">Volume</th>
-                                <th scope="col">Price/volume</th>
-                                <th scope="col">Seller</th>
-                                <th scope="col"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td colspan=5>No trades found</td>
-                            </tr>
-                        </tbody>
-                    </table>
+</ul>
 
-                    <table class="table buy" data-asset="option">
-                        <thead>
-                            <tr>
-                                <th scope="col">Your obligation</th>
-                                <th scope="col">Athlete</th>
-                                <th scope="col">Volume</th>
-                                <th scope="col">Strike price/volume</th>
-                                <th scope="col">Strike time</th>
-                                <th scope="col">Trade price</th>
-                                <th scope="col">Option holder</th>
-                                <th scope="col">Seller</th>
-                                <th scope="col"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td colspan=5>No trades found</td>
-                            </tr>
-                        </tbody>
-                    </table>
+<div class="tab-content" id="pills-tabContent">
+    <div class="tab-pane fade show active" id="pills-shares" role="tabpanel" aria-labelledby="pills-shares-tab">
+        <div class="row">
+            <div class="col-sm-12 col-lg-6">
 
-                    <table class="table buy" data-asset="future">
-                        <thead>
-                            <tr>
-                                <th scope="col">Your obligation</th>
-                                <th scope="col">Athlete</th>
-                                <th scope="col">Volume</th>
-                                <th scope="col">Strike Price/volume</th>
-                                <th scope="col">Strike time</th>
-                                <th scope="col">Trade price</th>
-                                <th scope="col">Seller</th>
-                                <th scope="col"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td colspan=5>No trades found</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="card">
+                    <div class="card-body">
+                        <h2>Buy</h2>
 
-                    <table class="table buy" data-asset="swap">
-                        <thead>
-                            <tr>
-                                <th scope="col">Description</th>
-                                <th scope="col">Price</th>
-                                <th scope="col">Seller</th>
-                                <th scope="col"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td colspan=5>No trades found</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                        <div id="buyTable">
+                            <table class="table buy" id="buy_share" data-asset="share">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Athlete</th>
+                                        <th scope="col">Volume</th>
+                                        <th scope="col">Price/volume</th>
+                                        <th scope="col">Seller</th>
+                                        <th scope="col"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan=5>No trades found</td>
+                                    </tr>
+                                </tbody>
+                            </table>
 
 
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-12 col-lg-6">
+
+                <div class="card">
+                    <div class="card-body">
+
+                        <h2>Sell</h2>
+
+                        <div id="sellTable">
+                            <table class="table sell" id="sell_shares" data-asset="share">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Athlete</th>
+                                        <th scope="col">Volume</th>
+                                        <th scope="col">Price/volume</th>
+                                        <th scope="col">Buyer</th>
+                                        <th scope="col"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan=5>No trades found</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+
+                    </div>
                 </div>
             </div>
         </div>
 
     </div>
-    <div class="col-sm-12 col-lg-6 order-2" id="sellContainer">
-        <div class="card">
-            <div class="card-body">
-                <h2>Sell</h2>
+    <div class="tab-pane fade show " id="pills-futures" role="tabpanel" aria-labelledby="pills-futures-tab">
 
-                <div id="sellTable">
-                    <table class="table sell" id="sell_shares" data-asset="share">
-                        <thead>
-                            <tr>
-                                <th scope="col">Athlete</th>
-                                <th scope="col">Volume</th>
-                                <th scope="col">Price/volume</th>
-                                <th scope="col">Buyer</th>
-                                <th scope="col"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td colspan=5>No trades found</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+        <table class="table buy" data-asset="future">
+            <thead>
+                <tr>
+                    <th scope="col">Your obligation</th>
+                    <th scope="col">Athlete</th>
+                    <th scope="col">Volume</th>
+                    <th scope="col">Strike Price/volume</th>
+                    <th scope="col">Strike time</th>
+                    <th scope="col">Trade price</th>
+                    <th scope="col">Seller</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan=5>No trades found</td>
+                </tr>
+            </tbody>
+        </table>
 
-                <table class="table sell" data-asset="option">
-                    <thead>
-                        <tr>
-                            <th scope="col">Your obligation</th>
-                            <th scope="col">Athlete</th>
-                            <th scope="col">Volume</th>
-                            <th scope="col">Strike Price/volume</th>
-                            <th scope="col">Strike time</th>
-                            <th scope="col">Option holder</th>
-                            <th scope="col">Trade price</th>
-                            <th scope="col">Buyer</th>
-                            <th scope="col"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td colspan=5>No trades found</td>
-                        </tr>
-                    </tbody>
-                </table>
 
-                <table class="table sell" data-asset="future">
-                    <thead>
-                        <tr>
-                            <th scope="col">Your obligation</th>
-                            <th scope="col">Athlete</th>
-                            <th scope="col">Volume</th>
-                            <th scope="col">Strike Price/volume</th>
-                            <th scope="col">Strike time</th>
-                            <th scope="col">Trade price</th>
-                            <th scope="col">Buyer</th>
-                            <th scope="col"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td colspan=5>No trades found</td>
-                        </tr>
-                    </tbody>
-                </table>
+    </div>
+    <div class="tab-pane fade show " id="pills-options" role="tabpanel" aria-labelledby="pills-options-tab">
+        <table class="table buy" data-asset="option">
+            <thead>
+                <tr>
+                    <th scope="col">Your obligation</th>
+                    <th scope="col">Athlete</th>
+                    <th scope="col">Volume</th>
+                    <th scope="col">Strike price/volume</th>
+                    <th scope="col">Strike time</th>
+                    <th scope="col">Trade price</th>
+                    <th scope="col">Option holder</th>
+                    <th scope="col">Seller</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan=5>No trades found</td>
+                </tr>
+            </tbody>
+        </table>
 
-                <table class="table sell" data-asset="swap">
-                    <thead>
-                        <tr>
-                            <th scope="col">Description</th>
-                            <th scope="col">Price</th>
-                            <th scope="col">Buyer</th>
-                            <th scope="col"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td colspan=5>No trades found</td>
-                        </tr>
-                    </tbody>
-                </table>
 
-            </div>
-        </div>
+    </div>
+    <div class="tab-pane fade show " id="pills-swaps" role="tabpanel" aria-labelledby="pills-swaps-tab">
+        <table class="table buy" data-asset="swap">
+            <thead>
+                <tr>
+                    <th scope="col">Description</th>
+                    <th scope="col">Price</th>
+                    <th scope="col">Seller</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan=5>No trades found</td>
+                </tr>
+            </tbody>
+        </table>
+
     </div>
 </div>
-
 
 
 
@@ -225,63 +197,67 @@
     }
 
     $(document).ready(function () {
-        selected_asset = "share";
-        $("table.sell").hide();
-        $("table.buy").hide();
+        // selected_asset = "share";
+        // $("table.sell").hide();
+        // $("table.buy").hide();
         populate_table("share");
+        populate_table("option");
+        populate_table("future");
+        populate_table("swap");
 
-        $("button.asset-choice[data-asset=" + selected_asset + "]").removeClass("btn-outline-success");
-        $("button.asset-choice[data-asset=" + selected_asset + "]").addClass("btn-success");
+        // $("button.asset-choice[data-asset=" + selected_asset + "]").removeClass("btn-outline-success");
+        // $("button.asset-choice[data-asset=" + selected_asset + "]").addClass("btn-success");
 
 
-        $("button.asset-choice").click(function () {
-            selected_asset = $(this).attr("data-asset");
+        // $("button.asset-choice").click(function () {
+            // selected_asset = $(this).attr("data-asset");
 
-            $("button.asset-choice").each(function () {
-                $(this).removeClass("btn-success");
-                $(this).addClass("btn-outline-success");
-            });
+            // $("button.asset-choice").each(function () {
+            //     $(this).removeClass("btn-success");
+            //     $(this).addClass("btn-outline-success");
+            // });
 
-            $(this).removeClass("btn-outline-success");
-            $(this).addClass("btn-success");
+            // $(this).removeClass("btn-outline-success");
+            // $(this).addClass("btn-success");
 
-            $("table.sell").hide();
-            $("table.buy").hide();
+            // $("table.sell").hide();
+            // $("table.buy").hide();
 
-           
 
-            if (selected_asset == 'share') {
-                $("#sellContainer").show();
-                $("#buyContainer").removeClass("col-lg-12");
-                $("#sellContainer").removeClass("col-lg-12");
-                $("#buyContainer").addClass("col-lg-6");
-                $("#sellContainer").addClass("col-lg-6");
-            } else {
-                $("#buyContainer").removeClass("col-lg-6");
-                $("#sellContainer").removeClass("col-lg-6");
-                $("#buyContainer").addClass("col-lg-12");
-                $("#sellContainer").addClass("col-lg-12");
-                $("#sellContainer").hide();
 
-            }
+            // if (selected_asset == 'share') {
+            //     $("#sellContainer").show();
+            //     $("#buyContainer").removeClass("col-lg-12");
+            //     $("#sellContainer").removeClass("col-lg-12");
+            //     $("#buyContainer").addClass("col-lg-6");
+            //     $("#sellContainer").addClass("col-lg-6");
+            // } else {
+            //     $("#buyContainer").removeClass("col-lg-6");
+            //     $("#sellContainer").removeClass("col-lg-6");
+            //     $("#buyContainer").addClass("col-lg-12");
+            //     $("#sellContainer").addClass("col-lg-12");
+            //     $("#sellContainer").hide();
 
-            $("table").each(function (index) {
-                // console.log($(this));
-                if ($.fn.DataTable.isDataTable($(this))) {
-                    $(this).DataTable().destroy();
-                    // console.log("Destroy");
-                }
+            // }
 
-            });
+            // $("table").each(function (index) {
+            //     // console.log($(this));
+            //     if ($.fn.DataTable.isDataTable($(this))) {
+            //         $(this).DataTable().destroy();
+            //         // console.log("Destroy");
+            //     }
+
+            // });
 
             // $("table[data-asset=" + selected_asset + "]").show();
 
-            populate_table(selected_asset);
+            
 
-        });
+        // });
     });
 
     function populate_table(asset) {
+        
         var tables = $("table[data-asset=" + asset + "]");
 
         $("table[data-asset=" + asset + "]").show();
@@ -306,7 +282,7 @@
                 var sell_exists = false;
 
                 response.trades.forEach(trade => {
-                    
+
                     var row = '';
                     var tooltip = '';
 
@@ -334,8 +310,8 @@
                         row += '<td>' + Number(trade.price / share.volume).toFixed(2) + '</td>';
                     }
 
-                   
-                    if (is_future) {
+
+                    if (is_future || is_option) {
                         buy_sell = "Enter contract";
                         var future = trade.asset
                         var share = future.underlying
@@ -343,15 +319,15 @@
                         // if we're not the seller, we would be acquiring shares
 
                         var trader_obligation = ""; // what will the buyer or seller be taking on? The obligation to buy or to sell?
-                        
-                        
+
+
                         var other_ob; // what is the obligation of the other party? our obligation will then be the opposite
                         if (future.owner && other_party.id == future.owner.id) {
                             other_ob = future.owner_obligation;
                         } else {
                             other_ob = (future.owner_obligation == 'Sell') ? 'buy' : 'sell';
                         }
-                        
+
                         trader_obligation = (other_ob == 'sell') ? 'Buy' : 'Sell';
 
                         row += '<td>' + trader_obligation + '</td>';
@@ -365,22 +341,24 @@
                         } else if (future.buyer && future.buyer.id != response.investor.id) {
                             future_asset_plus_minus = "-";
                             tooltip = "You will sell shares in this futures contract";
-                        // } else if (future.seller && )
+                            // } else if (future.seller && )
                         }
-                        
-                        tooltip =  "If you " + buy_sell + " this future contract, you commit to " + trader_obligation.toLowerCase() + "ing ";
+
+                        tooltip = "If you " + buy_sell + " this future contract, you commit to " + trader_obligation.toLowerCase() + "ing ";
                         tooltip += Number(share.volume).toFixed(2) + " shares in " + share.athlete.name + " for ";
                         tooltip += Number(future.strike_price / share.volume).toFixed(2) + " per share at " + d.toLocaleString();
-                        
-                        
-                        
+
                         row += '<td>' + Number(share.volume).toFixed(2) + '</td>';
                         row += '<td>' + Number(future.strike_price / share.volume).toFixed(2) + '</td>';
                         row += '<td>' + d.toLocaleString() + '</td>';
                         row += '<td>' + Number(trade.price).toFixed(2) + '</td>';
+
+                        if (is_option) {
+                            row += '<td>' + format_investor_display(response.investor, future.option_holder) + '</td>';
+                        }
                     }
 
-                    
+
                     // seller
                     row += '<td>' + format_investor_display(response.investor, other_party) + '</td>';
 
@@ -388,11 +366,14 @@
                     row += '<td>' + actions + '</td>';
                     // row = '<tr data-trade="' + trade.id + '" data-toggle="tooltip" data-placement="left" title="' + tooltip + '">' + row + '</tr>';
                     row = '<tr ' + make_trade_row_attrs(trade) + 'data-toggle="tooltip" data-placement="left" title="' + tooltip + '">' + row + '</tr>';
-                    
-                    
+
+                    if (is_share) {
+                        $("table[data-asset=" + asset + "]." + buy_sell + " tbody").append(row);    
+                    } else {
                     $("table[data-asset=" + asset + "].buy tbody").append(row);
+                    }
                     // $("table[data-asset=" + asset + "]." + buy_sell + " tbody").append('<tr><td colspan=9>' + JSON.stringify(trade) + '</td></tr>');
-                    
+
                 });
 
                 var none_exist = `<tr><td colspan=5>No trades found</td></tr>`;

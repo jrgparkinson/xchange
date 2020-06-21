@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'import_export',
     'background_task',
     'admin_reorder',
+    'rest_framework',
     # 'django.contrib.sites',
 ]
 
@@ -220,3 +221,9 @@ ADMIN_REORDER = (
 # Set > 0 to determine number of seconds after a future trade is done that the
 # future is settled (for testing purposes)
 TESTING_FUTURES_TIMING = 0
+
+#REST
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10
+}

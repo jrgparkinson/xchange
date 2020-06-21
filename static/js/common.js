@@ -22,6 +22,20 @@ function format_investor_display(current_inv, inv) {
     }
 }
 
+function remove_row(tr) {
+    var myTable = tr.parent('tbody').parent('table'); //.DataTable();
+    if ($.fn.DataTable.isDataTable(myTable.attr('id'))) {
+        console.log("Remove datatable row");
+        // console.log(row);
+        var row = myTable.row(tr);
+
+        row.remove().draw();
+    } else {
+        console.log("Remove normal table row");
+        tr.remove();
+    }
+}
+
 function format_athlete(athlete) {
     return '<span class="badgeContainer"><a href="' + DEPLOY_URL + 'athlete/' + athlete.id + '" class="badge badge-danger">' + athlete.name + '</a></span>';
 }
@@ -30,7 +44,7 @@ function format_asset(asset, current_inv) {
         // this is a share
         return 'Share (' + format_athlete(asset.athlete) + ', ' + Number(asset.volume).toFixed(2) + ')';
     } else if (asset.strike_price) {
-        
+
         var x = "";
         if (asset.current_option) {
             // option
@@ -38,19 +52,19 @@ function format_asset(asset, current_inv) {
         } else {
             x = "Future:<br>";
         }
-        
+
         var d = new Date(asset.strike_date);
 
-        var underlying = "(" + format_athlete(asset.underlying.athlete) +", "+ Number(asset.underlying.volume).toFixed(2) + ')';
-        
+        var underlying = "(" + format_athlete(asset.underlying.athlete) + ", " + Number(asset.underlying.volume).toFixed(2) + ')';
+
         var obl = "";
         if (asset.buyer) {
             obl = format_investor_display("", asset.buyer) + " to buy";
         } else {
             obl = format_investor_display("", asset.seller) + " to sell";
         }
-        x += obl + ": " + underlying; 
-        x += "<br>Strike price: " + asset.strike_price+"<br>Strike date: " + d.toLocaleString();
+        x += obl + ": " + underlying;
+        x += "<br>Strike price: " + asset.strike_price + "<br>Strike date: " + d.toLocaleString();
         return x;
     } else {
         return "Unknown asset";
@@ -68,8 +82,8 @@ function get_actions(trade, trade_type) {
     var closeAction = '<button type="button" class="btn btn-danger" onclick="actionTrade(' + trade.id + ', \'cancel\')">Cancel</button>';
     // var clas = trade_type.includes("ell") ? "success" : "info";
     var clas = "success";
-    var acceptAction = ' <button type="button" class="btn btn-' + clas + '" onclick="actionTrade(' + trade.id + ', \'accept\')">' + capitalizeFirstLetter(trade_type) +'</button>';
-  
+    var acceptAction = ' <button type="button" class="btn btn-' + clas + '" onclick="actionTrade(' + trade.id + ', \'accept\')">' + capitalizeFirstLetter(trade_type) + '</button>';
+
     var actions = "";
     if (trade.can_close) {
         actions += closeAction;
@@ -124,7 +138,7 @@ function defaultChartOptions(ylab) {
                     autoSkip: true,
                     maxTicksLimit: 10,
                 },
-                
+
                 scaleLabel: {
                     display: true,
                     labelString: "Time"
@@ -168,8 +182,8 @@ function defaultChartOptions(ylab) {
 
 function updateZoom() {
     var zoom = '';
-    if($("#xzoom").prop('checked')) { zoom += 'x'; }
-    if($("#yzoom").prop('checked')) { zoom += 'y'; }
+    if ($("#xzoom").prop('checked')) { zoom += 'x'; }
+    if ($("#yzoom").prop('checked')) { zoom += 'y'; }
     console.log("zoom = " + zoom);
     chart.options.plugins.zoom.zoom.mode = zoom;
     chart.update();
@@ -181,16 +195,16 @@ function successNotif(message) {
     $("#successNotifMsg").text(message);
     $('#successNotif').toast('show');
     // hide after 5 seconds
-    setTimeout(function() { $('#successNotif').toast('hide'); }, 5000);
+    setTimeout(function () { $('#successNotif').toast('hide'); }, 5000);
 }
-$(document).ready(function() {
+$(document).ready(function () {
     $("#datatables_crazyfix").remove();
 
     // console.log("Toast:");
     // console.log($(".toast"));
     $('.toast').toast('hide');
 
-    
+
     // $.toaster({ settings : {'timeout': 500} });
     // $('.toast').css('color', 'red');
 });

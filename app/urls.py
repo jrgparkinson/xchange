@@ -1,9 +1,27 @@
-from django.urls import path
+from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from django.contrib import admin
 
 from . import views, requests
 from app.forms import UserLoginForm
+from rest_framework import routers
+from app import views_rest
+
+# REST
+# router = routers.DefaultRouter()
+# # router.register(r'trades', views_rest.TradeViewSet)
+# # router.register(r'trades', views_rest.TradeList)
+# router.register(r'assets', views_rest.AssetViewSet)
+# router.register(r'investors', views_rest.InvestorViewSet)
+# router.register(r'entities', views_rest.EntityViewSet)
+# router.register(r'banks', views_rest.BankViewSet)
+# router.register(r'athletes', views_rest.AthleteViewSet)
+# router.register(r'shares', views_rest.ShareViewSet)
+# router.register(r'futures', views_rest.FutureViewSet)
+# router.register(r'options', views_rest.OptionViewSet)
+# router.register(r'clubs', views_rest.ClubViewSet)
+# # router.register(r'groups', views_rest.GroupViewSet)
+
 
 handler404 = views.handler404
 handler500 = views.handler500
@@ -88,8 +106,23 @@ urlpatterns = [
     path("get_bank_offer/", views.get_bank_offer, name="get_bank_offer"),
     path("trade_with_bank/", views.trade_with_bank, name="trade_with_bank"),
     path("get_contract/", views.get_contract, name="get_contract"),
+
+    path("option/", views.option, name="options"),
     
     # make_loan
     # get_loans
     
+    # REST
+    # path('api/', include(router.urls)),
+    # path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    path('api/trades/', views_rest.TradeList.as_view(), name="trades-list"),
+    path('api/athletes/', views_rest.AthleteList.as_view(), name="athletes-list"),
+    path('api/athlete/<int:pk>', views_rest.Athlete.as_view(), name="athlete"),
+    path('api/entity/<int:pk>', views_rest.Entity.as_view(), name="entity"),
+    path('api/entities/', views_rest.EntityList.as_view(), name="entity-list"),
+    path('api/asset/<int:pk>', views_rest.AssetRetrieve.as_view(), name="asset"),
+    path('api/assets/', views_rest.AssetList.as_view(), name="asset-list"),
+    path('api/', views_rest.api_root),
+    
 ]
+
