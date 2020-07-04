@@ -15,6 +15,7 @@ import time
 from datetime import datetime
 import logging
 import traceback
+from rest_framework.authtoken.models import Token
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -292,7 +293,12 @@ def profile(request):
         }
     )
 
-    return render(request, "app/profile.html", {"form": form})
+    api_token = Token.objects.get_or_create(user=request.user)[0]
+
+    # api_token.save()
+    logger.info(api_token)
+
+    return render(request, "app/profile.html", {"form": form, "api_token": api_token})
 
 
 @login_required(login_url="/login/")

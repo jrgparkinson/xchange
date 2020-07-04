@@ -122,6 +122,7 @@ urlpatterns = [
     path('api/entities/', views_rest.EntityList.as_view(), name="entity-list"),
     path('api/asset/<int:pk>', views_rest.AssetRetrieve.as_view(), name="asset"),
     path('api/assets/', views_rest.AssetList.as_view(), name="asset-list"),
+    path('api/current_user', views_rest.current_user, name="current_user"),
     path('api/', views_rest.api_root),
     
 ]

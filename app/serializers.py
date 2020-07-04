@@ -1,7 +1,8 @@
 from django.contrib.auth.models import User, Group
 from app.models import *
-from rest_framework import serializers
+from rest_framework import serializers, validators
 import logging
+from app.errors import AssetNotOwned
 
 LOGGER = logging.getLogger(__name__)
 
@@ -37,7 +38,11 @@ class EntitySerializer(serializers.ModelSerializer):
 class EntityIdSerializer(serializers.ModelSerializer):
     class Meta:
         model = Entity
-        fields = ['id','name']
+        fields = ['id'] #,'name']
+
+    def to_representation(self, instance):
+        return instance.id
+        
 
 class SeasonSerializer(serializers.ModelSerializer):
     class Meta:
@@ -46,18 +51,23 @@ class SeasonSerializer(serializers.ModelSerializer):
 
 
 class ShareSerializer(serializers.ModelSerializer):
-    # athlete = AthleteSerializer(many=False)
     athlete = serializers.PrimaryKeyRelatedField(queryset=Athlete.objects.all())
+    owner = serializers.PrimaryKeyRelatedField(queryset=Entity.objects.all(), required=False, allow_null=True)
+    is_virtual = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Share
-        fields = ['id', 'asset_type', 'athlete', 'volume']
+        fields = ['id', 'asset_type', 'athlete', 'volume', 'owner', 'is_virtual']
         depth = 1
 
     def create(self, validated_data):
         LOGGER.info("Create share with: ")
         LOGGER.info(validated_data)
         share = Share(**validated_data)
+
+        # Set virtual unless we decide otherwise
+        if not 'is_virtual' in validated_data.keys():
+            share.is_virtual = True
 
         if not 'season' in validated_data.keys():
             share.season = get_current_season()
@@ -67,22 +77,41 @@ class ShareSerializer(serializers.ModelSerializer):
         return share
 
 
-
 class OptionSerializer(serializers.ModelSerializer):
-    option_holder = EntityIdSerializer()
+    option_holder = serializers.PrimaryKeyRelatedField(queryset=Entity.objects.all())
     underlying_asset = ShareSerializer()
-    seller = EntityIdSerializer()
-    buyer = EntityIdSerializer()
+    seller = EntityIdSerializer(required=False, allow_null=True)
+    buyer = EntityIdSerializer(required=False, allow_null=True)
+    owner = serializers.PrimaryKeyRelatedField(queryset=Entity.objects.all(), write_only=True)
+    owner_obligation = serializers.CharField(write_only=True)
 
     class Meta:
         model =  Option
         fields = ['id', 'asset_type', 'strike_price', 'strike_time',  'underlying_asset',
-                   'seller',  'buyer', 'option_holder', 'current_option']
+                   'seller',  'buyer', 'option_holder', 'current_option',
+                   'owner', 'owner_obligation']
         depth = 1
+        
+    
 
 class FutureSerializer(OptionSerializer):
     option_holder = None
     current_option = None
+
+    def create(self, validated_data):
+
+        future = Future(**validated_data)
+        future.save()
+        return future
+
+    # class Meta:
+    #     model =  Future
+    #     fields = ['id', 'asset_type', 'strike_price', 'strike_time',  'underlying_asset',
+    #                'seller',  'buyer',
+    #                'owner', 'owner_obligation']
+    #     depth = 1
+    #     extra_kwargs = {'owner': {'write_only': True},
+    #                     'owner_obligation': {'write_only': True}}
 
 
 class AssetSerializer(serializers.ModelSerializer):
@@ -107,21 +136,27 @@ class AssetGenericSerializer(serializers.Serializer):
 
     def to_internal_value(self, data):
         if data["type"].lower() == "share":
-            return ShareSerializer().to_internal_value(data) # .to_internal_value(data)
-        # elif data["type"].lower() == "future":
-        #     return FutureSerializer.to_internal_value(data)
-        # elif data["type"].lower() == "option":
-        #     return OptionSerializer.to_internal_value(data)
+            return ShareSerializer().to_internal_value(data)
+        elif data["type"].lower() == "future":
+            return FutureSerializer().to_internal_value(data)
+        elif data["type"].lower() == "option":
+            return OptionSerializer().to_internal_value(data)
         else:
             raise XChangeException("Unknown asset type {}".format(data["type"]))
 
     def get_serializer(data):
         LOGGER.info("get serializer with data: {}".format(data))
-        if data["type"].lower() == "share":
-            # athlete = Athlete.objects.get(pk=data["athlete"])
+        if "type" in data.keys() and data["type"].lower() == "share" or "athlete" in data.keys():
+            
+            if isinstance(data["athlete"], Athlete):
+                data["athlete"] = data["athlete"].id
             return ShareSerializer(data=data)
+        elif "owner_obligation" in data.keys() and "option_holder" in data.keys():
+            return OptionSerializer(data=data) 
+        elif "owner_obligation" in data.keys():
+            return FutureSerializer(data=data)
         else:
-            raise XChangeException("Unknown asset type {}".format(data["type"]))
+            raise XChangeException("Unknown asset type: {}".format(data))
         
 
 
@@ -132,20 +167,73 @@ class AssetSimpleSerializer(serializers.ModelSerializer):
 
 
 class TradeSerializer(serializers.ModelSerializer):
-    buyer = serializers.PrimaryKeyRelatedField(queryset=Entity.objects.all())
- #EntityIdSerializer()
-    seller = serializers.PrimaryKeyRelatedField(queryset=Entity.objects.all())
-    creator = EntityIdSerializer(read_only=True)
-    asset = AssetGenericSerializer() # AssetSimpleSerializer()
+    buyer = serializers.PrimaryKeyRelatedField(queryset=Entity.objects.all(), allow_null=True) #EntityIdSerializer()
+    seller = serializers.PrimaryKeyRelatedField(queryset=Entity.objects.all(), allow_null=True)
+    creator = serializers.PrimaryKeyRelatedField(queryset=Entity.objects.all(), allow_null=True, required=False)
+    asset = AssetGenericSerializer()
 
     def create(self, validated_data):
-        return Trade(**validated_data)
+        LOGGER.info("TradeSerializer create: " + str(validated_data))
+
+        # Create asset to trade
+        LOGGER.info(validated_data["asset"])
+        asset_serializer = AssetGenericSerializer.get_serializer(validated_data["asset"]) # (data=request.data["asset"])
+        
+        if (asset_serializer.is_valid() == False):
+            # return asset_serializer.errors
+            LOGGER.info(asset_serializer.errors)
+            return None
+            
+        asset = asset_serializer.save()
+        asset.is_virtual = True
+        asset.save()
+
+        validated_data["asset"] = asset
+
+        return self.save_with_fields_filled(validated_data)
+
+    def validate(self, attrs):
+        # TODO: need to make sure validation includes asset too, so validation errors
+        # are properly returned to the client
+        asset_serializer = AssetGenericSerializer.get_serializer(data["asset"]) # (data=request.data["asset"])
+        asset_serializer.validate()
+        if (asset_serializer.is_valid() == False):
+            return asset_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+    def save_with_fields_filled(self, validated_data):
+        trade = Trade(**validated_data)
+
+        if not 'season' in validated_data.keys():
+            trade.season = get_current_season()
+
+        trade.save()
+        return trade
+
 
     class Meta:
         model = Trade
         
         fields = ['id', 'asset', 'buyer', 'seller', 'creator', 
         'price', 'created','updated', 'status_detailed']
+
+        
+class TradeExistingAssetSerializer(TradeSerializer):
+    asset = serializers.PrimaryKeyRelatedField(queryset=Asset.objects.all())
+
+    def create(self, validated_data):
+        LOGGER.info("TradeSerializer create: " + str(validated_data))
+
+        return super().save_with_fields_filled(validated_data)
+
+        # trade = Trade(**validated_data)
+
+        # if not 'season' in validated_data.keys():
+        #     trade.season = get_current_season()
+
+        # trade.save()
+        # return trade
 
 class InvestorSerializer(serializers.ModelSerializer):
     

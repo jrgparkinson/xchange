@@ -468,6 +468,8 @@ class Entity(models.Model):
             return True
         except Bank.DoesNotExist:
             return False
+        except Exception:
+            return False
 
     def __str__(self):
         if self.is_investor():
@@ -475,7 +477,7 @@ class Entity(models.Model):
         elif self.is_bank():
             return self.bank.__str__()
         else:
-            return "Entity with capital {}".format(capital)
+            return "Unknown entity with id {}".format(self.id)
 
     # Override equality operator as a Bank with pk 2 = an Entity with pk 2
     def __eq__(self, other):
@@ -1104,7 +1106,6 @@ class Future(Contract):
 
     owner_obligation = models.CharField(max_length=1, choices=OBLIGATIONS, default=BUY)
 
-    # settled = models.BooleanField(default=False)
 
     def __str__(self):
         

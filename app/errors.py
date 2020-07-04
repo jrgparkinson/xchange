@@ -1,3 +1,11 @@
+from rest_framework.exceptions import APIException
+
+
+class AssetNotOwned(APIException):
+    status_code = 450
+    default_detail = 'An entity cannot sell an asset they do not own.'
+    default_code = 'asset_not_owned'
+
 class XChangeException(Exception):
     title = "Unknown error"
     desc = ""
