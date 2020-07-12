@@ -19,6 +19,8 @@ from django.db.models.signals import pre_save
 import logging
 from typing import List
 import json
+import decimal
+from rest_framework.exceptions import APIException
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -301,17 +303,19 @@ class Entity(models.Model):
             timestamp = current_time()
 
         # Get active contracts
-        contracts = Contract.objects.all().filter(Q(status=Contract.ACTIVE))
-        owned_contracts = []
-        for c in contracts:
-                
-            relevant_history = ContractHistory.objects.all().filter(Q(contract=c) & Q(timestamp__lte=timestamp))
-            relevant_history = relevant_history.order_by('-timestamp')
+        # contracts = Contract.objects.all().filter(Q(status=Contract.ACTIVE))
+        futures = Future.objects.all().filter(Q(status=Contract.ACTIVE) & (Q(buyer=self) | Q(seller=self)))
+        options = Option.objects.all().filter(Q(status=Contract.ACTIVE) & (Q(buyer=self) | Q(seller=self)))
+        owned_contracts = list(futures) + list(options)
+        # for c in contracts:
+                # 
+            # relevant_history = ContractHistory.objects.all().filter(Q(contract=c) & Q(timestamp__lte=timestamp))
+            # relevant_history = relevant_history.order_by('-timestamp')
 
-            if len(relevant_history) > 0:
-                most_recent = relevant_history[0]
-                if most_recent.owner == self or most_recent.other_party == self:
-                    owned_contracts.append(c)
+            # if len(relevant_history) > 0:
+            #     most_recent = relevant_history[0]
+            #     if most_recent.owner == self or most_recent.other_party == self:
+            #         owned_contracts.append(c)
 
         return owned_contracts
 
@@ -403,7 +407,7 @@ class Entity(models.Model):
         except Share.DoesNotExist:
             return None
 
-    def transfer_cash_to(self, ammount, to, reason=None):
+    def transfer_cash_to(self, ammount, to, reason):
         """ Transfer cash from this entity to another
         """
         if self.capital < ammount:
@@ -413,6 +417,7 @@ class Entity(models.Model):
                 )
             )
 
+        ammount = decimal.Decimal(ammount)
         self.capital = self.capital - ammount
         to.capital = to.capital + ammount
 
@@ -451,9 +456,9 @@ class Entity(models.Model):
                 "contracts": contracts }
 
 
-    @property
-    def name(self):
-        return self.print_name
+    # @property
+    # def name(self):
+    #     return self.print_name
 
     @property
     def to_html(self):
@@ -527,7 +532,7 @@ class Bank(Entity):
         total_buy_price = 0
 
         remaining_vol = volume
-        share_division =  0.01*total_vol
+        share_division =  decimal.Decimal(0.01)*total_vol
         while remaining_vol > 0.0:
             this_vol = min(share_division, remaining_vol)
             total_sell_price = total_sell_price + (sell_price_per_unit * this_vol)
@@ -562,11 +567,13 @@ class Investor(Entity):
     An investor is an individual who trades stuff
     """
 
+    DEFAULT = "N" # N for no preference
     LIGHT = "L"
     DARK = "D"
     OXFORD = "O"
     CAMBRIDGE = "C"
     THEMES = (
+        (DEFAULT, "Browser default"),
         (LIGHT, "Light"),
         (DARK, "Dark"),
         (OXFORD, "Oxford"),
@@ -832,13 +839,6 @@ class Asset(models.Model):
     
     """
 
-    owner = models.ForeignKey(
-        Entity,
-        related_name="%(app_label)s_%(class)s_owner",
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
-    )
     is_virtual = models.BooleanField(
         default=False
     )  # need ability to create virtual commodities for an open buy trade
@@ -856,7 +856,7 @@ class Asset(models.Model):
         else:
             logger.info("Trying to serialize unknown asset type!")
             logger.info(self)
-            return {"owner": self.owner.serialize(), "virtual": self.is_virtual}
+            return {"is_virtual": self.is_virtual}
 
     def is_share(self):
         try:
@@ -935,16 +935,21 @@ class Asset(models.Model):
         elif self.is_future():
             return self.contract.future.__str__()
         else:
-            val = "Asset owned by {}".format(self.owner)
-            if self.is_virtual:
-                val = val + " (virtual)"
-            return val
+           return "Asset. Virtual: {}".format(self.is_virtual)
 
 
 class Share(Asset):
     """
     Most common type of asset - a share in an athlete
     """
+
+    owner = models.ForeignKey(
+        Entity,
+        related_name="%(app_label)s_%(class)s_owner",
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+    )
 
     athlete = models.ForeignKey(
         Athlete,
@@ -1013,18 +1018,11 @@ class Share(Asset):
 
 
 class Contract(Asset):
-    """ A contract is a type of asset which is a contract between two parties
-    We assume that one party is the Asset.owner, and the other is "other_party" below
-    There is nothing special about being the owner vs being the other_party 
-    
-    future, options, and swaps are all contracts. They are also all assets. """
-    other_party = models.ForeignKey(
-        Entity,
-        related_name="%(app_label)s_%(class)s_other_party",
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
-    )
+    """ 
+    A contract is a type of asset which is a contract between two parties.
+
+    This is an abstract class. 
+    """
 
     UNSOLD = "U"
     ACTIVE = "A"
@@ -1041,51 +1039,29 @@ class Contract(Asset):
 
     def serialize(self):
         return {"id": self.id,
-        "owner": serialize_entity(self.owner),
-        "other_party": serialize_entity(self.other_party),
-        "pretty_print": str(self),
-        "pretty_print_long": self.long_pretty_print}
+                "status": self.status}
 
     def __str__(self):
-        return "{} contract between {} and {}".format(self.contract_type, self.owner.print_name, self.other_party.print_name)
+        return "{} contract. Status: {}".format(self.contract_type, self.status)
     
     @property
     def long_pretty_print(self):
-        asset = "unknown asset"
-        if self.is_future():
-            fut = self.future
-        asset = "{} to {} {} shares of {} for {} at {}".format(fut.owner.print_name, fut.obligation.lower(), 
-                                                        fut.underlying_asset.volume, 
-                                                        fut.underlying_asset.athlete.name, fut.strike_price, fut.strike_time)
-        text = "{} contract between {} and {}".format(self.contract_type, self.owner.print_name, self.other_party.print_name)
-        text = text + ": " + asset
-        text = text + " (current value: {:.2f})".format(self.value)
-        return text
+        raise XChangeException("Contract.long_pretty_print not implemented")
 
     @property
     def value(self):
         """ This should be overriden """
-        if self.is_future():
-            return self.future.value
-        return np.nan
+        raise XChangeException("Contract.value not implemented")
 
     @property
     def contract_type(self):
         return self.asset_type
 
     def get_obligation(self, investor):
-        if self.owner == investor:
-            return self.future.owner_obligation
-        else:
-            if self.future.owner_obligation == Future.BUY:
-                return Future.SELL
-            return Future.BUY
+        raise XChangeException("Contract.get_obligation not implemented")
 
     def get_other_party_to(self, investor):
-        if self.owner == investor:
-            return self.other_party
-        return self.owner
-
+        raise XChangeException("Contract.get_other_party_to not implemented")
 
 class Future(Contract):
     """ An agreement to buy/sell in the future at a fixed price """
@@ -1099,34 +1075,76 @@ class Future(Contract):
 
     SELL = "S"
     BUY = "B"
+    NONE = "N"
     OBLIGATIONS = (
         (BUY, "Buy"),
         (SELL, "Sell"),
+        (NONE, "None"),
     )
 
-    owner_obligation = models.CharField(max_length=1, choices=OBLIGATIONS, default=BUY)
+    # Who will buy the underlying asset
+    buyer = models.ForeignKey(
+        Entity,
+        related_name="%(app_label)s_%(class)s_buyer",
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+    )
 
+    # Who will sell the underlying asset
+    seller = models.ForeignKey(
+        Entity,
+        related_name="%(app_label)s_%(class)s_seller",
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+    )
 
     def __str__(self):
-        
-        return "Future: {} to {} ({}, {}) from/to {} for {} at {}".format(self.owner,self.obligation, self.underlying_asset.athlete.name,
-        self.underlying_asset.volume, self.other_party, self.strike_price, self.strike_time)
+        return "Future: {} to buy ({}, {}) from {} for {} at {}".format(self.buyer,
+        self.underlying_asset.athlete.name,
+        self.underlying_asset.volume, self.seller, self.strike_price, self.strike_time)
 
     def serialize(self):
         s = {"id": self.pk,
             "underlying": self.underlying_asset.serialize(),
             "strike_price": self.strike_price,
             "strike_date": self.strike_time,
-            "owner_obligation": self.obligation,
-            "owner": serialize_entity(self.owner),
             "status": self.status,
             "buyer": serialize_entity(self.buyer),
             "seller": serialize_entity(self.seller),
-            "other_party": serialize_entity(self.other_party),
             "type": "Future",
         }
 
         return s
+
+    def get_other_party_to(self, investor):
+        if self.buyer == investor:
+            return self.seller
+        elif self.seller == investor:
+            return self.buyer
+        else:
+            raise XChangeException("Investor not involved in contract")
+
+
+    def get_obligation(self, investor):
+        if self.buyer == investor:
+            return Future.BUY
+        elif self.seller == investor:
+            return Future.SELL
+        else:
+            return Future.NONE
+            # raise XChangeException("Investor not involved in contract")
+
+    @property
+    def long_pretty_print(self):
+        asset = "{} to buy {} shares of {} for {} at {}".format(self.buyer.print_name, 
+                                                        self.underlying_asset.volume, 
+                                                        self.underlying_asset.athlete.name, 
+                                                        self.strike_price, self.strike_time)
+        text = "Futures contract: " + asset
+        text = text + " (current value: {:.2f})".format(self.value)
+        return text
 
     @property
     def strike_price_per_volume(self):
@@ -1142,33 +1160,7 @@ class Future(Contract):
 
         logging.info("Current price: {} ({} per share, vol={}) for future id: {}".format(current_price, current_price_per_share, self.underlying_asset.volume, self.id))
         return current_price - float(self.strike_price)
-
-    @property
-    def obligation(self):
-        dictionary = dict(self.OBLIGATIONS)
-        try:
-            v = dictionary[self.owner_obligation]
-        except KeyError:
-            logger.warning("owner obligation: {} doesn't match expected values for future id: {}".format(self.owner_obligation, self.id))
-            v = self.owner_obligation
-
-        return v
-        # return dict(self.OBLIGATIONS)[self.owner_obligation]
-
-    @property
-    def seller(self):
-        """ Who will sell the underlying asset """
-        if self.get_obligation(self.owner) == self.SELL:
-            return self.owner
-        else:
-            return self.other_party
-        
-
-    @property
-    def buyer(self):
-        """ Who will buy the underlying asset """
-        return self.get_other_party_to(self.seller)
-
+       
     def execute(self):
         """ Called when the strike date is reached """
 
@@ -1190,23 +1182,17 @@ class Future(Contract):
         # If we didn't find anything
         return None
 
-@receiver(pre_save, sender=Future)
-def tidy_future(sender, instance: Future, **kwargs):
-    if instance.owner_obligation in ("Sell", "sell"):
-        instance.owner_obligation = Future.SELL
-    elif instance.owner_obligation in ("Buy", "buy"):
-        instance.owner_obligation = Future.BUY
 
 class ContractHistory(models.Model):
     """ To keep track of who was engaged in a contract at some point in time 
     Created once a futures contract is traded, and updated whenver it is traded again """
     contract = models.ForeignKey(Contract, on_delete=models.CASCADE)
-    owner = models.ForeignKey(
+    party_a = models.ForeignKey(
         Entity,
         related_name="%(app_label)s_%(class)s_owner",
         on_delete=models.CASCADE,
     )
-    other_party = models.ForeignKey(
+    party_b = models.ForeignKey(
         Entity,
         related_name="%(app_label)s_%(class)s_other_party",
         on_delete=models.CASCADE,
@@ -1214,7 +1200,8 @@ class ContractHistory(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return "{} contract between {} and {} ({})".format(self.contract.contract_type, self.owner.print_name, self.other_party.print_name, self.timestamp)
+        return "{} contract between {} and {} ({})".format(self.contract.contract_type, 
+               self.party_a.print_name, self.party_b.print_name, self.timestamp)
 
 
 class Option(Future):
@@ -1257,35 +1244,29 @@ def settle_future_now(future: Future):
         logging.info("Future not active, cannot be settled")
         return
 
-    if future.is_option() and not future.current_option:
-        logging.info("Future option is to not transfer assets")
+    if future.is_option() and not future.option.current_option:
+        logging.info("Option is to not transfer assets")
         future.status = Contract.SETTLED
         future.save()
         return
 
+    if not (future.seller and future.buyer):
+        raise XChangeException("Future cannot be settled - does not have buyer and seller")
+
     # Now we try and transfer the underlying asset
     # What to do if one party doesn't have the shares or cash to fulfill deal?
     # Abort - one or both parties default, and owe a debt of the 2*future value
-    if future.owner_obligation == Future.SELL:
-        seller = future.owner
-        buyer = future.other_party
-    else:
-        seller = future.other_party
-        buyer = future.owner
 
-    seller_has_shares =  seller.can_sell_asset(future.underlying_asset)
-    buyer_has_cash = buyer.capital >= future.strike_price
+    seller_has_shares =  future.seller.can_sell_asset(future.underlying_asset)
+    buyer_has_cash = future.buyer.capital >= future.strike_price
 
     if seller_has_shares and buyer_has_cash:
         
         # Do the transfer by creating and immediately accepting a share trade
         vol = future.underlying_asset.volume
-        t = Trade.make_share_trade(future.underlying_asset.athlete, vol, seller, future.strike_price, seller, buyer)
-        t.accept_trade(action_by=buyer, skip_notif=True)
-
-        # share = seller.get_share(future.underlying_asset)
-        # share.transfer(to=buyer, vol=vol)
-        # buyer.transfer_cash_to(ammount=future.strike_price, to=seller, reason="Future trade: " + str(future))
+        t = Trade.make_share_trade(future.underlying_asset.athlete, vol, future.seller, 
+                                    future.strike_price, future.seller, future.buyer)
+        t.accept_trade(action_by=future.buyer, skip_notif=True)
 
         future.status = Contract.SETTLED
         future.save()
@@ -1294,15 +1275,17 @@ def settle_future_now(future: Future):
         common = "{:.2f} shares in {} for {:.2f} per share".format(vol, 
         future.underlying_asset.athlete.name, future.strike_price/vol)
         
-        Notification.send_notification(title="Future contract settled", description="You bought " + common, entity=buyer)
-        Notification.send_notification(title="Future contract settled", description="You sold" + common, entity=seller)
+        Notification.send_notification(title="Future contract settled", 
+                                        description="You bought " + common, entity=future.buyer)
+        Notification.send_notification(title="Future contract settled", 
+                                        description="You sold" + common, entity=future.seller)
         
     else:
 
         logger.info(f"Seller has shares: {seller_has_shares}, buyer cash: {buyer_has_cash}")
-        seller_shares = seller.shares_in_athlete(future.underlying_asset.share.athlete)
+        seller_shares = future.seller.shares_in_athlete(future.underlying_asset.share.athlete)
         seller_vol = seller_shares.volume if seller_shares else 0
-        logger.info(f"Seller ({seller}) shares: {seller_shares}")
+        logger.info(f"Seller ({future.seller}) shares: {seller_shares}")
 
         # if neither party can fulfill obligation, contract is void
         if not seller_has_shares and not buyer_has_cash:
@@ -1322,20 +1305,20 @@ def settle_future_now(future: Future):
             defaulter = None # type: Entity
             non_defaulter = None # type: Entity
             if seller_has_shares and not buyer_has_cash:
-                defaulter = buyer
-                non_defaulter = seller
+                defaulter = future.buyer
+                non_defaulter = future.seller
             else:
-                defaulter = seller
-                non_defaulter = buyer
+                defaulter = future.seller
+                non_defaulter = future.buyer
 
             # contract value is athlete value - strike price
             # so if the value of the contract is positive, the buyer is getting a good deal
             # and if it is negative, the seller is getting a good deal
-            if (val > 0 and defaulter == buyer) or (val < 0 and defaulter==seller):
+            if (val > 0 and defaulter == future.buyer) or (val < 0 and defaulter==future.seller):
                 # here, the defaulter was due to benefit so we should do nothing
                 future.status = Contract.VOID
 
-                if defaulter == buyer:
+                if defaulter == future.buyer:
                     desc = "Future contract between {} and {} for {} void as buyer cannot fulfill obligation but was due to benefit".format(buyer, seller, common)
                 else:
                     desc = "Future contract between {} and {} for {} void as seller cannot fulfill obligation but was due to benefit".format(buyer, seller, common)
@@ -1344,22 +1327,22 @@ def settle_future_now(future: Future):
                 Notification.send_notification(title="Future contract void", description=desc, entity=seller)
 
             else:
-                val_owed = np.round(val*1.5, 2)
+                val_owed = decimal.Decimal(np.round(val*1.5, 2))
 
-                val_payable = defaulter.Capital
+                val_payable = defaulter.capital
                 debt = val_owed - val_payable
 
-                defaulter.transfer_cash_to(val_payable, non_defaulter)
+                defaulter.transfer_cash_to(val_payable, non_defaulter, reason="Partial fulfilment of contract")
 
                 debt_desc = ""
                 if debt > 0:
                     bank = get_bank()
-                    bank.transfer_cash_to(debt, non_defaulter)
+                    bank.transfer_cash_to(debt, non_defaulter, reason="Bank payment of debt")
 
                     debt = Debt(ammount=debt, owed_by=defaulter, owed_to=bank)
                     debt.save()
 
-                    debt_desc = " You now owe a debt of {} to the bank".format(debt)
+                    debt_desc = " You now owe a debt of {} to the bank".format(debt.ammount)
 
                 Notification.send_notification(title="Future contract settled", 
                 description="The other party defaulted, so you were awarded 1.5x the value of the contract", 
@@ -1542,7 +1525,6 @@ class Trade(models.Model):
             "created": self.created,
             "updated": self.updated,
             "status": dict(self.STATUS_CHOICES)[self.status],
-            "decision_dt": self.decision_dt,
         }
 
         if self.buyer:
@@ -1584,7 +1566,7 @@ class Trade(models.Model):
     @staticmethod
     def make_option_trade(athlete: Athlete, volume: float, creator: Entity, price: float, seller: Entity, 
                         buyer: Entity, strike_date: datetime,  strike_price: float, 
-                        owner_obligation: str, option_holder: Entity):
+                        option_holder: Entity):
         Trade.check_share_trade_possible(buyer, seller, creator, price, volume, athlete)
 
         virtual_share = Share(
@@ -1593,7 +1575,7 @@ class Trade(models.Model):
         virtual_share.save()
 
         option = Option(underlying_asset=virtual_share, strike_time=strike_date, strike_price=strike_price, 
-        season=get_current_season(), owner_obligation=owner_obligation, owner=buyer, other_party=seller,
+        season=get_current_season(), buyer=buyer, seller=seller, 
          option_holder=option_holder)
 
         option.save()
@@ -1604,7 +1586,7 @@ class Trade(models.Model):
 
     @staticmethod
     def make_future_trade(athlete, volume, creator, price, seller, buyer,
-                          strike_date, strike_price, owner_obligation):
+                          strike_date, strike_price):
         Trade.check_share_trade_possible(buyer, seller, creator, price, volume, athlete)
 
         virtual_share = Share(
@@ -1613,7 +1595,7 @@ class Trade(models.Model):
         virtual_share.save()
 
         future = Future(underlying_asset=virtual_share, strike_time=strike_date, strike_price=strike_price, 
-        season=get_current_season(), owner_obligation=owner_obligation, owner=buyer, other_party=seller)
+        season=get_current_season(), buyer=buyer, seller=seller)
         future.save()
         
         trade = Trade.make_trade(asset=future, creator=creator, price=price, seller=seller, buyer=buyer)
@@ -1712,6 +1694,7 @@ class Trade(models.Model):
             other_party = self.buyer
 
         # Now do asset specfic checks and action the trade
+        transaction_reason = "Unknown"
         if self.asset.is_share():
 
             if not self.seller.can_sell_asset(self.asset):
@@ -1732,6 +1715,8 @@ class Trade(models.Model):
             if notify_both:
                 Notification.send_notification(title="Trade accepted", description="{} accepted the trade for {}".format(other_party, common), entity=action_by)
 
+            transaction_reason = "Share trade: " + str(self)
+
         elif self.asset.is_future() or self.asset.is_option():
             # Only one check to perform - can purchaser of contract pay the trade price?
             # This is already done.
@@ -1740,49 +1725,47 @@ class Trade(models.Model):
             future = self.asset.contract.future
 
             # 1) Confirm contract
-            # The buyer replaces the seller's position
-            if self.seller == self.asset.owner:
-                # If the owner was the seller, the buyer becomes the owner
-                self.asset.owner = self.buyer
-                contract.other_party = self.seller
-                future.owner = self.buyer
-                future.other_party = self.seller
-            
-            elif self.seller == self.asset.contract.other_party:
-                contract.other_party = self.buyer
-                self.asset.owner = self.seller  
+            # Either there is currently an open spot, in which case the buyer takes that spot
+            # Or one of the two involved parties is selling
+            # their position (as either the future buyer or seller) to someone else.
+            # The trade buyer replaces the trade sellers position
 
-                future.owner = self.seller
-                future.other_party = self.buyer     
-
+            if future.seller and future.buyer:
+                if self.seller == future.seller:
+                    future.seller = self.buyer
+                elif self.seller == future.buyer:
+                    future.buyer = self.buyer   
+                else:
+                    # This should never happen!
+                    raise XChangeException(f"Contract seller ({self.seller}) was not involved in the contract (between {future.seller} and {future.buyer})!")
+            elif future.seller is None:
+                    future.seller = action_by
+            elif future.buyer is None:
+                    future.buyer = action_by
             else:
-                # This should never happen!
-                raise XChangeException(f"Contract seller ({self.seller}) was not involved in the contract (between {self.asset.owner} and {future.other_party})!")
+                raise XChangeException("This should never happen")
+
 
             if self.asset.is_option():
                 # sort out the option holder
                 # if option holder is involved in option, all is good
                 opt = future.option
-                if opt.option_holder in (future.owner, future.other_party):
+                if opt.option_holder in (future.buyer, future.seller):
                     pass
                 else:
                     # otherwise, we need to find the holder
                     # it must be the new party into the contract?
                     opt.option_holder = action_by
             
-            # logger.info("Future:")
-            # logger.info(future.serialize())
-            logger.info(f"Seller: {self.seller}, buyer: {self.buyer}")
-            logger.info(f"Asset owner: {self.asset.owner}, future owner: {self.asset.contract.owner}")
-            logger.info(f"Future buyer: {future.buyer}, seller: {future.seller}")
-
             if future.seller is None or future.buyer is None:
-                raise XChangeException(f"Future/option does not have buyer ({future.buyer}) and/or seller ({future.seller})")
+                raise XChangeException(f"Future/option does not have buyer ({future.buyer}) and/or seller ({future.seller}). Action by: {action_by}")
 
             if future.seller == future.buyer:
                 raise XChangeException(f"The future/option buyer ({future.buyer}) cannot be the same as the future seller ({future.seller})")
 
-            opt.save()
+            if self.asset.is_option():
+                opt.save()
+                
             contract.status = Contract.ACTIVE
             future.save()
             self.asset.contract.save()
@@ -1793,6 +1776,8 @@ class Trade(models.Model):
             # For testing, just schedule 5 seconds in the future
             if settings.TESTING_FUTURES_TIMING > 0:
                 schedule = settings.TESTING_FUTURES_TIMING
+                #  self.asset.contract.future.strike_time = datetime.now() +  timedelta(seconds=settings.TESTING_FUTURES_TIMING)
+                #  self.asset.contract.future.save()
             else:
                 schedule = self.asset.contract.future.strike_time
             settle_future(self.asset.contract.future.pk, schedule=schedule)
@@ -1805,15 +1790,15 @@ class Trade(models.Model):
             else:
                 sell_string = f"{fut.buyer} to buy"
             common = "Future: ({} {} shares in {} for {}). Trade price: {}".format(sell_string, fut.underlying_asset.volume, fut.underlying_asset.athlete.name, fut.strike_price, self.price)
-            Notification.send_notification(title="Trade accepted", description="{} accepted the trade for asset: {}".format(action_by, common), entity=other_party)
+            Notification.send_notification(title="Trade accepted", description="{} accepted the trade for contract: {}".format(action_by, common), entity=other_party)
             
-          
+            transaction_reason = "Entered contract: " + common
         else:
             logger.info("Unable to complete trade for {}".format(self.asset))
             return
 
         b = self.buyer
-        b.transfer_cash_to(ammount=self.price, to=self.seller, reason="Share trade: " + str(self))
+        b.transfer_cash_to(ammount=self.price, to=self.seller, reason=transaction_reason)
 
         self.seller.save()
         self.buyer.save()
@@ -1981,20 +1966,20 @@ def update_on_trade_acceptance(sender, instance, **kwargs):
 
             if instance.asset.is_contract():
 
-                if instance.asset.is_future():
-                    other_party = instance.asset.contract.future.other_party
+                party_a = None
+                party_b = None
+
+                if instance.asset.is_future() or instance.asset.is_option():
+                    party_a = instance.asset.contract.future.buyer
+                    party_b = instance.asset.contract.future.buyer
                     
-                elif instance.asset.is_option():
-                    other_party = instance.asset.contract.future.other_party
                 elif instance.asset.is_swap():
-                    other_party = instance.asset.swap.other_party
+                    pass
 
-                if other_party is None:
-                    raise XChangeException(f"Other party ({other_party}) must exist")
+                if party_a is None or party_b is None:
+                    raise XChangeException(f"Party A ({party_a}) and party b ({party_b}) must exist")
 
-
-                c = ContractHistory(owner=instance.asset.owner, 
-                other_party=instance.asset.contract.other_party, contract=instance.asset.contract)
+                c = ContractHistory(party_a=party_a, party_b=party_b, contract=instance.asset.contract)
                 c.save()
             
 @receiver(post_save, sender=Trade)
@@ -2204,6 +2189,29 @@ class Debt(models.Model):
         }
 
 
+@receiver(pre_save, sender=Debt)
+def update_debt(sender, instance: Debt, **kwargs):
+    """ Update capital of debt owed to/by rating """
+    
+    if instance.id:
+        old_debt = Debt.objects.get(pk=instance.id)
+        
+        # update capital of owed by / to
+        repayment_ammount = old_debt.ammount - instance.ammount
+
+        # Can only ever decrease debt
+        if repayment_ammount < 0:
+            raise APIException("Cannot repay a negative ammount of debt")
+
+        if instance.ammount < 0:
+            raise APIException("Cannot repay more than the debt")
+
+        # This should through exceptions if this repayment is invalid
+        instance.owed_by.transfer_cash_to(repayment_ammount, instance.owed_to, reason="Debt repayment")
+
+
+
+
 class TransactionHistory(models.Model):
     """ We should keep a track of all transactions made """
 
@@ -2319,12 +2327,7 @@ class TransactionHistory(models.Model):
 
 @receiver(pre_save, sender=TransactionHistory)
 def set_capital(sender, instance : TransactionHistory, **kwargs):
-    # if created:
-    #     bank_shares = instance.bank.get_shares_owned()
 
-    #     for share in bank_shares:
-    #         lot = Lot(athlete=share.athlete, volume=share.volume, auction=instance)
-    #         lot.save()
     instance.recipient.refresh_from_db()
     instance.sender.refresh_from_db()
 

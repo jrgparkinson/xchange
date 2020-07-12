@@ -123,6 +123,9 @@ urlpatterns = [
     path('api/asset/<int:pk>', views_rest.AssetRetrieve.as_view(), name="asset"),
     path('api/assets/', views_rest.AssetList.as_view(), name="asset-list"),
     path('api/current_user', views_rest.current_user, name="current_user"),
+    path('api/debts/', views_rest.debt_list, name='debt-list'),
+    path('api/debt/<int:pk>/', views_rest.debt_detail, name='debt-detail'),
+
     path('api/', views_rest.api_root),
     
 ]

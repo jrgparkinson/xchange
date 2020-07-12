@@ -20,26 +20,31 @@
 
 <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
     <li class="nav-item">
-        <a class="nav-link active" id="pills-transactions-tab" data-toggle="pill" href="#pills-transactions" role="tab"
-            aria-controls="pills-transactions" aria-selected="true">
+        <a class="nav-link active" id="transactions-tab-tab" data-toggle="pill" href="#transactions-tab" role="tab"
+            aria-controls="transactions-tab" aria-selected="true">
             Transactions</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link" id="pills-buy-tab" data-toggle="pill" href="#pills-buy" role="tab" 
-        aria-controls="pills-buy"
+        <a class="nav-link" id="buy-tab-tab" data-toggle="pill" href="#buy-tab" role="tab" 
+        aria-controls="buy-tab"
             aria-selected="false">
             Trade</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link" id="pills-loans-tab" data-toggle="pill" href="#pills-loans" role="tab"
-            aria-controls="pills-loans" aria-selected="false">
+        <a class="nav-link" id="loans-tab-tab" data-toggle="pill" href="#loans-tab" role="tab"
+            aria-controls="loans-tab" aria-selected="false">
             Loans</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="debts-tab-tab" data-toggle="pill" href="#debts-tab" role="tab"
+            aria-controls="debts-tab" aria-selected="false">
+            Debt</a>
     </li>
 
 </ul>
-<div class="tab-content" id="pills-tabContent">
-    <div class="tab-pane fade show active" id="pills-transactions" role="tabpanel"
-        aria-labelledby="pills-transactions-tab">
+<div class="tab-content" id="tabContent-tab">
+    <div class="tab-pane fade show active" id="transactions-tab" role="tabpanel"
+        aria-labelledby="transactions-tab-tab">
 
         <div class="card">
             <div class="card-body">
@@ -75,7 +80,7 @@
             </div>
         </div>
     </div>
-    <div class="tab-pane fade show" id="pills-buy" role="tabpanel" aria-labelledby="pills-buy-tab">
+    <div class="tab-pane fade show" id="buy-tab" role="tabpanel" aria-labelledby="buy-tab-tab">
         <div class="card">
             <div class="card-body">
 
@@ -130,7 +135,7 @@
             </div>
         </div>
     </div>
-    <div class="tab-pane fade show" id="pills-loans" role="tabpanel" aria-labelledby="pills-loans-tab">
+    <div class="tab-pane fade show" id="loans-tab" role="tabpanel" aria-labelledby="loans-tab-tab">
         <div class="card">
             <div class="card-body">
 
@@ -179,14 +184,48 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- {% for l in loans %}
-            <tr>
-                <td>{{l.lender}}</td>
-                <td>{{l.balance}}</td>
-                <td>{{l.interest_rate}}</td>
-                <td>{{l.repayment_interval}}</td>
-            </tr>
-            {% endfor %} -->
+                       
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+    </div>
+    <div class="tab-pane fade show" id="debts-tab" role="tabpanel" aria-labelledby="debts-tab-tab">
+        <div class="card">
+            <div class="card-body">
+
+                <h2>Debts</h2>
+
+                
+               
+                <table class="table" id="debts">
+                    <thead>
+                        <tr>
+                            <th scope="col">Owed to</th>
+                            <th scope="col">Ammount</th>
+                            <th scope="col">Created</th>
+                            <th scope="col">Repay ammount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for debt in debts %}
+
+                        <tr>
+                            <td>{{debt.owed_to}}</td>
+                            <td data-debt-id="{{debt.id}}" class="debtAmmount">{{debt.ammount}}</td>
+                            <td>{{debt.created}}</td>
+                            <td>
+                                
+                                    <div class="form-inline">
+                                    <input type="number" step="0.01" class="form-control repayDebt col-sm-4" 
+                                           value="0.0" data-debt-id="{{debt.id}}">
+                                    <button class='btn btn-primary repayDebt col-sm-auto' data-debt-id="{{debt.id}}">Repay</button>
+                                
+                            </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
 
@@ -237,11 +276,60 @@
         $("#volume").keyup(get_offer);
         $("button#refreshOffers").click(get_offer);
 
+        $(document).on("click", "button.repayDebt", function () {
+            var debt_id = $(this).attr("data-debt-id");
+            var repay_ammount = Number($("input.repayDebt[data-debt-id=" + debt_id + "]").val());
+            var current_debt = Number($("td.debtAmmount[data-debt-id=" + debt_id + "]").text());
+
+            console.log(repay_ammount);
+            console.log(current_debt);
+            repay_debt(debt_id, Number(current_debt - repay_ammount).toFixed(2));
+        });
+
         
         // $("#athletesShare").val()
         // $('#athletesShare').val($("#athletesShare option:first").val());
         get_offer();
+
     });
+
+    function repay_debt(debt_id, new_ammount) {
+        /*
+        Try using the API here
+        */
+
+        
+        data = {"ammount": new_ammount};
+        console.log(data);
+        var update_url = "{% url 'debt-detail' pk=12345 %}/".replace("12345/", debt_id.toString());
+        console.log(update_url);
+        $.ajax({
+            url: update_url,
+            type: 'PATCH',
+            data: JSON.stringify(data),
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            beforeSend: function (xhr, settings) {
+                xhr.setRequestHeader("X-CSRFToken", '{{ csrf_token }}');
+            },
+            success: function (arg) {
+                //todo
+                console.log("Success");
+                console.log(arg.ammount);
+                $("td.debtAmmount[data-debt-id=" + debt_id + "]").text(arg.ammount);
+            },
+            error: function(arg) {
+                //todo
+                console.log("Failure");
+                console.log(arg.responseJSON);
+                let err = {title: "Unable to repay debt", desc: arg.responseJSON.detail};
+                display_error(err);
+            }
+        });
+
+
+
+    }
 
     function accept_bank_offer(buy_or_sell) {
 

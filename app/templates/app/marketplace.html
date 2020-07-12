@@ -10,30 +10,30 @@
 
 <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
     <li class="nav-item">
-        <a class="nav-link active" id="pills-shares-tab" data-toggle="pill" href="#pills-shares" role="tab"
-            aria-controls="pills-shares" aria-selected="true">
+        <a class="nav-link active" id="shares-tab-tab" data-toggle="pill" href="#shares-tab" role="tab"
+            aria-controls="shares-tab" aria-selected="true">
             Shares</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link" id="pills-futures-tab" data-toggle="pill" href="#pills-futures" role="tab"
-            aria-controls="pills-futures" aria-selected="false">
+        <a class="nav-link" id="futures-tab-tab" data-toggle="pill" href="#futures-tab" role="tab"
+            aria-controls="futures-tab" aria-selected="false">
             Futures</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link" id="pills-options-tab" data-toggle="pill" href="#pills-options" role="tab"
-            aria-controls="pills-options" aria-selected="false">
+        <a class="nav-link" id="options-tab-tab" data-toggle="pill" href="#options-tab" role="tab"
+            aria-controls="options-tab" aria-selected="false">
             Options</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link" id="pills-swaps-tab" data-toggle="pill" href="#pills-swaps" role="tab"
-            aria-controls="pills-swaps" aria-selected="false">
+        <a class="nav-link" id="swaps-tab-tab" data-toggle="pill" href="#swaps-tab" role="tab"
+            aria-controls="swaps-tab" aria-selected="false">
             Swaps</a>
     </li>
 
 </ul>
 
-<div class="tab-content" id="pills-tabContent">
-    <div class="tab-pane fade show active" id="pills-shares" role="tabpanel" aria-labelledby="pills-shares-tab">
+<div class="tab-content" id="tabContent-tab">
+    <div class="tab-pane fade show active" id="shares-tab" role="tabpanel" aria-labelledby="shares-tab-tab">
         <div class="row">
             <div class="col-sm-12 col-lg-6">
 
@@ -98,17 +98,17 @@
         </div>
 
     </div>
-    <div class="tab-pane fade show " id="pills-futures" role="tabpanel" aria-labelledby="pills-futures-tab">
+    <div class="tab-pane fade show " id="futures-tab" role="tabpanel" aria-labelledby="futures-tab-tab">
 
         <table class="table buy" data-asset="future">
             <thead>
                 <tr>
-                    <th scope="col">Your obligation</th>
+                    <th scope="col">Your position</th>
                     <th scope="col">Athlete</th>
                     <th scope="col">Volume</th>
                     <th scope="col">Strike Price/volume</th>
                     <th scope="col">Strike time</th>
-                    <th scope="col">Trade price</th>
+                    <th scope="col">Price to enter contract</th>
                     <th scope="col">Seller</th>
                     <th scope="col"></th>
                 </tr>
@@ -122,7 +122,7 @@
 
 
     </div>
-    <div class="tab-pane fade show " id="pills-options" role="tabpanel" aria-labelledby="pills-options-tab">
+    <div class="tab-pane fade show " id="options-tab" role="tabpanel" aria-labelledby="options-tab-tab">
         <table class="table buy" data-asset="option">
             <thead>
                 <tr>
@@ -146,7 +146,7 @@
 
 
     </div>
-    <div class="tab-pane fade show " id="pills-swaps" role="tabpanel" aria-labelledby="pills-swaps-tab">
+    <div class="tab-pane fade show " id="swaps-tab" role="tabpanel" aria-labelledby="swaps-tab-tab">
         <table class="table buy" data-asset="swap">
             <thead>
                 <tr>
@@ -321,14 +321,32 @@
                         var trader_obligation = ""; // what will the buyer or seller be taking on? The obligation to buy or to sell?
 
 
-                        var other_ob; // what is the obligation of the other party? our obligation will then be the opposite
-                        if (future.owner && other_party.id == future.owner.id) {
-                            other_ob = future.owner_obligation;
-                        } else {
-                            other_ob = (future.owner_obligation == 'Sell') ? 'buy' : 'sell';
-                        }
+                        // var other_ob; // what is the obligation of the other party? our obligation will then be the opposite
+                        // if (future.owner && other_party.id == future.owner.id) {
+                        //     other_ob = future.owner_obligation;
+                        // } else {
+                        //     other_ob = (future.owner_obligation == 'Sell') ? 'buy' : 'sell';
+                        // }
 
-                        trader_obligation = (other_ob == 'sell') ? 'Buy' : 'Sell';
+                        // trader_obligation = (other_ob == 'sell') ? 'Buy' : 'Sell';
+                        // What is our obligation here?
+                        // First check if we're involved in the trade...
+                        if (future.seller && future.seller.id == response.investor.id) 
+                        {
+                            trader_obligation = "Sell";
+                        }
+                        else if (future.buyer && future.buyer.id == response.investor.id)
+                        {
+                            trader_obligation = "Buy";
+                        }
+                        // we're not involved in the trade, so we're the opposite of whoever is involved
+                        else if (future.seller) {
+                            trader_obligation = "Buy";
+                        } else {
+                            trader_obligation = "Sell";
+                        }
+                        // trader_obligation = "Unknown - TODO";
+                        
 
                         row += '<td>' + trader_obligation + '</td>';
                         row += '<td>' + format_athlete(share.athlete) + '</td>';

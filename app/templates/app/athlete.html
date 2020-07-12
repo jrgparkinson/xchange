@@ -43,28 +43,28 @@
 
 <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
     <li class="nav-item">
-      <a class="nav-link active" id="pills-value-tab" data-toggle="pill" 
-      href="#pills-value" role="tab" aria-controls="pills-value" aria-selected="true">
+      <a class="nav-link active" id="value-tab-tab" data-toggle="pill" 
+      href="#value-tab" role="tab" aria-controls="value-tab" aria-selected="true">
          Value</a>
     </li>
     <li class="nav-item">
-      <a class="nav-link" id="pills-active-tab" data-toggle="pill" 
-      href="#pills-active" role="tab" aria-controls="pills-active" aria-selected="false">
+      <a class="nav-link" id="active-tab-tab" data-toggle="pill" 
+      href="#active-tab" role="tab" aria-controls="active-tab" aria-selected="false">
           Active trades</a>
     </li>
     <li class="nav-item">
-      <a class="nav-link" id="pills-results-tab" data-toggle="pill" 
-      href="#pills-results" role="tab" aria-controls="pills-results" aria-selected="false">
+      <a class="nav-link" id="results-tab-tab" data-toggle="pill" 
+      href="#results-tab" role="tab" aria-controls="results-tab" aria-selected="false">
       Results and dividends</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link" id="pills-history-tab" data-toggle="pill" 
-        href="#pills-history" role="tab" aria-controls="pills-history" aria-selected="false">
+        <a class="nav-link" id="history-tab-tab" data-toggle="pill" 
+        href="#history-tab" role="tab" aria-controls="history-tab" aria-selected="false">
         Trade history</a>
       </li>
   </ul>
-  <div class="tab-content" id="pills-tabContent">
-    <div class="tab-pane fade show active" id="pills-value" role="tabpanel" aria-labelledby="pills-value-tab">
+  <div class="tab-content" id="tabContent-tab">
+    <div class="tab-pane fade show active" id="value-tab" role="tabpanel" aria-labelledby="value-tab-tab">
         <div class="card">
             <div class="card-body"  > <!--style="height: 500px;" -->
 
@@ -98,7 +98,7 @@
         </div>
 
     </div>
-    <div class="tab-pane fade" id="pills-active" role="tabpanel" aria-labelledby="pills-active-tab">
+    <div class="tab-pane fade" id="active-tab" role="tabpanel" aria-labelledby="active-tab-tab">
         <div class="card">
             <div class="card-body">
 
@@ -128,7 +128,7 @@
         </div>
 
     </div>
-    <div class="tab-pane fade" id="pills-results" role="tabpanel" aria-labelledby="pills-results-tab">
+    <div class="tab-pane fade" id="results-tab" role="tabpanel" aria-labelledby="results-tab-tab">
         <div class="card">
             <div class="card-body">
 
@@ -164,7 +164,7 @@
         </div>
 
     </div>
-    <div class="tab-pane fade" id="pills-history" role="tabpanel" aria-labelledby="pills-history-tab">
+    <div class="tab-pane fade" id="history-tab" role="tabpanel" aria-labelledby="history-tab-tab">
         <div class="card">
             <div class="card-body">
 
@@ -253,9 +253,10 @@
                 var trade_dataset = {
                     label: "Trading price per volume",
                     borderColor: "blue",
+                    backgroundColor: "rgba(0, 0, 255, 0.2)",
                     data: trade_data_vals,
-                    fill: false,
-                    lineTension: 0,
+                    fill: true,
+                    lineTension: 0.05,
                 };
 
                 var data = { datasets: [trade_dataset] };
@@ -344,10 +345,5 @@
 </script>
 
 
-// <script>
-//     jQuery(function($){
-//         $("#datatables_crazyfix").remove();
-//     });
-// </script>
 
 {% endblock %}

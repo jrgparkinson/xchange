@@ -196,10 +196,13 @@ def bank(request):
     for l in loan_offers:
         l.investor_interest_rate = l.compute_interest_rate(investor)*100.0
 
+    debts =  Debt.objects.all().filter(Q(owed_by=investor))
+
     context = {"loans": [], "shares_to_sell": [],
     "transactions": transactions,
     "loans": loans,
-    "loan_offers": loan_offers}
+    "loan_offers": loan_offers,
+    "debts": debts}
     return render(request, "app/bank.html", context)
 
 @login_required(login_url="/login/")
@@ -322,14 +325,14 @@ def view_investor(request, investor_id):
     for c in contracts_held: # type: Contract
 
         if c.is_future() or c.is_option():
-            obl = c.get_obligation(investor) # . dict(Future.OBLIGATIONS)[c.get_obligation(investor)
+            obl = c.future.get_obligation(investor) 
             if obl in dict(Future.OBLIGATIONS).keys():
                 obl = dict(Future.OBLIGATIONS)[obl]
             else:
                 obl = obl.capitalize()
 
             c.investor_obligation = obl
-        c.other_party_to_investor = c.get_other_party_to(investor)
+        c.other_party_to_investor = c.future.get_other_party_to(investor)
 
 
     debts = Debt.objects.all().filter(Q(owed_by=investor) & Q(ammount__gt=0))
@@ -748,8 +751,6 @@ def create_trade(request):
 
     logger.info(request.GET)
 
-    # TODO: validation
-
     try:
 
         commodity = request.GET["commodityEntry"]
@@ -776,7 +777,6 @@ def create_trade(request):
             buyer = investor
             seller = other
 
-        # share_match = re.match(r"([\w ]+)/([\.\d]+)", commodity)
         if asset_type == 'share':
             ath_id = request.GET["data-athlete"] # share_match.group(1)
             volume = float(request.GET["data-volume"]) # float(share_match.group(2))
@@ -786,11 +786,8 @@ def create_trade(request):
                 athlete, volume, investor, price, seller, buyer
             )
 
-            # try:
+            
             match_partial_trades(schedule=timedelta(milliseconds=1))
-            # except Exception as e:
-            #     # Should not return exception to user - it's nothing to do with them
-            #     logger.warning(traceback.print_tb(e.__traceback__))
 
         elif asset_type == "future" or asset_type == "option":
             ath_id = request.GET["data-athlete"] 
@@ -802,25 +799,25 @@ def create_trade(request):
 
             # Currently we know what the person creating the future/option wants to do
             # need to convert to what the 'owner' - person who will buy - will do
-            if buyer == investor:
-                owner_obligation = investor_obligation
+            if investor_obligation.lower() in ("sell", "s"):
+                seller = investor
+                buyer = other
             else:
-                # the opposite
-                owner_obligation = "buy" if investor_obligation == "sell" else "sell"
-            
+                buyer = investor
+                seller = other
             
             if asset_type == "option":
                 option_holder = investor if request.GET['data-holder'] == 'you' else other
                 
-                # raise InvalidAsset(desc="Options not supported yet, sorry".format(commodity))
+                
                 trade = Trade.make_option_trade(athlete, volume, investor, price, seller, buyer, 
-                                                strike_date, strike_price, owner_obligation, option_holder)
+                                                strike_date, strike_price, option_holder)
 
                 
             else:
                 
                 trade = Trade.make_future_trade(athlete, volume, investor, price, seller, buyer, 
-                                                strike_date, strike_price, owner_obligation)
+                                                strike_date, strike_price)
             
         elif asset_type == "contract":
             # must be a contract we own
@@ -997,29 +994,31 @@ def get_bank_offer(request):
         data = request.GET
         response = {}
 
-        athlete_id = int(data["athlete_id"])
-        volume = float(data["volume"])
+        if "athlete_id" in data:
 
-        bank = get_bank()
-        offer = bank.get_sell_offer(athlete_id, volume)
+            athlete_id = int(data["athlete_id"])
+            volume = float(data["volume"])
 
-        athlete = Athlete.objects.get(pk=athlete_id)
-        response["trading_price_per_unit"] = float(athlete.get_value())
+            bank = get_bank()
+            offer = bank.get_sell_offer(athlete_id, volume)
 
-        bank_shares = bank.shares_in_athlete(athlete)
-        bank_vol = bank_shares.volume if bank_shares else 0.0
-        response["bank_volume"] = float(bank_vol)
+            athlete = Athlete.objects.get(pk=athlete_id)
+            response["trading_price_per_unit"] = float(athlete.get_value())
 
-        logger.info(offer)
+            bank_shares = bank.shares_in_athlete(athlete)
+            bank_vol = bank_shares.volume if bank_shares else 0.0
+            response["bank_volume"] = float(bank_vol)
 
-        if offer:
-            response["offer"] = offer.serialize()
+            logger.info(offer)
+
+            if offer:
+                response["offer"] = offer.serialize()
 
     except XChangeException as e:
         return make_error(e)
-    except Exception as e:
-        logger.warning(traceback.print_tb(e.__traceback__))
-        return JsonResponse({"error": "Unknown error"})
+    # except Exception as e:
+    #     logger.warning(traceback.print_tb(e.__traceback__))
+    #     return JsonResponse({"error": "Unknown error"})
 
     return JsonResponse(response)
 

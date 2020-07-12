@@ -82,14 +82,11 @@ class OptionSerializer(serializers.ModelSerializer):
     underlying_asset = ShareSerializer()
     seller = EntityIdSerializer(required=False, allow_null=True)
     buyer = EntityIdSerializer(required=False, allow_null=True)
-    owner = serializers.PrimaryKeyRelatedField(queryset=Entity.objects.all(), write_only=True)
-    owner_obligation = serializers.CharField(write_only=True)
 
     class Meta:
         model =  Option
         fields = ['id', 'asset_type', 'strike_price', 'strike_time',  'underlying_asset',
-                   'seller',  'buyer', 'option_holder', 'current_option',
-                   'owner', 'owner_obligation']
+                   'seller',  'buyer', 'option_holder', 'current_option']
         depth = 1
         
     
@@ -104,16 +101,7 @@ class FutureSerializer(OptionSerializer):
         future.save()
         return future
 
-    # class Meta:
-    #     model =  Future
-    #     fields = ['id', 'asset_type', 'strike_price', 'strike_time',  'underlying_asset',
-    #                'seller',  'buyer',
-    #                'owner', 'owner_obligation']
-    #     depth = 1
-    #     extra_kwargs = {'owner': {'write_only': True},
-    #                     'owner_obligation': {'write_only': True}}
-
-
+  
 class AssetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asset
@@ -151,9 +139,9 @@ class AssetGenericSerializer(serializers.Serializer):
             if isinstance(data["athlete"], Athlete):
                 data["athlete"] = data["athlete"].id
             return ShareSerializer(data=data)
-        elif "owner_obligation" in data.keys() and "option_holder" in data.keys():
+        elif "buyer" in data.keys() and "option_holder" in data.keys():
             return OptionSerializer(data=data) 
-        elif "owner_obligation" in data.keys():
+        elif "buyer" in data.keys():
             return FutureSerializer(data=data)
         else:
             raise XChangeException("Unknown asset type: {}".format(data))
@@ -198,7 +186,7 @@ class TradeSerializer(serializers.ModelSerializer):
         asset_serializer = AssetGenericSerializer.get_serializer(data["asset"]) # (data=request.data["asset"])
         asset_serializer.validate()
         if (asset_serializer.is_valid() == False):
-            return asset_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return asset_serializer.errors # , status=status.HTTP_400_BAD_REQUEST)
 
 
 
@@ -247,3 +235,10 @@ class BankSerializer(serializers.ModelSerializer):
         fields = ['id', 'name']
 
 
+class DebtSerializer(serializers.ModelSerializer):
+    owed_by = serializers.PrimaryKeyRelatedField(queryset=Entity.objects.all())
+    owed_to = serializers.PrimaryKeyRelatedField(queryset=Entity.objects.all())
+
+    class Meta:
+        model = Debt
+        fields = ('id', 'owed_by', 'owed_to', 'created', 'ammount')

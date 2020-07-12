@@ -26,6 +26,7 @@ admin.site.register(LoanOffer)
 admin.site.register(Loan)
 admin.site.register(Debt)
 admin.site.register(ShareOwnership)
+admin.site.register(Share)
 # admin.site.register(Trade)
 # admin.site.register(Asset)
 

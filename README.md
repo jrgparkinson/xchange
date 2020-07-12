@@ -2,15 +2,17 @@
 XC trading exchange
 
 To kill other webservers:
-  sudo fuser -k 8000/tcp
+```bash
+sudo fuser -k 8000/tcp
+```
 
 To start webserver: 
-```
+```bash
   python manage.py runserver
 ```
 
 To start processing tasks:
-```
+```bash
 python manage.py process_tasks
 ```
 

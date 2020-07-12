@@ -22,6 +22,8 @@ def api_root(request, format=None):
         'entities': reverse('entity-list', request=request, format=format),
         'assets': reverse('asset-list', request=request, format=format),
         'current_user': reverse('current_user', request=request, format=format),
+        'debts': reverse('debt-list', request=request, format=format),
+        # 'debt': reverse('debt-detail', request=request, format=format, args=[]),
         # 'contracts': reverse('entity-list', request=request, format=format),
     })  
 
@@ -58,20 +60,6 @@ class TradeList(generics.ListCreateAPIView):
 
         else:
             # Create asset too
-            # If option/future, translate buyer/seller into owner and owner obligation
-            if asset["type"].lower() in ("future", "option"):
-                if asset["buyer"]:
-                    owner = asset["buyer"]
-                    owner_obligation = Future.BUY
-                else:
-                    owner = asset["seller"]
-                    owner_obligation = Future.SELL
-
-                request.data["asset"]["owner"] = owner
-                request.data["asset"]["owner_obligation"] = owner_obligation
-                del request.data["asset"]["seller"]
-                del request.data["asset"]["buyer"]
-
             trade_serializer = TradeSerializer(data=request.data)
        
         
@@ -156,3 +144,40 @@ class AssetRetrieve(generics.RetrieveAPIView):
     serializer_class = AssetGenericSerializer
 
 
+
+class IsDebtOwedByOrReadOnly(permissions.BasePermission):
+     def has_object_permission(self, request, view, obj):
+        # Read permissions are allowed to any request,
+        # so we'll always allow GET, HEAD or OPTIONS requests.
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
+        # Write permissions are only allowed to the user who owes the debt
+        # LOGGER.info(obj)
+        # LOGGER.info(obj.owed_by)
+        # LOGGER.info(request.user)
+        # LOGGER.info(obj.owed_by == request.user.investor)
+        return obj.owed_by == request.user.investor
+
+class DebtViewSet(viewsets.ModelViewSet):
+    serializer_class = DebtSerializer
+    queryset = Debt.objects.all()
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly,
+                          IsDebtOwedByOrReadOnly]
+
+    
+
+
+debt_list = DebtViewSet.as_view({
+    'get': 'list',
+    'post': 'create'
+})
+
+debt_detail = DebtViewSet.as_view({
+    'get': 'retrieve',
+    'put': 'update',
+    'patch': 'partial_update',
+    # 'delete': 'destroy'
+})
+
+    

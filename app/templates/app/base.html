@@ -29,13 +29,16 @@
   <link rel="stylesheet" href="{% static 'css/bootstrap-datetimepicker.min.css' %}" />
 
   <!-- Custom styles for this template-->
-  {% if user.is_authenticated %}
+  {% if user.is_authenticated and user.investor.print_uitheme !=  "Browser default" %}
   {% with 'css/variables-'|add:user.investor.print_uitheme|add:'.css' as cssvars %}
   <link href="{% static cssvars %}" rel="stylesheet">
   {% endwith %}
 
   {% else %}
-  <link href="{% static 'css/variables-Light.css' %}" rel="stylesheet">
+  <style>
+      @import "{% static 'css/variables-Light.css' %}" screen;
+      @import "{% static 'css/variables-Dark.css' %}" screen and (prefers-color-scheme: dark);
+  </style>
   {% endif %}
   <link href="{% static 'css/sb-admin.css' %}" rel="stylesheet">
   <link href="{% static 'css/xchange.css' %}" type="text/css" rel="stylesheet">
@@ -341,15 +344,14 @@
   <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@0.7.7"></script>
 
-  <!-- <script type="text/javascript" src="{% static 'js/transition.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'js/collapse.min.js' %}"></script> -->
-
   <script type="text/javascript" src="{% static 'js/bootstrap-datetimepicker.min.js' %}"></script>
 
 
   <script type="text/javascript">
 
     function display_error(error) {
+      console.log(error);
+      console.log(error.title);
       $("#errorTitle").html(error.title);
       if (error.desc && error.desc != "") {
         $("#errorModalText").html(error.desc);
@@ -432,11 +434,25 @@
         e.stopPropagation();
       });
 
-      
 
-    }); // end document ready
+     
+
+    }); 
 
   
+       // Sort out tabs
+        // Javascript to enable link to tab
+        var url = document.location.toString();
+        if (url.match('#')) {
+            $('.nav a[href="#' + url.split('#')[1] + '"]').tab('show');
+        } 
+
+        // Change hash for page-reload
+        $('.nav a').on('shown.bs.tab', function (e) {
+            window.location.hash = e.target.hash;
+            $(window).scrollTop(0);
+        });
+      
 
 
     
@@ -497,18 +513,6 @@
     function removeNotif(id) {
 
       notifUpdate(id, 'dismissed');
-      // var el = $("li[data-notification=" + id + "]");
-      // el.remove();
-
-      // $.ajax({
-      // type: "GET",
-      // url: {% url 'set_notification_status' %},  // URL to your view that serves new info
-      // data: {"dismissed": id}
-      // }).done(function (response) {
-      //   console.log(response);
-        
-      // });
-
       
 
     }

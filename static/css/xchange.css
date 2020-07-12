@@ -336,15 +336,6 @@ tr.rejected, input.rejected {
     color: var(--fg-nav);
 }
 
-/* .dataTables_wrapper {
-    overflow-x:auto;
-} */
-
-/* 
-div.dataTables_wrapper div.row div.dataTables_filter {
-    position: sticky;
-    left: 0;
-} */
 
 #buyTable, #sellTable {
     overflow-x:auto;
@@ -424,3 +415,29 @@ i.dismissNotification {
     }
 
     }
+
+table, table.table {
+    color: var(--fg-1);
+}
+
+.modal-content {
+    background-color: var(--bg-2);
+    color: var(--fg-1);
+}
+
+.modal-body {
+    background-color: var(--bg-3);
+    border: 1px solid var(--bg-4);
+}
+
+.close {
+    color: var(--fg-1);
+}
+
+tr, thead, .table th, .table thead th, .table td {
+    border-color: var(--bg-4);
+}
+
+.form-control, select, .custom-select {
+    border-color: var(--internal-border);
+}
