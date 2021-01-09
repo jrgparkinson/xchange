@@ -548,7 +548,7 @@ class Bank(Entity):
         if total_buy_price > self.capital:
             total_buy_price = -1
 
-        logger.info("Season: {}".format(get_current_season()))
+        # logger.info("Season: {}".format(get_current_season()))
         offer = BankOffer(athlete=athlete, volume=volume, total_sell_price=total_sell_price, 
                             total_buy_price=total_buy_price, 
                             bank=self, season=get_current_season())
@@ -1543,13 +1543,14 @@ class Trade(models.Model):
     def check_share_trade_possible(buyer, seller, creator, price, volume, athlete):
         # Check this is possible!
         if buyer and creator == buyer and price > buyer.capital:
-            raise InsufficientFunds("Trade price exceeds your capital")
+            raise InsufficientFunds("Trade price exceeds potential buyer's capital")
+            
 
         if seller and creator == seller:
             s = seller.saleable_shares_in_athlete(athlete)
             if not s or s.volume < volume:
                 raise InsufficientShares(
-                    "You do not have this many shares available to sell"
+                    f"{seller} does not have this many shares available to sell"
                 )
 
 
@@ -1690,9 +1691,7 @@ class Trade(models.Model):
                 "Buyer ({}) does not have enough funds ({} < {})".format(
                     self.buyer.print_name, self.buyer.capital, self.price
                 )
-            )
-
-        
+            )     
 
         other_party = self.seller
         if self.seller == action_by:
@@ -1812,8 +1811,6 @@ class Trade(models.Model):
         self.save()
 
 
-
-
     def partially_fill_with(self, other_trade: 'Trade') -> None:
         """ 
         Partially fill this trade by matching with another.
@@ -1856,8 +1853,6 @@ class Trade(models.Model):
         # Update smaller trade for the actual trade we're going to make
         other_trade.price = matched_price
 
-        # other_trade.volume = volume_to_trade # not needed
-
         if self.seller and not self.buyer:
             other_trade.seller = self.seller
         elif self.buyer and not self.seller:
@@ -1868,7 +1863,6 @@ class Trade(models.Model):
 
         # New trade:
         original_volume = self.asset.share.volume
-        # partial_trade = None
         try:
 
             # Accept the smaller trade at the matched price
@@ -2616,10 +2610,47 @@ class TradePartialFill:
         self.filled_volume = volume
 
     def get_price_per_vol(self):
-        return trade.price/trade.asset.share.volume 
+        return self.trade.price/self.trade.asset.share.volume 
 
     def get_price(self):
         return self.get_price_per_vol() * self.filled_volume
+
+    def accept(self, investor, buy_or_sell):
+        """ Accept this partial trade """
+        if self.trade.asset.share.volume == self.filled_volume:
+            logger.info("Fill full trade: %s", self.trade)
+
+            if buy_or_sell == Offer.BUY:
+                if self.trade.buyer is not None and self.trade.buyer is not investor:
+                    raise XChangeException("Trade already has different buyer")
+
+                self.trade.buyer = investor
+            else:
+                if self.trade.seller is not None and self.trade.seller is not investor:
+                    raise XChangeException("Trade already has different seller")
+                self.trade.seller = investor
+
+            self.trade.accept_trade(investor)
+        else:
+            # Partially fill the trade, which is more complicated
+            # First create new trade for the volume we actually want
+            if self.trade.buyer is None:
+                buyer = investor
+                seller = self.trade.seller
+
+            else:
+                buyer = self.trade.buyer
+                seller = investor
+
+            new_trade = Trade.make_share_trade(self.trade.asset.share.athlete, self.filled_volume,
+            investor, self.get_price(), seller, buyer)
+            new_trade.save()
+
+            # Now fill existing trade with the new trade
+            self.trade.partially_fill_with(new_trade)
+
+        self.trade.save()
+
 
 class Offer:
     """
@@ -2647,9 +2678,9 @@ class Offer:
     def __init__(self, investor: Investor, athlete: Athlete, volume: decimal.Decimal, buy_or_sell: str):
         self.investor = investor
         self.athlete = athlete
-        self.volume = volume
+        self.volume = decimal.Decimal(volume)
         self.is_available = False
-        self.buy_or_sell = buy_or_sell
+        self.buy_or_sell = Offer.BUY if buy_or_sell in ("B", "Buy", "buy") else Offer.SELL
         self.trades = []
 
     def compute_offer(self):
@@ -2659,17 +2690,117 @@ class Offer:
         """
         # Reset flag
         self.is_available = False
+        self.bank_offer = None
+        self.trades = []
 
         # Consider bank
         bank = get_bank()
-        self.bank_offer = bank.get_buy_sell_offer(self.athlete.id, self.volume)
-        logger.info("Bank offer: buy for %s, sell for %s", self.bank_offer.total_buy_price, self.bank_offer.total_sell_price)
+        bank_offer = bank.get_buy_sell_offer(self.athlete.id, self.volume)
+        bank_offer_total = bank_offer.total_sell_price  if self.buy_or_sell == self.BUY else bank_offer.total_buy_price
+        bank_offer_per_unit = bank_offer_total / self.volume
+        logger.info("Bank offer: bank will %s volume %s for %s per unit", self.buy_or_sell,self.volume,  bank_offer_per_unit)
+
 
         # TODO: Consider trades with other players
+        # Get all open trades for this athlete
+        valid_trades = []
+        if self.buy_or_sell == self.BUY:
+            # We want to buy - find all trades without a buyer
+            matching_trades = Trade.objects.all().filter(Q(asset__share__athlete=self.athlete)
+                                                        & ~Q(creator=self.investor)
+                                                        & Q(status=Trade.PENDING)
+                                                        & Q(buyer=None)
+                                                        & Q(asset__share__volume__gt=0)
+                                                        & Q(season=get_current_season()) ).order_by('-price')
+        
+            
+        else:
+            # We want to sell - find all trades without a seller
+            matching_trades = Trade.objects.all().filter(Q(asset__share__athlete=self.athlete)
+                                                        & ~Q(creator=self.investor)
+                                                        & Q(status=Trade.PENDING)
+                                                        & Q(seller=None)
+                                                        & Q(asset__share__volume__gt=0)
+                                                        & Q(season=get_current_season()) ).order_by('-price')
+       
+        for trade in matching_trades:
+            trade.price_per_unit = trade.price/trade.asset.share.volume
 
-        # Check offer is available
-        if (self.buy_or_sell == self.BUY and self.bank_offer.total_sell_price > 0) or (self.buy_or_sell == self.SELL and  self.bank_offer.total_buy_price > 0):
+        
+        matching_trades = sorted(matching_trades, key = lambda t: t.price_per_unit)
+
+        if self.buy_or_sell == self.SELL:
+            matching_trades.reverse()
+
+        logger.info("Possible trades: ")
+        for trade in matching_trades:
+            logger.info("%d: %s %s (%s) for %s (%s per unit) with %s", trade.id, self.buy_or_sell,
+            trade.asset.share.athlete.name, trade.price, trade.asset.share.volume,
+            trade.price_per_unit,
+            trade.creator)
+
+        # Start accumulating trades whilst the price is better than the bank price
+        volume_to_fill = self.volume
+        for trade in matching_trades:
+
+            logger.info("Looking to %s, considering trade with price/unit: %s vs bank %s", self.buy_or_sell, trade.price_per_unit, bank_offer_per_unit)
+
+            if (self.buy_or_sell == self.BUY and trade.price_per_unit < bank_offer_per_unit) or (self.buy_or_sell == self.SELL and trade.price_per_unit > bank_offer_per_unit):
+
+                trade_volume = min(trade.asset.share.volume, volume_to_fill)
+
+                # Check trade is actually possible
+                if self.buy_or_sell == self.BUY:
+                    buyer = self.investor
+                    seller = trade.seller
+                else:
+                    buyer = trade.buyer
+                    seller = self.investor
+
+                try:
+                    Trade.check_share_trade_possible(buyer, seller, trade.creator,
+                                                trade.price_per_unit*trade_volume,
+                                                trade_volume, self.athlete)
+
+                except XChangeException as e:
+                    # trade is not possible, try next one
+                    logger.info("Trade not possible because: %s", e)
+                    continue
+
+                logger.info("Fill volume %s from trade %s", trade_volume, trade.id)
+                self.trades.append(TradePartialFill(trade, trade_volume))
+
+                volume_to_fill = volume_to_fill - trade_volume
+
+                if volume_to_fill == 0:
+                    break
+            else:
+                logger.info("Don't do trade %s", trade.id)
+                break
+
+        # If remaining volume to fill, fill with bank
+        if volume_to_fill > 0:
+            bank_offer = bank.get_buy_sell_offer(self.athlete.id, volume_to_fill)
+            bank_offer_total = bank_offer.total_sell_price  if self.buy_or_sell == self.BUY else bank_offer.total_buy_price
+
+            if bank_offer_total > 0:
+                self.bank_offer = bank_offer
+
+                logger.info("Fill remaining volume (%s) with bank offer: %s", volume_to_fill, bank_offer_total)
+                volume_to_fill = 0
+
+            else:
+                self.bank_offer = None
+                logger.info("Unable to fill remaining volume with bank offer")
+
+        # If we've filled the requirements, set offer as available
+        if volume_to_fill == 0:
+            logger.info("Offer is available")
             self.is_available = True
+        else:
+            self.is_available = False
+            logger.info("No offer available")
+
 
     def accept(self, total_price: decimal.Decimal):
 
@@ -2682,9 +2813,16 @@ class Offer:
             logger.info("Offer no longer available %s != %s", total_price, self.get_total_price_of_offer())
             raise OfferExpired(f"Price {total_price} no longer available, please refresh")
 
-        # TODO: accept offers
+        volume_to_fill_with_trades = self.volume
+
         if self.bank_offer:
             self.bank_offer.accept(self.investor, self.buy_or_sell)
+            volume_to_fill_with_trades = volume_to_fill_with_trades - decimal.Decimal(self.bank_offer.volume)
+
+        if self.trades:
+            for partial_trade in self.trades:
+                partial_trade.accept(self.investor, self.buy_or_sell)
+
 
     def get_total_price_of_offer(self):
         """
@@ -2701,7 +2839,7 @@ class Offer:
 
         total_price = 0
         if self.trades:
-            for trade in trades:
+            for trade in self.trades:
                 total_price = total_price + trade.get_price()
 
         if self.bank_offer:

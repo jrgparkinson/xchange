@@ -80,7 +80,7 @@ function capitalizeFirstLetter(string) {
 }
 
 function get_actions(trade, trade_type) {
-    var closeAction = '<button type="button" class="btn btn-danger" onclick="actionTrade(' + trade.id + ', \'cancel\')">Cancel</button>';
+    var closeAction = '<button type="button" class="btn btn-danger" onclick="actionTrade(' + trade.id + ', \'cancel\')">Decline</button>';
     // var clas = trade_type.includes("ell") ? "success" : "info";
     var clas = "success";
     var acceptAction = ' <button type="button" class="btn btn-' + clas + '" onclick="actionTrade(' + trade.id + ', \'accept\')">' + capitalizeFirstLetter(trade_type) + '</button>';
@@ -206,5 +206,53 @@ function buySell(athlete_id, athlete_name) {
     $("#buySellShareTitle").html("Buy/sell shares in " + athlete_name);
     // $("#buySellShareBtn").html(buy_or_sell);
 
+    $("#buySellShareBtn").attr('data-athlete', athlete_id);
+
+    // Fill volume from existing table row if we can
+    const volume = $(".buySellVolume[data-athlete=" + athlete_id + "]").val();
+    console.log("Current volume is " + volume);
+    $("input#volume").val(volume);
+
+    table_row = $("tr[data-athlete=" + athlete_id + "]");
+    $("input#price").val(table_row.find(".tradingAt").html());
+
+    updateTotalBuySellPrice();
+
     $('#buySellShare').modal('show');
+}
+
+function buySellShare() {
+    athlete = $("#buySellShareBtn").attr('data-athlete');
+    volume = Number($("input#volume").val());
+    price_per_vol = Number($("input#price").val());
+    buy_sell = $('input[name=buysell]:checked').val();
+
+    console.log("Make offer to " + buy_sell + " " + athlete + ": " + volume + "unit at " + price_per_vol + " per unit");
+
+    $.ajax({
+        type: "GET",
+        url: '/create_trade/',
+        data: {
+            'data-asset': 'share',
+            'tradeWith': 'Open',
+            'price': price_per_vol * volume,
+            'buysell': buy_sell,
+            'data-athlete': athlete,
+            'data-volume': volume,
+        },
+        success: function(data) {
+            if (data.error) {
+                display_error(data.error);
+            } else {
+                successNotif("Offer created succesfully.");
+            }
+            // reload_all();
+        }
+    });
+
+}
+
+function updateTotalBuySellPrice() {
+    var total_price = Number($("input#volume").val()) * Number($("input#price").val());
+    $("#totalPrice").html(total_price.toFixed(2));
 }

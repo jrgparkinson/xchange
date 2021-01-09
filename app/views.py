@@ -637,10 +637,11 @@ def retrieve_trades(request):
                     trade["can_accept"] = True
 
             trade["can_close"] = False
-            if current_investor and (
-                t.creator == current_investor or t.seller == current_investor
-            ):
-                trade["can_close"] = t.buyer == investor or t.seller == investor
+            # if current_investor and (
+            #     t.creator == current_investor or t.seller == current_investor
+            # ):
+            #     trade["can_close"] = t.buyer == investor or t.seller == investor
+            trade["can_close"] = t.buyer == current_investor or t.seller == current_investor
 
             trades.append(trade)
 
@@ -773,11 +774,11 @@ def create_trade(request):
 
     try:
 
-        commodity = request.GET["commodityEntry"]
         tradeWith = request.GET["tradeWith"]
         price = float(request.GET["price"])
         is_sell = request.GET["buysell"] == "sell"
         if "data-asset" not in request.GET:
+            commodity = request.GET["commodityEntry"]
             logger.info("data-asset not in request.GET")
             raise InvalidAsset(desc="{} is not a valid asset".format(commodity))
 
@@ -1051,7 +1052,7 @@ def buy_sell_share(request):
         athlete_id = int(data["athlete_id"])
         volume = float(data["volume"])
         price = decimal.Decimal(data["price"])
-        investor = request.user.investor
+        investor = request.user.investor # type: Investor
         buy_sell = Offer.BUY if data["buy_sell"]  in ("B", "Buy", "buy") else Offer.SELL
 
         logger.info(f"f{buy_sell} {athlete_id} ({volume}) for {price}")
@@ -1061,10 +1062,14 @@ def buy_sell_share(request):
         # Try and execute sale, will through an exception if not possible
         offer.accept(price)
 
-        response = {"success": True}
+        shares_owned = investor.shares_in_athlete(athlete)
+        response = {"success": True,
+                    "trading_at": athlete.get_value(),
+                    "shares_owned": shares_owned.volume if shares_owned else 0}
     except XChangeException as e:
         return JsonResponse(make_error(e))
     except Exception as e:
+        logger.warning(traceback.print_exc())
         logger.warning(traceback.print_tb(e.__traceback__))
         return JsonResponse({"error": "Unknown error: " + str(e)})
 
@@ -1085,14 +1090,17 @@ def buy_sell_prices(request):
         buy_offer = Offer(investor, athlete, volume, Offer.BUY)
         sell_offer = Offer(investor, athlete, volume, Offer.SELL)
 
-        buy_price = buy_offer.get_total_price_of_offer() #athlete.get_buy_price(volume)
-        sell_price = sell_offer.get_total_price_of_offer() # athlete.get_sell_price(volume)
+        buy_price = buy_offer.get_total_price_of_offer()
+        sell_price = sell_offer.get_total_price_of_offer()
 
+        shares_owned = investor.shares_in_athlete(athlete)
         response = {"buy": round(buy_price, 2),
                     "sell": round(sell_price, 2),
-                    "trading_at": round(athlete.get_value(), 2)}
+                    "trading_at": round(athlete.get_value(), 2),
+                    "shares_owned": shares_owned.volume if shares_owned else 0}
     except Exception as e:
-        logger.warning(traceback.print_tb(e.__traceback__))
+        logger.warning(traceback.print_exc())
+        # logger.warning(traceback.print_tb(e.__traceback__))
         return JsonResponse({"error": "Unknown error"})
 
     return JsonResponse(response)

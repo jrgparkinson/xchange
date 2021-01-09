@@ -34,7 +34,7 @@
                                         <input type="number" step="0.01" value="1.0" class="form-control from-control-inline col-sm-2 buySellVolume" id="volume" data-athlete="{{a.id}}">
                                         <button type="button" class="btn btn-success buyShare buyOrSellButton buySellOffer" data-athlete="{{a.id}}" data-buy-sell="buy" data-price="0">Buy for x</button>
                                         <button type="button" class="btn btn-danger sellShare buyOrSellButton buySellOffer" data-athlete="{{a.id}}" data-buy-sell="sell" data-price="0">Sell for x</button>
-                                        <button type="button" class="btn btn-secondary buyOrSellButton buySellOffer" data-athlete="{{a.id}}" onClick="buySell('{{a.id}}', '{{a.name}}');" disabled>Make offer</button>
+                                        <button type="button" class="btn btn-secondary" data-athlete="{{a.id}}" onClick="buySell('{{a.id}}', '{{a.name}}');">Make offer</button>
                                     </div>
 
                                 </td>
@@ -122,7 +122,10 @@
                     }
 
                     // $(".tradingAt[data-athlete=" + athlete_id + "]").html(response.trading_at);
-                    table_row.find(".tradingAt").html(response.trading_at);
+                    // table_row.find(".tradingAt").html(response.trading_at);
+                    table_row.find(".volOwned").html(Number(response.shares_owned).toFixed(2));
+                    table_row.find(".tradingAt").html(Number(response.trading_at).toFixed(2));
+
 
                 }
             });
@@ -166,7 +169,10 @@
                     } else {
                         new_vol_owned = current_vol_owned - Number(volume);
                     }
-                    $(".volOwned[data-athlete=" + athlete_id + "]").html(new_vol_owned.toFixed(2));
+                    table_row = $("tr[data-athlete=" + athlete_id + "]");
+
+                    table_row.find(".volOwned").html(Number(response.shares_owned).toFixed(2));
+                    table_row.find(".tradingAt").html(Number(response.trading_at).toFixed(2));
 
                     fillPrice(athlete_id, volume);
 
