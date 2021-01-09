@@ -10,12 +10,15 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 import re
 import json
+import math
 from django.core.serializers.json import DjangoJSONEncoder
 import time
 from datetime import datetime
 import logging
 import traceback
 from rest_framework.authtoken.models import Token
+import numpy as np
+
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -76,6 +79,23 @@ def index(request):
         "athletes": athletes,
     }
     return render(request, "app/index.html", context)
+
+
+@login_required(login_url="/login/")
+def shares(request):
+    athletes = Athlete.objects.all()
+    athletes = sorted(athletes, key=lambda a: a.get_value(), reverse=True)
+    
+    for i in range(len(athletes)):
+        a = athletes[i]
+        a.position = i + 1
+        athletes[i] = a
+        a.vol_owned = a.get_vol_owned_by(request.user.investor)
+
+    context = {
+        "athletes": athletes,
+    }
+    return render(request, "app/shares.html", context)
 
 
 def about(request):
@@ -1000,7 +1020,7 @@ def get_bank_offer(request):
             volume = float(data["volume"])
 
             bank = get_bank()
-            offer = bank.get_sell_offer(athlete_id, volume)
+            offer = bank.get_buy_sell_offer(athlete_id, volume)
 
             athlete = Athlete.objects.get(pk=athlete_id)
             response["trading_price_per_unit"] = float(athlete.get_value())
@@ -1019,6 +1039,61 @@ def get_bank_offer(request):
     # except Exception as e:
     #     logger.warning(traceback.print_tb(e.__traceback__))
     #     return JsonResponse({"error": "Unknown error"})
+
+    return JsonResponse(response)
+
+@login_required(login_url='/login/')
+def buy_sell_share(request):
+    try:
+        # Work out the best price at which this volume could be bought/sold
+        data = request.GET
+        logger.info(data)
+        athlete_id = int(data["athlete_id"])
+        volume = float(data["volume"])
+        price = decimal.Decimal(data["price"])
+        investor = request.user.investor
+        buy_sell = Offer.BUY if data["buy_sell"]  in ("B", "Buy", "buy") else Offer.SELL
+
+        logger.info(f"f{buy_sell} {athlete_id} ({volume}) for {price}")
+        athlete = Athlete.objects.get(id=athlete_id)
+        offer = Offer(investor, athlete, volume, buy_sell)
+
+        # Try and execute sale, will through an exception if not possible
+        offer.accept(price)
+
+        response = {"success": True}
+    except XChangeException as e:
+        return JsonResponse(make_error(e))
+    except Exception as e:
+        logger.warning(traceback.print_tb(e.__traceback__))
+        return JsonResponse({"error": "Unknown error: " + str(e)})
+
+    return JsonResponse(response)
+
+@login_required(login_url='/login/')
+def buy_sell_prices(request):
+    try:
+        # Work out the best price at which this volume could be bought/sold
+        data = request.GET
+        logger.info(data)
+        athlete_id = int(data["athlete_id"])
+        volume = float(data["volume"])
+        investor = request.user.investor
+        logger.info(f"{athlete_id}: {volume}")
+        athlete = Athlete.objects.get(id=athlete_id)
+
+        buy_offer = Offer(investor, athlete, volume, Offer.BUY)
+        sell_offer = Offer(investor, athlete, volume, Offer.SELL)
+
+        buy_price = buy_offer.get_total_price_of_offer() #athlete.get_buy_price(volume)
+        sell_price = sell_offer.get_total_price_of_offer() # athlete.get_sell_price(volume)
+
+        response = {"buy": round(buy_price, 2),
+                    "sell": round(sell_price, 2),
+                    "trading_at": round(athlete.get_value(), 2)}
+    except Exception as e:
+        logger.warning(traceback.print_tb(e.__traceback__))
+        return JsonResponse({"error": "Unknown error"})
 
     return JsonResponse(response)
 

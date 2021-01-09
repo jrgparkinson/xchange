@@ -510,8 +510,8 @@ class Bank(Entity):
     def serialize(self):
         return {"name": self.name, "capital": self.capital}
 
-    def get_sell_offer(self, athlete_id, volume):
-        """ What will bank sell for """
+    def get_buy_sell_offer(self, athlete_id, volume):
+        """ What will bank buy/sell for """
         athlete = Athlete.objects.get(pk=athlete_id)
         current_price = athlete.get_value()
         all_shares = Share.objects.all().filter(athlete=athlete, is_virtual=False)
@@ -525,25 +525,22 @@ class Bank(Entity):
         bank_vol = bank_shares.volume if bank_shares else 0      
 
         # Price increases by 1% for each 1% of total share vol
-        sell_price_per_unit = current_price*1.05
-        buy_price_per_unit = current_price*0.95
+        sell_price_per_unit = decimal.Decimal(current_price*1.05)
+        buy_price_per_unit = decimal.Decimal(current_price*0.95)
 
         total_sell_price = 0
         total_buy_price = 0
 
-        remaining_vol = volume
-        share_division =  decimal.Decimal(0.01)*total_vol
+        remaining_vol = decimal.Decimal(volume)
+        share_division =  decimal.Decimal(0.01)*decimal.Decimal(total_vol)
         while remaining_vol > 0.0:
             this_vol = min(share_division, remaining_vol)
             total_sell_price = total_sell_price + (sell_price_per_unit * this_vol)
             total_buy_price = total_buy_price + (buy_price_per_unit * this_vol)
 
             remaining_vol = remaining_vol - this_vol
-            sell_price_per_unit = sell_price_per_unit * 1.01
-            buy_price_per_unit = buy_price_per_unit * 0.99
-
-        # total_sell_price = np.round(total_sell_price, 2)
-        # total_buy_price = np.round(total_buy_price, 2)
+            sell_price_per_unit = sell_price_per_unit * decimal.Decimal(1.01)
+            buy_price_per_unit = buy_price_per_unit * decimal.Decimal(0.99)
 
         if volume > bank_vol:
             total_sell_price = -1
@@ -657,10 +654,10 @@ class Athlete(models.Model):
 
     @property
     def to_html(self):
-        return '<span class="badgeContainer"><a href="athlete/' + str(self.id) + '" class="badge badge-danger">' + self.name + '</a></span>'
+        return '<span class="badgeContainer"><a href="/athlete/' + str(self.id) + '" class="badge badge-danger">' + self.name + '</a></span>'
 
     def serialize(self, investor: Investor =None):
-        s = {"id": self.pk, "name": self.name}
+        s = {"id": self.pk, "name": self.name, "value": self.get_value()}
 
         if investor:
             shares = investor.saleable_shares_in_athlete(self)
@@ -670,6 +667,13 @@ class Athlete(models.Model):
             s["vol_owned"] = vol
 
         return s
+
+    def get_vol_owned_by(self, investor: Investor):
+        shares = investor.saleable_shares_in_athlete(self)
+        vol = 0
+        if shares:
+            vol = shares.volume
+        return vol
 
     def get_all_trades(self):
         trades = (
@@ -1388,6 +1392,7 @@ class Swap(Asset):
         "type": "Swap",}
 
 
+
 class BankOffer(models.Model):
 
     BUY = "B"
@@ -1840,8 +1845,6 @@ class Trade(models.Model):
         if not self.asset.share.volume >= other_trade.asset.share.volume:
             raise XChangeException("Attempting to fill trade with another trade of greater volume")
 
-        
-
         # Now do the work
         volume_to_trade = other_trade.asset.share.volume
         unfilled_volume = self.asset.share.volume - volume_to_trade
@@ -1856,16 +1859,9 @@ class Trade(models.Model):
         # other_trade.volume = volume_to_trade # not needed
 
         if self.seller and not self.buyer:
-            # seller = self.seller
-            # buyer = other_trade.buyer
-
             other_trade.seller = self.seller
         elif self.buyer and not self.seller:
-            # seller = other_trade.seller
-            # buyer = self.buyer
-
             other_trade.buyer = self.buyer
-
         else:
             # This also shouldn't happen
             return
@@ -2610,6 +2606,116 @@ class Notification(models.Model):
     #     return notifs
 
 
+class TradePartialFill:
+    """ Represents a fraction of a current trade """
+    trade: Trade
+    filled_volume: decimal.Decimal
+
+    def __init__(self, trade, volume):
+        self.trade = trade
+        self.filled_volume = volume
+
+    def get_price_per_vol(self):
+        return trade.price/trade.asset.share.volume 
+
+    def get_price(self):
+        return self.get_price_per_vol() * self.filled_volume
+
+class Offer:
+    """
+    When an investor wants to buy/sell shares in an athlete,
+    this may be possible by combining various open trades
+    along with buying/selling some portion with the bank
+
+    This class represents the collection of these trades.
+    """
+    BUY = "B"
+    SELL = "S"
+    OPTIONS = (
+        (BUY, "Buy"),
+        (SELL, "Sell")
+    )
+
+    investor: Investor
+    trades: List[TradePartialFill]
+    bank_offer: BankOffer
+    athlete: Athlete
+    volume: decimal.Decimal
+    is_available: bool
+
+
+    def __init__(self, investor: Investor, athlete: Athlete, volume: decimal.Decimal, buy_or_sell: str):
+        self.investor = investor
+        self.athlete = athlete
+        self.volume = volume
+        self.is_available = False
+        self.buy_or_sell = buy_or_sell
+        self.trades = []
+
+    def compute_offer(self):
+        """
+        Compute offer by considering available trades
+        and bank offers 
+        """
+        # Reset flag
+        self.is_available = False
+
+        # Consider bank
+        bank = get_bank()
+        self.bank_offer = bank.get_buy_sell_offer(self.athlete.id, self.volume)
+        logger.info("Bank offer: buy for %s, sell for %s", self.bank_offer.total_buy_price, self.bank_offer.total_sell_price)
+
+        # TODO: Consider trades with other players
+
+        # Check offer is available
+        if (self.buy_or_sell == self.BUY and self.bank_offer.total_sell_price > 0) or (self.buy_or_sell == self.SELL and  self.bank_offer.total_buy_price > 0):
+            self.is_available = True
+
+    def accept(self, total_price: decimal.Decimal):
+
+        # Get latest offer, check still valid
+        self.compute_offer()
+
+        logger.info("Latest offer: %s, desired price: %s", self.get_total_price_of_offer(), total_price)
+
+        if abs(self.get_total_price_of_offer() - total_price) > 0.01:
+            logger.info("Offer no longer available %s != %s", total_price, self.get_total_price_of_offer())
+            raise OfferExpired(f"Price {total_price} no longer available, please refresh")
+
+        # TODO: accept offers
+        if self.bank_offer:
+            self.bank_offer.accept(self.investor, self.buy_or_sell)
+
+    def get_total_price_of_offer(self):
+        """
+        Sum up price of trades and bank offer that constitute this offer
+        Computes offer if not done already
+        Returns NaN if no offer available
+        """
+        if not self.is_available:
+            self.compute_offer()
+
+        if not self.is_available:
+            logger.info("No offer available")
+            return -1
+
+        total_price = 0
+        if self.trades:
+            for trade in trades:
+                total_price = total_price + trade.get_price()
+
+        if self.bank_offer:
+            if self.buy_or_sell == self.BUY:
+                # We want to buy, get bank sell price
+                total_price = total_price + self.bank_offer.total_sell_price
+            else:
+                # We want to sell, get bank buy price
+                total_price = total_price + self.bank_offer.total_buy_price
+
+        return total_price
+
+
+
 def compute_dividends(race: Race):
     if not race.num_competitors:
         return
@@ -2627,3 +2733,4 @@ def compute_dividends(race: Race):
 def cowley_club_bank():
     bank = Bank.objects.get(name="The Cowley Club Bank")
     return bank
+

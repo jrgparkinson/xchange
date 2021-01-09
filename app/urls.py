@@ -66,6 +66,7 @@ urlpatterns = [
     path("bank/", views.bank, name="bank"),
     path("auction/", views.auction, name="auction"),
     path("marketplace/", views.marketplace, name="marketplace"),
+    path("shares/", views.shares, name="shares"),
     path("athlete/<int:athlete_id>/", views.view_athlete, name="athlete"),
     path("investor/<int:investor_id>/", views.view_investor, name="investor"),
     # JQuery
@@ -108,6 +109,9 @@ urlpatterns = [
     path("get_contract/", views.get_contract, name="get_contract"),
 
     path("option/", views.option, name="options"),
+
+    path("get_buy_sell_prices/", views.buy_sell_prices, name="buy_sell_prices"),
+    path("buy_sell_share/", views.buy_sell_share, name="buy_sell_share"),
     
     # make_loan
     # get_loans

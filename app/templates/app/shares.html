@@ -1,0 +1,197 @@
+{% extends 'app/base.html' %} {% load static %} {% block title %} Shares{% endblock %} {% block page_title %}Shares {% endblock %} {% block content %}
+
+
+<div class="row">
+    <div class="col-md-12 col-lg-12 col-sm-12">
+
+        <div class="card">
+            <div class="card-body">
+
+                <div class="page" id="athlete">
+
+                    <table class="table" id="athlete">
+                        <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Athlete</th>
+                                <th scope="col">Trading at</th>
+                                <th scope="col">Volume owned</th>
+                                <th scope="col">Trade</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for a in athletes %}
+                            <tr data-athlete="{{a.id}}">
+                                <td>{{a.position}}</td>
+                                <td>{{a.to_html|safe}}
+                                </td>
+                                <td class="tradingAt" data-athlete="{{a.id}}">
+                                    {{a.get_value|floatformat:2}}
+                                </td>
+                                <td class="volOwned" data-athlete="{{a.id}}">{{a.vol_owned}}</td>
+                                <td>
+                                    <div class="form-row">
+                                        <input type="number" step="0.01" value="1.0" class="form-control from-control-inline col-sm-2 buySellVolume" id="volume" data-athlete="{{a.id}}">
+                                        <button type="button" class="btn btn-success buyShare buyOrSellButton buySellOffer" data-athlete="{{a.id}}" data-buy-sell="buy" data-price="0">Buy for x</button>
+                                        <button type="button" class="btn btn-danger sellShare buyOrSellButton buySellOffer" data-athlete="{{a.id}}" data-buy-sell="sell" data-price="0">Sell for x</button>
+                                        <button type="button" class="btn btn-secondary buyOrSellButton buySellOffer" data-athlete="{{a.id}}" onClick="buySell('{{a.id}}', '{{a.name}}');" disabled>Make offer</button>
+                                    </div>
+
+                                </td>
+
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+{% include 'app/create-share.html' %} {%endblock%} {% block footer %}
+
+<script type="text/javascript">
+    $(document).ready(function() {
+
+        $(".buySellVolume").each(function(index) {
+            fillPrice($(this).attr("data-athlete"), $(this).val());
+        });
+
+        $('table#athlete').DataTable({
+            paging: false,
+            scrollx: true,
+            scrollx: true,
+        });
+    });
+
+    $(".buySellVolume").on('change keyup paste input', function(event) {
+        var athlete_id = $(this).attr("data-athlete");
+        var volume = $(this).val();
+        fillPrice(athlete_id, volume);
+    });
+
+
+    function fillPrice(athlete_id, volume) {
+        // var prices = getPrice(athlete_id, volume);
+
+        var prices;
+        $.ajax({
+                type: "GET",
+                url: DEPLOY_URL + 'get_buy_sell_prices/',
+                data: {
+                    "athlete_id": athlete_id,
+                    "volume": volume
+                }
+            })
+            .done(function(response) {
+                console.log(response);
+
+                if (response.error) {
+
+                } else {
+                    prices = response;
+                    table_row = $("tr[data-athlete=" + athlete_id + "]");
+                    var buy_button = $(".buyShare[data-athlete=" + athlete_id + "]");
+                    var sell_button = $(".sellShare[data-athlete=" + athlete_id + "]");
+
+                    if (prices.buy > 0) {
+                        var unitSell = Number(prices.buy / volume);
+                        buy_button.text("Buy @ " + unitSell.toFixed(3) + " (" + prices.buy + ")");
+                        buy_button.attr("data-price", prices.buy);
+                        buy_button.prop('disabled', false);
+                    } else {
+                        buy_button.prop('disabled', true);
+                        buy_button.text("Buy unavailable");
+
+                    }
+
+                    var volOwned = Number($(".volOwned[data-athlete=" + athlete_id + "]").text());
+                    canSell = volOwned >= volume;
+                    if (prices.sell > 0 && canSell) {
+                        var unitSell = Number(prices.sell / volume);
+                        sell_button.text("Sell @ " + unitSell.toFixed(3) + " (" + prices.sell + ")");
+                        sell_button.attr("data-price", prices.sell);
+                        sell_button.prop('disabled', false);
+                    } else {
+                        sell_button.prop('disabled', true);
+                        sell_button.text("Sell unavailable");
+                    }
+
+                    // $(".tradingAt[data-athlete=" + athlete_id + "]").html(response.trading_at);
+                    table_row.find(".tradingAt").html(response.trading_at);
+
+                }
+            });
+
+
+
+    }
+
+    $(".buyOrSellButton").click(function() {
+        console.log($(this));
+
+        var athlete_id = $(this).attr("data-athlete");
+        var volume = $(".buySellVolume[data-athlete=" + athlete_id + "]").val();
+        var price = $(this).attr("data-price");
+        var buy_sell = $(this).attr("data-buy-sell");
+
+        console.log(buy_sell + ", " + athlete_id + ", " + volume + ", " + price);
+
+        $.ajax({
+                type: "GET",
+                url: DEPLOY_URL + 'buy_sell_share/',
+                data: {
+                    "athlete_id": athlete_id,
+                    "volume": volume,
+                    "price": price,
+                    "buy_sell": buy_sell,
+                }
+            })
+            .done(function(response) {
+                console.log(response);
+                // alert(response);
+
+                if (response.success) {
+                    // TODO: refresh everything (table, top bar)
+                    console.log("Trade success");
+                    populate_top_bar_portfolio();
+                    const current_vol_owned = Number($(".volOwned[data-athlete=" + athlete_id + "]").html());
+                    var new_vol_owned;
+                    if (buy_sell == "buy") {
+                        new_vol_owned = current_vol_owned + Number(volume);
+                    } else {
+                        new_vol_owned = current_vol_owned - Number(volume);
+                    }
+                    $(".volOwned[data-athlete=" + athlete_id + "]").html(new_vol_owned.toFixed(2));
+
+                    fillPrice(athlete_id, volume);
+
+                } else {
+                    display_error(response.error);
+                }
+            });
+
+    });
+
+    function refresh_row(athlete_id) {
+        // get trading at and, vol owned
+        $.ajax({
+                type: "GET",
+                url: DEPLOY_URL + 'get_share_details/',
+                data: {
+                    "athlete_id": athlete_id,
+                }
+            })
+            .done(function(response) {
+                console.log(response);
+
+                // Set trading at and vol owned
+
+            });
+    }
+</script>
+{% endblock %}

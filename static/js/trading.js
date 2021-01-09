@@ -1,22 +1,21 @@
-
 function populateTradeWithSelect() {
     $.ajax({
-        type: "GET",
-        url: DEPLOY_URL + 'get_investors/',  // URL to your view that serves new info
-        data: { "ignore_self": true }
-    })
-        .done(function (response) {
+            type: "GET",
+            url: DEPLOY_URL + 'get_investors/', // URL to your view that serves new info
+            data: { "ignore_self": true }
+        })
+        .done(function(response) {
             // console.log(response);
             if (response.error) {
                 display_error(response.error);
             }
 
-            $("#tradeWith option[value='X']").each(function () {
+            $("#tradeWith option[value='X']").each(function() {
                 if ($(this).value != "Open") {
                     $(this).remove();
                 }
             });
-            $.each(response.investors, function (i, item) {
+            $.each(response.investors, function(i, item) {
                 $('#tradeWith').append($('<option>', {
                     value: item.name,
                     text: item.name
@@ -26,24 +25,23 @@ function populateTradeWithSelect() {
 }
 
 function populateAthletes(athleteSelectId, includeOwned) {
-    if (includeOwned == undefined) { includeOwned = true; }
-    else { includeOwned = false; }
+    if (includeOwned == undefined) { includeOwned = true; } else { includeOwned = false; }
     $.ajax({
-        type: "GET",
-        url: DEPLOY_URL + 'get_athletes/',  // URL to your view that serves new info
-        data: {}
-    })
-        .done(function (response) {
+            type: "GET",
+            url: DEPLOY_URL + 'get_athletes/', // URL to your view that serves new info
+            data: {}
+        })
+        .done(function(response) {
             // console.log(response);
             if (response.error) {
                 display_error(response.error);
             }
 
-            $("#" + athleteSelectId + " option").each(function () {
+            $("#" + athleteSelectId + " option").each(function() {
                 $(this).remove();
             });
 
-            $.each(response.athletes, function (i, athlete) {
+            $.each(response.athletes, function(i, athlete) {
                 $('#' + athleteSelectId).append($('<option>', {
                     value: athlete.id,
                     text: athlete.name + (includeOwned ? " (owned: " + athlete.vol_owned + ")" : "")
@@ -61,17 +59,17 @@ function populateAthletes(athleteSelectId, includeOwned) {
 
 function populateExistingContracts(selectId) {
     $.ajax({
-        type: "GET",
-        url: DEPLOY_URL + 'get_investor_contracts/',  // URL to your view that serves new info
-        data: {}
-    })
-        .done(function (response) {
+            type: "GET",
+            url: DEPLOY_URL + 'get_investor_contracts/', // URL to your view that serves new info
+            data: {}
+        })
+        .done(function(response) {
             // console.log(response);
             if (response.error) {
                 display_error(response.error);
             }
 
-            $("#" + selectId + " option").each(function () {
+            $("#" + selectId + " option").each(function() {
                 $(this).remove();
             });
 
@@ -79,7 +77,7 @@ function populateExistingContracts(selectId) {
             //     value: "",
             //     text: "Select a contract",
             // }));
-            $.each(response.contracts, function (i, contract) {
+            $.each(response.contracts, function(i, contract) {
 
                 $('#' + selectId).append($('<option>', {
                     value: contract.id,
@@ -131,11 +129,11 @@ function actionTrade(trade_id, change, confirmation) {
         } else {
             $(".confirm-contract").show();
             $.ajax({
-                type: "GET",
-                url: DEPLOY_URL + 'get_contract/',
-                data: { "trade_id": trade_id }
-            })
-                .done(function (response) {
+                    type: "GET",
+                    url: DEPLOY_URL + 'get_contract/',
+                    data: { "trade_id": trade_id }
+                })
+                .done(function(response) {
                     console.log(response);
                     // var trade = response.trade;
                     var contract = response.contract;
@@ -146,7 +144,7 @@ function actionTrade(trade_id, change, confirmation) {
 
                     var obligation = "Unknown";
                     if (contract.type == "Future" || contract.type == "Option") {
-                        var d = new Date(contract.strike_date); 
+                        var d = new Date(contract.strike_date);
                         var asset = format_asset(contract.underlying);
                         obligation = "";
                         if (contract.seller) {
@@ -163,7 +161,7 @@ function actionTrade(trade_id, change, confirmation) {
                             obligation += " The option holder (" + holder + ") can trigger the obligation";
                             obligation += " at any time up until the strike date (" + d.toLocaleString() + ")";
                         }
-                    } 
+                    }
                     $("#contractObligation").html(obligation);
                     $("#contractPrice").text(response.trade.price);
                     if (response.trade.price < 0) {
@@ -181,11 +179,11 @@ function actionTrade(trade_id, change, confirmation) {
     tr.addClass("actionedTrade");
 
     $.ajax({
-        type: "GET",
-        url: DEPLOY_URL + 'action_trade/',
-        data: { "id": trade_id, "change": change, "confirmation": confirmation }
-    })
-        .done(function (response) {
+            type: "GET",
+            url: DEPLOY_URL + 'action_trade/',
+            data: { "id": trade_id, "change": change, "confirmation": confirmation }
+        })
+        .done(function(response) {
             console.log(response)
             if (response.error) {
                 display_error(response.error);
@@ -213,9 +211,6 @@ function actionTrade(trade_id, change, confirmation) {
                 }
 
             }
-
-
-
 
             populate_top_bar_portfolio();
             tr.removeClass("actionedTrade");
@@ -273,9 +268,9 @@ function reload_trades(div, active, investor_id, other_opts) {
 
     return $.ajax({
         type: "GET",
-        url: DEPLOY_URL + 'retrieve_trades/',  // URL to your view that serves new info
+        url: DEPLOY_URL + 'retrieve_trades/', // URL to your view that serves new info
         data: opts
-    }).done(function (response) {
+    }).done(function(response) {
         console.log(response)
         if (response.error) {
             // handle error
@@ -370,8 +365,7 @@ function reload_trades(div, active, investor_id, other_opts) {
 
             if (active) {
                 newRow += '<td>' + actions + '</td></tr>';
-            }
-            else {
+            } else {
                 var d = new Date(trade.updated)
                 newRow += '<td>' + d.toLocaleString() + '</td></tr>';
             }
@@ -441,7 +435,3 @@ function reload_all() {
     // reload_make_trades();
     //reload_outgoing_trades();
 }
-
-
-
-

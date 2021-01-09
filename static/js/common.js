@@ -39,6 +39,7 @@ function remove_row(tr) {
 function format_athlete(athlete) {
     return '<span class="badgeContainer"><a href="' + DEPLOY_URL + 'athlete/' + athlete.id + '" class="badge badge-danger">' + athlete.name + '</a></span>';
 }
+
 function format_asset(asset, current_inv) {
     if (asset.athlete) {
         // this is a share
@@ -98,11 +99,11 @@ function get_actions(trade, trade_type) {
 function populate_top_bar_portfolio() {
 
     $.ajax({
-        type: "GET",
-        url: DEPLOY_URL + 'get_portfolio_value/',  // URL to your view that serves new info
-        data: {}
-    })
-        .done(function (response) {
+            type: "GET",
+            url: DEPLOY_URL + 'get_portfolio_value/', // URL to your view that serves new info
+            data: {}
+        })
+        .done(function(response) {
             if (response.capital && response.shares) {
                 $("#investor_capital_top").text(Number(response.capital).toFixed(2));
                 $("#investor_shares_top").text(Number(response.shares).toFixed(2));
@@ -148,21 +149,19 @@ function defaultChartOptions(ylab) {
                     zeroLineColor: primCol
                 }
             }],
-            yAxes: [
-                {
-                    scaleLabel: {
-                        display: true,
-                        labelString: ylab,
-                    },
-                    ticks: {
-                        beginAtZero: true
-                    },
-                    gridLines: {
-                        color: primCol,
-                        zeroLineColor: primCol
-                    }
+            yAxes: [{
+                scaleLabel: {
+                    display: true,
+                    labelString: ylab,
+                },
+                ticks: {
+                    beginAtZero: true
+                },
+                gridLines: {
+                    color: primCol,
+                    zeroLineColor: primCol
                 }
-            ]
+            }]
         },
         plugins: {
             zoom: {
@@ -195,16 +194,17 @@ function successNotif(message) {
     $("#successNotifMsg").text(message);
     $('#successNotif').toast('show');
     // hide after 5 seconds
-    setTimeout(function () { $('#successNotif').toast('hide'); }, 5000);
+    setTimeout(function() { $('#successNotif').toast('hide'); }, 5000);
 }
-$(document).ready(function () {
+$(document).ready(function() {
     $("#datatables_crazyfix").remove();
-
-    // console.log("Toast:");
-    // console.log($(".toast"));
     $('.toast').toast('hide');
-
-
-    // $.toaster({ settings : {'timeout': 500} });
-    // $('.toast').css('color', 'red');
 });
+
+function buySell(athlete_id, athlete_name) {
+
+    $("#buySellShareTitle").html("Buy/sell shares in " + athlete_name);
+    // $("#buySellShareBtn").html(buy_or_sell);
+
+    $('#buySellShare').modal('show');
+}

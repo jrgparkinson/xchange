@@ -1,30 +1,38 @@
-html, body {
+html,
+body {
     background-color: var(--bg-color);
     color: var(--main-text);
 }
 
-h1, h2, h3, h4, h5, h6, p {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
     color: var(--main-text);
 }
 
 .tradeLabel {
-    float:left;
-    width:calc(100% - 50px);
+    float: left;
+    width: calc(100% - 50px);
 }
 
 .tradeActions {
-    float:right;
-    width:50px;
+    float: right;
+    width: 50px;
 }
 
 .active_trades {
     min-width: 800px;
 }
+
 ul.tradeList {
     list-style: none;
 }
 
-tr.buy {   
+tr.buy {
     /* color: black; */
     background-color: var(--buy);
 }
@@ -34,7 +42,8 @@ tr.sell {
     background-color: var(--sell);
 }
 
-tr.cancelled, tr.rejected {
+tr.cancelled,
+tr.rejected {
     background-color: var(--cancel);
 }
 
@@ -64,13 +73,13 @@ tr.noTradesFound {
 
 @media (max-width:600px) {
     .nav-portfolio {
-        right:0px;
-        width:300px;
+        right: 0px;
+        width: 300px;
     }
 }
 
-.searchError{
-    color:var(--error);
+.searchError {
+    color: var(--error);
     /* padding-left:10px; */
     /* vertical-align: 10px; */
 }
@@ -79,73 +88,74 @@ tr.noTradesFound {
     width: 422px;
     margin: 12px 0;
     padding: 8px 0;
-    background-color:var(--bg-color);
+    background-color: var(--bg-color);
     border: 1px solid var(--search-pred-border);
     border: 1px solid var(--search-pred-border-2);
     -webkit-border-radius: 8px;
-       -moz-border-radius: 8px;
-            border-radius: 8px;
+    -moz-border-radius: 8px;
+    border-radius: 8px;
     -webkit-box-shadow: 0 5px 10px var(--search-pred-border-2);
-       -moz-box-shadow: 0 5px 10px var(--search-pred-border-2);
-            box-shadow: 0 5px 10px var(--search-pred-border-2);
-  }
-  
-  .tt-suggestion {
+    -moz-box-shadow: 0 5px 10px var(--search-pred-border-2);
+    box-shadow: 0 5px 10px var(--search-pred-border-2);
+}
+
+.tt-suggestion {
     padding: 3px 20px;
     font-size: 18px;
     line-height: 24px;
-  }
-  
-  .tt-suggestion:hover {
+}
+
+.tt-suggestion:hover {
     cursor: pointer;
     color: var(--nav-active);
     background-color: var(--suggestion-bg);
-  }
-  
-  .tt-suggestion.tt-cursor {
+}
+
+.tt-suggestion.tt-cursor {
     color: var(--nav-active);
     background-color: var(--suggestion-bg);
-  
-  }
-  
-  .tt-suggestion p {
+}
+
+.tt-suggestion p {
     margin: 0;
-  }
-  
+}
 
-  
-
- .right-scroll-box {
-    height:300px;
+.right-scroll-box {
+    height: 300px;
 }
 
 div.graph {
     /* height:300px; */
     background-color: var(--bg-4);
     border-radius: 10px;
-    padding:10px;
+    padding: 10px;
     min-height: 300px;
 }
 
 @media (min-width:800px) {
     div.graph {
-        min-height:400px;
+        min-height: 400px;
     }
 }
 
-.tableFixHead thead th { position: sticky; top: 0;
-     background-color:var(--table-fixed-header);
-      padding: 10; margin:0; border-top:0;
-      
-    }
+.tableFixHead thead th {
+    position: sticky;
+    top: 0;
+    background-color: var(--table-fixed-header);
+    padding: 10;
+    margin: 0;
+    border-top: 0;
+}
 
-thead, th {
+thead,
+th {
     color: var(--table-fixed-head-text);
 }
 
-ul.eventList, ul.eventList ul {
+ul.eventList,
+ul.eventList ul {
     list-style: none;
-    padding:5px;
+    padding: 5px;
 }
 
 ul.eventList li {
@@ -153,15 +163,17 @@ ul.eventList li {
 }
 
 ul.raceList {
-    margin-left:0px;
+    margin-left: 0px;
 }
 
 ul.raceList li {
-    border-radius:5px;
-    padding:5px;
-    margin-top:5px;
+    border-radius: 5px;
+    padding: 5px;
+    margin-top: 5px;
 }
-ul.raceList li:hover, ul.raceList li.selected {
+
+ul.raceList li:hover,
+ul.raceList li.selected {
     /* background-color: thistle; */
     background-color: var(--menu-selected);
     color: var(--link-active);
@@ -170,7 +182,6 @@ ul.raceList li:hover, ul.raceList li.selected {
 li.selected a {
     color: var(--link-active);
 }
-
 
 .deletedTrade {
     background-color: var(--cancel);
@@ -184,74 +195,74 @@ li.selected a {
     font-size: larger;
 }
 
-
-
 .statLabel {
     color: var(--stat);
     font-size: 2em;
-    width:100%;
-
+    width: 100%;
     text-align: center;
 }
 
 .statDesc {
     font-size: small;
-    color:var(--stat-desc);
-    
-    width:100%;
+    color: var(--stat-desc);
+    width: 100%;
     text-align: center;
 }
 
 .statValue {
     /* font-size: x-large; */
     font-size: 4em;
-    width:100%;
+    width: 100%;
     text-align: center;
 }
 
 .statSmallValues {
     font-size: 1em;
-    width:100%;
+    width: 100%;
     text-align: left;
-
 }
 
 .statContainer {
     /* width:100%; */
     border: 2px solid var(--stat);
     border-radius: 10px;
-    margin:5px;
-    margin-bottom:10px;
-    padding:2px;
-    
+    margin: 5px;
+    margin-bottom: 10px;
+    padding: 2px;
 }
 
 .card {
     margin-bottom: 15px;
     border-color: var(--border);
-
     /* border-width: 2px; */
 }
 
-    /* div.page {
+
+/* div.page {
         width:300px;
     } */
 
-div.card-body, div.card {
+div.card-body,
+div.card {
     background-color: var(--bg-3);
 }
 
-input.form-control, select.form-control, select.custom-select {
+input.form-control,
+select.form-control,
+select.custom-select {
     background-color: var(--bg-4);
     color: var(--fg-1);
 }
 
-input.form-control:focus, select.form-control:focus,  select.custom-select:focus {
+input.form-control:focus,
+select.form-control:focus,
+select.custom-select:focus {
     background-color: var(--bg-4);
     color: var(--fg-1);
 }
 
-.form-control:disabled, .form-control[readonly] {
+.form-control:disabled,
+.form-control[readonly] {
     background-color: var(--bg-2);
     color: var(--fg-2);
 }
@@ -259,7 +270,9 @@ input.form-control:focus, select.form-control:focus,  select.custom-select:focus
 a {
     color: var(--link);
 }
-a:hover, a:active {
+
+a:hover,
+a:active {
     text-decoration: none;
     color: var(--link-active);
 }
@@ -271,7 +284,7 @@ ul.errorlist {
     /* background-color: var(--bg-3); */
     background-color: var(--cancel);
     border-radius: 10px;
-    padding:10px;
+    padding: 10px;
     border: 1px solid var(--error);
 }
 
@@ -280,7 +293,7 @@ ul.errorlist {
 }
 
 .formHelp {
-    color: var(--fg-2); 
+    color: var(--fg-2);
 }
 
 .formHelp ul {
@@ -306,13 +319,12 @@ thead {
 }
 
 .leftnav {
-    border-right:1px solid var(--internal-border);
+    border-right: 1px solid var(--internal-border);
 }
 
 button.page-choice {
-    margin-bottom:10px;
+    margin-bottom: 10px;
 }
-
 
 button.predict-search {
     background-color: var(--bg-3);
@@ -322,51 +334,56 @@ button.predict-search {
 
 /* Bids */
 
-tr.accepted, input.accepted {
+tr.accepted,
+input.accepted {
     background-color: var(--accept);
     color: var(--fg-alternate);
 }
 
-tr.rejected, input.rejected {
+tr.rejected,
+input.rejected {
     background-color: var(--cancel);
     color: var(--fg-alternate);
 }
 
-.top-nav, .top-nav a {
+.top-nav,
+.top-nav a {
     color: var(--fg-nav);
 }
 
-
-#buyTable, #sellTable {
-    overflow-x:auto;
+#buyTable,
+#sellTable {
+    overflow-x: auto;
 }
 
 textarea[data-asset="none"]:disabled {
-    display:none;
+    display: none;
 }
 
 textarea[data-asset="share"]:disabled {
-    display:block;
+    display: block;
     background-color: var(--accept);
 }
 
-textarea[data-asset="option"]:disabled, input[data-asset="future"]:disabled {
+textarea[data-asset="option"]:disabled,
+input[data-asset="future"]:disabled {
     background-color: var(--action-in-progres);
-    display:block;
+    display: block;
 }
 
 textarea[data-asset="swap"]:disabled {
     background-color: var(--stat);
-    display:block;
+    display: block;
 }
 
 textarea[data-asset="contract"]:disabled {
     background-color: var(--bg-2);
-    display:block;
+    display: block;
 }
 
 .calendar-addon {
-    font-size:1.5em; padding-left:2px;
+    font-size: 1.5em;
+    padding-left: 2px;
 }
 
 li.notificationUnseen {
@@ -374,49 +391,52 @@ li.notificationUnseen {
     background-color: var(--bg-3);
 }
 
-ul.notifications, ul.notifications li {
+ul.notifications,
+ul.notifications li {
     list-style: none;
-    padding-left:5px;
-    white-space:normal;
+    padding-left: 5px;
+    white-space: normal;
     max-width: 90vw;
     min-width: 50vw;
-
 }
- ul.notifications li {
-     padding-right:50px;
- }
+
+ul.notifications li {
+    padding-right: 50px;
+}
 
 li.notificationSeen {
     font-weight: normal;
     background-color: var(--bg-4);
 }
 
-i.seenNotification, i.dismissNotification {
+i.seenNotification,
+i.dismissNotification {
     position: absolute;
 }
+
 i.seenNotification {
-    right:22px;
+    right: 22px;
 }
+
 i.dismissNotification {
-    right:15px;
+    right: 15px;
 }
 
 @media (max-width: 576px) {
     #notificationContent {
         right: -135px!important;
-        max-width:100vw;
-        margin-top:15px;
+        max-width: 100vw;
+        margin-top: 15px;
     }
     ul.notifications {
-        
         max-width: 95vw;
         min-width: 95vw;
-        padding-right:10px;
+        padding-right: 10px;
     }
+}
 
-    }
-
-table, table.table {
+table,
+table.table {
     color: var(--fg-1);
 }
 
@@ -434,10 +454,20 @@ table, table.table {
     color: var(--fg-1);
 }
 
-tr, thead, .table th, .table thead th, .table td {
+tr,
+thead,
+.table th,
+.table thead th,
+.table td {
     border-color: var(--bg-4);
 }
 
-.form-control, select, .custom-select {
+.form-control,
+select,
+.custom-select {
     border-color: var(--internal-border);
+}
+
+.buySellOffer {
+    margin-left: 10px;
 }
