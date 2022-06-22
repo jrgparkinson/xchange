@@ -21,7 +21,7 @@ jdcal==1.4.1
 lazy-object-proxy==1.4.3
 MarkupPy==1.14
 mccabe==0.6.1
-numpy==1.18.4
+numpy==1.22.0
 odfpy==1.4.1
 openpyxl==3.0.3
 pathspec==0.8.0
